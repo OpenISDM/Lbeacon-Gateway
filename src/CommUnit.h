@@ -48,6 +48,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
@@ -58,7 +59,7 @@
 
 typedef enum commandrequest {
     /* Request for health report */
-    RFHR = 0,
+    HEALTH_REPORT = 0,
     /**/
     BEACON_JOIN_REQUEST = 1,
     /* Server web sends coordinates of the beacon */
@@ -89,15 +90,12 @@ typedef struct buffer{
 Buffer sendToBeacon, recieveFromBeacon;
 Buffer sendToServer, recieveFromServer;
 
-
 /*
 *   External Variables
 */ 
 
 extern bool CommUnit_initialization_complete;
-
 extern bool system_is_shutting_down;
-
 
 /*
 *  CommUnit_routine:
@@ -133,6 +131,7 @@ void buffer_enqueue(Buffer buffer, FILE *item);
 *
 */
 bool is_buffer_empty(Buffer buffer);
+
 /*
 *  RFHR
 *
@@ -149,3 +148,59 @@ bool is_buffer_empty(Buffer buffer);
 *  None
 */
 void RFHR();
+
+/*
+*  wifi_reciever:
+*
+*
+*  Parameters:
+*
+*  None
+*
+*  Return value:
+*
+*  O
+*/
+void *wifi_reciever();
+
+/*
+*  wifi_sender:
+*
+*
+*  Parameters:
+*
+*  None
+*
+*  Return value:
+*
+*  O
+*/
+void *wifi_sender();
+
+/*
+*  zigbee_receiver:
+*
+*
+*  Parameters:
+*
+*  None
+*
+*  Return value:
+*
+*  O
+*/
+void *zigbee_receiver();
+
+/*
+*  zigbee_sender:
+*
+*
+*  Parameters:
+*
+*  None
+*
+*  Return value:
+*
+*  O
+*/
+void *zigbee_sender();
