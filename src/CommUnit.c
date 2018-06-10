@@ -58,11 +58,44 @@ void *CommUnit_routine(){
     init_buffer(recieveFromBeacon);
     init_buffer(sendToServer);
     init_buffer(recieveFromServer);
-    
-
 
     //when initialization completes,
     CommUnit_initialization_complete = true;
+
+    pthread_t wifi_reciever_thread;
+    /* Rename it to prevent from getting confused with the one in
+    main thread */
+    return_error_value = startThread(wifi_receiver_thread, wifi_receiver, NULL);
+
+    if(return_error_value != WORK_SCUCESSFULLY){
+
+        perror(errordesc[E_START_THREAD].message);
+    }
+
+    pthread_t wifi_sender_thread;
+    return_error_value = startThread(wifi_sender_thread, wifi_sender, NULL);
+
+    if(return_error_value != WORK_SCUCESSFULLY){
+
+        perror(errordesc[E_START_THREAD].message);
+    }
+
+    pthread_t zigbee_receiver_thread;
+    return_error_value = startThread(zigbee_receiver_thread, zigbee_receiver, NULL);
+
+    if(return_error_value != WORK_SCUCESSFULLY){
+
+        perror(errordesc[E_START_THREAD].message);
+
+    }
+    pthread_t zigbee_sender_thread;
+    return_error_value = startThread(zigbee_sender_thread, zigbee_sender, NULL);
+
+    if(return_error_value != WORK_SCUCESSFULLY){
+
+        perror(errordesc[E_START_THREAD].message);
+    }
+
     while (system_is_shutting_down == false) {
         //   do a chunk of work and/or sleep for a short time
 
@@ -70,15 +103,6 @@ void *CommUnit_routine(){
         a short time*/
         if(!is_buffer_empty(recieveFromBeacon))
         {
-            // if (startThead (zigbee_dequeue()) != WORK_SCUCESSFULLY)
-            //     printf("Zigbee dequeue failure");
-            // if (startThead (udp_dequeue()) != WORK_SCUCESSFULLY)
-            //     printf("UDP dequeue failure");
-
-            // if (startThead (zigbee_enqueue()) != WORK_SCUCESSFULLY)
-            //     printf("Zigbee enqueue failure");
-            // if (startThead (udp_enqueue()) != WORK_SCUCESSFULLY)
-            //     printf("UDP enqueue failure");
             FILE *item = buffer_dequeue(recieveFromBeacon);
             buffer_enqueue(sendToServer, item);
         }
@@ -149,6 +173,47 @@ void buffer_enqueue(Buffer buffer, FILE *item){
 
 bool is_buffer_empty(Buffer buffer){
     return buffer.is_empty;
+}
+
+void *wifi_reciever(){
+    while (system_is_shutting_down == false) {
+
+        /* Recieving and sending have to be splited up into to threads, since
+        they are call back functions. It cost too much if they had to wait for 
+        each other. And these two threads should not start in a while loop. */
+        if (recvfrom(s, buffer, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1)
+        {
+            die("recvfrom()");
+        }
+        puts(buffer);
+        /* Dequeue buffer */
+        if(!is_buffer_empty(recieveFromServer){
+            FILE *item = buffer_dequeue(recieveFromServer);
+            /* Read the file dequeued from buffer, then execute command */
+        }
+    }
+}
+
+void *wifi_sender(){
+    while (system_is_shutting_down == false) {
+
+    }
+
+}
+
+void *zigbee_reciever(){
+    while (system_is_shutting_down == false) {
+        //recieve the string from beacon, then pack it into
+        //a file.
+    }
+
+}
+
+void *zigbee_sender(){
+    while (system_is_shutting_down == false) {
+
+    }
+
 }
 
 void RFHR(){

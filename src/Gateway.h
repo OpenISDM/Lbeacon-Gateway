@@ -41,15 +41,12 @@
 *      Hank Kung, hank910140@gmail.com
 */
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_lib.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <obexftp/client.h> 
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,7 +64,6 @@
 #include <unistd.h>
 #include "Lbeacon_Zigbee_Gateway.h"
 #include "CommUnit.h"
-
 
 /* 
 * CONSTANTS 
@@ -201,62 +197,6 @@ void *NSI_routine();
 *  O
 */
 int address_map_manager();
-
-/*
-*  wifi_reciever:
-*
-*
-*  Parameters:
-*
-*  None
-*
-*  Return value:
-*
-*  O
-*/
-void *wifi_reciever();
-
-/*
-*  wifi_sender:
-*
-*
-*  Parameters:
-*
-*  None
-*
-*  Return value:
-*
-*  O
-*/
-void *wifi_sender();
-
-/*
-*  zigbee_receiver:
-*
-*
-*  Parameters:
-*
-*  None
-*
-*  Return value:
-*
-*  O
-*/
-void *zigbee_receiver();
-
-/*
-*  zigbee_sender:
-*
-*
-*  Parameters:
-*
-*  None
-*
-*  Return value:
-*
-*  O
-*/
-void *zigbee_sender();
 
 /*
 *  beacon_join_request:
