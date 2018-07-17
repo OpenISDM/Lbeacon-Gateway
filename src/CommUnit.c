@@ -211,6 +211,11 @@ void *zigbee_reciever(){
 
 void *zigbee_sender(){
     while (system_is_shutting_down == false) {
+        if(!is_buffer_empty(sendToBeacon)){
+            //get item from front
+            //send item by ZigBee API
+            //move front back once
+        }
 
     }
 

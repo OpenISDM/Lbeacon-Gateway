@@ -62,6 +62,7 @@
 #include <sys/timeb.h>
 #include <time.h>
 #include <unistd.h>
+#include <xbee.h>
 #include "Lbeacon_Zigbee_Gateway.h"
 #include "CommUnit.h"
 
@@ -155,6 +156,50 @@ bool Beacon_address_lock;
 bool health_report[MAX_NUMBER_NODES];
 
 
+/* ZigBee API Variables */
+struct xbee *xbee;
+
+struct xbee_con *con;
+
+/* The address stored the destination MAC of xbee */
+struct xbee_conAddress address;
+
+/* The setting for xbee */
+struct xbee_conSettings settings;
+
+/* A variable to get error code */
+xbee_err ret;
+
+/* A variable txRet get Tx return value */
+unsigned char txRet;
+
+const char *xbee_mode = "xbeeZB";
+
+char *xbee_device = "/dev/ttyAMA0";
+
+int xbee_baudrate = 9600;
+
+//A 64-bit extended PAN ID for join Network
+char *PAN_ID = "0000000000000000";
+
+//0:disable Log, 100:enable Log
+int LogLevel = 100;
+
+// A flag to indicate if all part of address are get. 
+// 3 send first address 
+// 2 send second address 
+// 0 success
+
+enum{finish,wait_SL,wait_SH,start};
+int get_address = start;
+
+char* Local_Address = "";
+
+struct xbee** xbee;
+
+pkt_ptr pkt_queue;
+
+/* FUNCTIONS */
 
 /*
 *  get_system_time:

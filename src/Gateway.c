@@ -99,18 +99,18 @@ void *NSI_routine(){
     if (-1 != status)
         ping_ret = WEXITSTATUS(status);
 
+
+    xbee_err xbee_initial(xbee_mode, xbee_device, xbee_baudrate
+                            , LogLevel, xbee, pkt_queue);
+
+                            
+
      /* initialize beacon_address []
      - enter a 16-bit network address in each address_map struct in the array
      .....
      // start a thread to maintain beacon_address map. The thread
      // should also check system_is_shutting_down flag periodically
      // and returns when it finds the flag is true.*/
-
-     if (startThead (Zigbee_routine()) != WORK_SCUCESSFULLY) {
-        printf("Zigbee network failed\n")
-        initialization_failed = true;
-        NSIcleanupExit( );
-    }
      if (startThead (address_map_manager()) != WORK_SCUCESSFULLY) {
          printf("addrss_map_manager initialization failed\n")
          initialization_failed = true;
