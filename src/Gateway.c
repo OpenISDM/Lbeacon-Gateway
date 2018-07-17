@@ -103,7 +103,10 @@ void *NSI_routine(){
     xbee_err xbee_initial(xbee_mode, xbee_device, xbee_baudrate
                             , LogLevel, xbee, pkt_queue);
 
-                            
+    xbee_err xbee_connector(xbee, con, pkt_queue);
+
+    /* ZigBee connection done */
+
 
      /* initialize beacon_address []
      - enter a 16-bit network address in each address_map struct in the array

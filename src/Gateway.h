@@ -157,9 +157,9 @@ bool health_report[MAX_NUMBER_NODES];
 
 
 /* ZigBee API Variables */
-struct xbee *xbee;
+struct xbee **xbee;
 
-struct xbee_con *con;
+struct xbee_con **con;
 
 /* The address stored the destination MAC of xbee */
 struct xbee_conAddress address;
@@ -195,7 +195,6 @@ int get_address = start;
 
 char* Local_Address = "";
 
-struct xbee** xbee;
 
 pkt_ptr pkt_queue;
 
