@@ -62,6 +62,10 @@ void *CommUnit_routine(){
     //when initialization completes,
     CommUnit_initialization_complete = true;
 
+    //wait for NSI get ready
+    while(!zigbee_is_ready){
+        
+    }
     pthread_t wifi_reciever_thread;
     /* Rename it to prevent from getting confused with the one in
     main thread */

@@ -195,8 +195,9 @@ int get_address = start;
 
 char* Local_Address = "";
 
-
 pkt_ptr pkt_queue;
+
+bool zigbee_is_ready = false;
 
 /* FUNCTIONS */
 

@@ -101,9 +101,24 @@ void *NSI_routine(){
 
 
     xbee_err xbee_initial(xbee_mode, xbee_device, xbee_baudrate
-                            , LogLevel, xbee, pkt_queue);
+                            , LogLevel, &xbee, pkt_queue);
+    printf("Start establishing Connection to xbee\n");
+    /*--------------Configuration for connection in Data mode----------------*/
+    /* In this mode we aim to get Data.                                      */
+    /*-----------------------------------------------------------------------*/
 
-    xbee_err xbee_connector(xbee, con, pkt_queue);
+    printf("Establishing Connection...\n");
+    xbee_err xbee_connector(&xbee, &con, pkt_queue);
+
+    printf("Connection Successfully Established\n");
+
+    /* Start the chain reaction!                                             */
+
+    if((ret = xbee_conValidate(con)) != XBEE_ENONE){
+        xbee_log(xbee, 1, "con unvalidate ret : %d", ret);
+        return ret;
+    }
+    zigbee_is_ready = true;
 
     /* ZigBee connection done */
 
@@ -114,28 +129,28 @@ void *NSI_routine(){
      // start a thread to maintain beacon_address map. The thread
      // should also check system_is_shutting_down flag periodically
      // and returns when it finds the flag is true.*/
-     if (startThead (address_map_manager()) != WORK_SCUCESSFULLY) {
+    if (startThead (address_map_manager()) != WORK_SCUCESSFULLY) {
          printf("addrss_map_manager initialization failed\n")
          initialization_failed = true;
          NSIcleanupExit( );
-     }
-     // finish phase 2 initialization (in ways TBD)
-     NSI_initialization_complete = true;
+    }
+    // finish phase 2 initialization (in ways TBD)
+    NSI_initialization_complete = true;
     
      // wait for other components to complete initialization
-     while ( (system_is_shutting_down == false) &&
-     (ready_to_work == false))
-     {
+    while ( (system_is_shutting_down == false) &&
+    (ready_to_work == false))
+    {
          sleep(A_SHORT_TIME);
-     }
+    }
     
     // ready to work, check for system shutdown flag periodically
 
-     while (system_is_shutting_down == false) {
+    while (system_is_shutting_down == false) {
         //do a chunk of work and/or sleep for a short time
      
         sleep(A_SHORT_TIME);
-     }
+    }
 
     close(s);
     /* Upon fatal failure, set ready_to_work = false and
