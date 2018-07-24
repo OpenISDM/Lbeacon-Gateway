@@ -62,9 +62,9 @@
 #include <sys/timeb.h>
 #include <time.h>
 #include <unistd.h>
-#include <xbee.h>
-#include "Lbeacon_Zigbee_Gateway.h"
 #include "CommUnit.h"
+#include "../Lbeacon-zigbee-Alpha_version/xbee_API.h"
+
 
 /* 
 * CONSTANTS 

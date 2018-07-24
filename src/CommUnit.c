@@ -66,6 +66,7 @@ void *CommUnit_routine(){
     while(!zigbee_is_ready){
         
     }
+    
     pthread_t wifi_reciever_thread;
     /* Rename it to prevent from getting confused with the one in
     main thread */

@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <xbee.h>
+#include "../Lbeacon-zigbee-Alpha_version/xbee.h"
 #include "pkt_Queue.h"
 
 #ifndef xbee_API_H
