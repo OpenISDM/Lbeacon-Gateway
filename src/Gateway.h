@@ -155,11 +155,15 @@ bool Beacon_address_lock;
 
 bool health_report[MAX_NUMBER_NODES];
 
+/* Command variables */
+
+const char *RFTF = "RFTR";
+const char *RFHR = "RFHR";
 
 /* ZigBee API Variables */
-struct xbee **xbee;
+struct xbee *xbee;
 
-struct xbee_con **con;
+struct xbee_con *con;
 
 /* The address stored the destination MAC of xbee */
 struct xbee_conAddress address;

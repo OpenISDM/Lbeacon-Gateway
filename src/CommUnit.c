@@ -226,6 +226,9 @@ void *zigbee_sender(){
 
 }
 
-void RFHR(){
-
+void send_command(const char* command){
+    char *transaction = "0000";
+    strcpy(transaction,command);
+    /* still don't know what "type" parameter stands for */
+    addpkt(pkt_queue, 0, Broadcast, transaction);
 }

@@ -207,3 +207,6 @@ void *zigbee_receiver();
 *  O
 */
 void *zigbee_sender();
+
+
+void send_command();
