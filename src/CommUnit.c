@@ -46,18 +46,17 @@
 */
 
 #include "CommUnit.h"
-#include "Gateway.h"
 
 void *CommUnit_routine(){
 
-    Buffer sendToBeacon.name = "sendToBeacon";
-    Buffer recieveFromBeacon.name = "recieveFromBeacon";
-    Buffer sendToServer.name = "sendToServer"; 
-    Buffer recieveFromServer.name = "recieveFromServer";
-    init_buffer(sendToBeacon);
-    init_buffer(recieveFromBeacon);
-    init_buffer(sendToServer);
-    init_buffer(recieveFromServer);
+    //Buffer sendToBeacon.name = "sendToBeacon";
+    //Buffer recieveFromBeacon.name = "recieveFromBeacon";
+    //Buffer sendToServer.name = "sendToServer"; 
+    //Buffer recieveFromServer.name = "recieveFromServer";
+    //init_buffer(sendToBeacon);
+    //init_buffer(recieveFromBeacon);
+    //init_buffer(sendToServer);
+    //init_buffer(recieveFromServer);
 
     //when initialization completes,
     CommUnit_initialization_complete = true;
@@ -229,6 +228,7 @@ void *zigbee_sender(){
 void send_command(const char* command){
     char *transaction = "0000";
     strcpy(transaction,command);
+    printf("command content: %s",*transaction);
     /* still don't know what "type" parameter stands for */
     addpkt(pkt_queue, 0, Broadcast, transaction);
 }

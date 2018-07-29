@@ -44,7 +44,6 @@
 */
 
 
-
 #include "Gateway.h"
 
 
@@ -75,8 +74,8 @@ void *NSI_routine(){
     /* UDP Socket Set Up */
     struct sockaddr_in si_other;
     int s, i, slen=sizeof(si_other);
-    char buf[BUFLEN];
-    char message[BUFLEN];
+    char buf[BUFFER_SIZE];
+    char message[BUFFER_SIZE];
     
     if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {
@@ -130,7 +129,7 @@ void *NSI_routine(){
      // should also check system_is_shutting_down flag periodically
      // and returns when it finds the flag is true.*/
     if (startThead (address_map_manager()) != WORK_SCUCESSFULLY) {
-         printf("addrss_map_manager initialization failed\n")
+         printf("addrss_map_manager initialization failed\n");
          initialization_failed = true;
          NSIcleanupExit( );
     }
@@ -166,7 +165,7 @@ void *address_map_manager(){
     beacon_count = 1;
     //gateway info
     unsigned zigbee_macaddr;
-    coordinates gateway_coordinates;
+    Ｃoordinates gateway_coordinates;
     char * gateway_loc_description;
     double gateway_barcode;
     
@@ -233,12 +232,12 @@ Error_code startThread(pthread_t threads ,void * (*thfunct)(void*), void *arg){
 void cleanup_exit(){
 
     ready_to_work = false;
-    send_message_cancelled = true;
-    free_list(scanned_list);
-    free_list(waiting_list);
-    free_list(tracked_object_list);
-    free(g_idle_handler);
-    free(g_push_file_path);
+    //send_message_cancelled = true;
+    //free_list(scanned_list);
+    //free_list(waiting_list);
+    //free_list(tracked_object_list);
+    //free(g_idle_handler);
+    //free(g_push_file_path);
     return;
 
 }

@@ -63,7 +63,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "CommUnit.h"
-#include "../Lbeacon-zigbee-Alpha_version/xbee_API.h"
+
 
 
 /* 
@@ -112,7 +112,7 @@ typedef struct{
 
 typedef struct{
 
-  init16_t network_address[NETWORK_ADD_LENGTH];
+  int16_t network_address[NETWORK_ADD_LENGTH];
   char beacon_uuid[UUID_LENGTH];
   Coordinates beacon_coordinates;
   char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
@@ -120,7 +120,6 @@ typedef struct{
 
 }Address_map;
 
-Address_map
 /*
 * GLOBAL VARIABLES
 */
@@ -154,11 +153,6 @@ int beacon_count;
 bool Beacon_address_lock;
 
 bool health_report[MAX_NUMBER_NODES];
-
-/* Command variables */
-
-const char *RFTF = "RFTR";
-const char *RFHR = "RFHR";
 
 /* ZigBee API Variables */
 struct xbee *xbee;
@@ -202,7 +196,6 @@ char* Local_Address = "";
 pkt_ptr pkt_queue;
 
 bool zigbee_is_ready = false;
-
 /* FUNCTIONS */
 
 /*
@@ -245,7 +238,7 @@ void *NSI_routine();
 *
 *  O
 */
-int address_map_manager();
+void *address_map_manager();
 
 /*
 *  beacon_join_request:

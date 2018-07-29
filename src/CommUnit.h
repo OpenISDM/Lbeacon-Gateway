@@ -49,13 +49,12 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/socket.h>
+#include "../Lbeacon-zigbee-Alpha_version/src/xbee_API.h"
 
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
 #define BUFFER_SIZE 1024
 
-#define RFTF "@, Request-for-tracking-file"
-#define RFHR "+, Request-for-health-report"
 /*
 * ENUM
 */
