@@ -84,6 +84,8 @@
 
 #define COORDINATE_LENGTH 64
 
+#define BARCODE_SIZE 64
+
 #define A_SHORT_TIME 1000
 
 #define A_LONG_TIME 5000
@@ -112,10 +114,11 @@ typedef struct{
 
 typedef struct{
 
-  int16_t network_address[NETWORK_ADD_LENGTH];
+  char network_address[NETWORK_ADD_LENGTH];
   char beacon_uuid[UUID_LENGTH];
   Coordinates beacon_coordinates;
   char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
+  char barcode[BARCODE_SIZE];
 
 
 }Address_map;
@@ -238,7 +241,7 @@ void *NSI_routine();
 *
 *  O
 */
-void *address_map_manager();
+void address_map_manager();
 
 /*
 *  beacon_join_request:
@@ -257,9 +260,9 @@ void *address_map_manager();
 *
 *  None
 */
-void *beacon_join_request(int index, unsigned ID,Coordinates Beacon_Coordinates,
+void beacon_join_request(int *index, char *ID, Coordinates Beacon_Coordinates,
                          char *Loc_Description[MAX_LENGTH_LOC_DESCRIPTION]
-                         ,double Barcode);
+                         ,char *Barcode);
 
 /*
 *  BHM_routine:
@@ -275,7 +278,7 @@ void *beacon_join_request(int index, unsigned ID,Coordinates Beacon_Coordinates,
 *
 *  None
 */
-void *BHM_routine();
+void BHM_routine();
 
 /*
 *  startThread:
@@ -309,11 +312,5 @@ Error_code startThread(pthread_t threads, void * (*thfunct)(void*), void *arg);
 */
 void cleanup_exit();
 
-/*
-*
-*/
-void error(char * msg){
-    perror(msg);
-    exit(0);
-}
+
 

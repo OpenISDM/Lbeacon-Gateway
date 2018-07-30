@@ -86,7 +86,7 @@ void *NSI_routine(){
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(PORT);
      
-    if (inet_aton(SERVER , &si_other.sin_addr) == 0) 
+    if (inet_aton(SERV_PORT, &si_other.sin_addr) == 0) 
     {
         fprintf(stderr, "inet_aton() failed\n");
         exit(1);
@@ -160,14 +160,14 @@ void *NSI_routine(){
     return;
 }
 
-void *address_map_manager(){
+void address_map_manager(){
 
     beacon_count = 1;
     //gateway info
     unsigned zigbee_macaddr;
-    Ｃoordinates gateway_coordinates;
+    Coordinates gateway_coordinates;
     char * gateway_loc_description;
-    double gateway_barcode;
+    char *gateway_barcode;
     
     //Fill the gateway information into the address table
     //Gateway's index is always 0
@@ -178,22 +178,22 @@ void *address_map_manager(){
         //if a new join request && (beacon_count>=32)
         //startthread(beacon_join_request());
     }
-    return;
 }
 
 
-void *beacon_join_request(int index, unsigned ID,Coordinates Beacon_Coordinates,
+void beacon_join_request(int index, char *ID,Coordinates Beacon_Coordinates,
                          char *Loc_Description[MAX_LENGTH_LOC_DESCRIPTION]
-                         ,double Barcode){
+                         ,char *Barcode){
+    
+    strcpy(beacon_address[index].network_address, index);
+    strcpy(beacon_address[index].beacon_uuid, ID);
+    strcpy(beacon_address[index].loc_description, Loc_Description);
+    strcpy(beacon_address[index].beacon_coordinates, Beacon_Coordinates);
+    strcpy(beacon_address[index].barcode, Barcode);
 
-    beacon_address[index].network_address = index;//tempt
-    beacon_address[index].beacon_uuid = ID;
-    beacon_address[index].beacon_coordinates = Coordinates;
-    beacon_address[index].loc_description = Loc_Description;
-    beacon_address[index].beacon_barcode = Barcode;
 }
 
-void *BHM_routine(){
+void BHM_routine(){
 
     for (int i = 0; i<beacon_count; i++) {
         /* Default value is true; If beacon is failed, then set to false */
@@ -209,7 +209,6 @@ void *BHM_routine(){
     }
     ready_to_work = false;
     BHM_cleanup_exit();
-    return;
 }
 
 
@@ -242,13 +241,6 @@ void cleanup_exit(){
 
 }
 
-void error(char * msg){
-
-    perror(msg);
-    exit(0);
-    
-}
-
 int main(int argc, char **argv)
 {
     
@@ -257,7 +249,7 @@ int main(int argc, char **argv)
     ready_to_work = false;
     initialization_failed = false;
     NSI_initialization_complete = false;
-    BHM_initilaization_complete = false;
+    BHM_initialization_complete = false;
     CommUnit_initialization_complete = false;
 
     int return_value;
