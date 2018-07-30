@@ -86,13 +86,6 @@
 
 #define BARCODE_SIZE 64
 
-#define A_SHORT_TIME 1000
-
-#define A_LONG_TIME 5000
-
-/* Buffer size in gateway */
-#define BUFFER_SIZE 1024
-
 /* The time intervial between each beacon health self-testing */
 #define PERIOD_TO_MONITOR 1000*100
 
@@ -102,33 +95,33 @@
 /* */
 #define PORT 8000
 
-/*
-  ERROR CODE
-*/
-typedef enum ErrorCode {
+// /*
+//   ERROR CODE
+// */
+// typedef enum ErrorCode {
 
-    WORK_SCUCESSFULLY = 0,
-    E_MALLOC = 1,
-    E_OPEN_FILE = 2,
-    E_OPEN_DEVICE = 3,
-    E_OPEN_SOCKET = 4,
-    E_SEND_OBEXFTP_CLIENT = 5,
-    E_SEND_CONNECT_DEVICE = 6,
-    E_SEND_PUT_FILE = 7,
-    E_SEND_DISCONNECT_CLIENT = 8,
-    E_SCAN_SET_HCI_FILTER = 9,
-    E_SCAN_SET_INQUIRY_MODE = 10,
-    E_SCAN_START_INQUIRY = 11,
-    E_SEND_REQUEST_TIMEOUT = 12,
-    E_ADVERTISE_STATUS = 13,
-    E_ADVERTISE_MODE = 14,
-    E_START_THREAD = 15,
-    E_INIT_THREAD_POOL = 16,
-    E_INIT_ZIGBEE = 17,
-    E_ZIGBEE_CONNECT = 18,
-    MAX_ERROR_CODE = 19
+//     WORK_SCUCESSFULLY = 0,
+//     E_MALLOC = 1,
+//     E_OPEN_FILE = 2,
+//     E_OPEN_DEVICE = 3,
+//     E_OPEN_SOCKET = 4,
+//     E_SEND_OBEXFTP_CLIENT = 5,
+//     E_SEND_CONNECT_DEVICE = 6,
+//     E_SEND_PUT_FILE = 7,
+//     E_SEND_DISCONNECT_CLIENT = 8,
+//     E_SCAN_SET_HCI_FILTER = 9,
+//     E_SCAN_SET_INQUIRY_MODE = 10,
+//     E_SCAN_START_INQUIRY = 11,
+//     E_SEND_REQUEST_TIMEOUT = 12,
+//     E_ADVERTISE_STATUS = 13,
+//     E_ADVERTISE_MODE = 14,
+//     E_START_THREAD = 15,
+//     E_INIT_THREAD_POOL = 16,
+//     E_INIT_ZIGBEE = 17,
+//     E_ZIGBEE_CONNECT = 18,
+//     MAX_ERROR_CODE = 19
 
-} ErrorCode;
+// } ErrorCode;
 
 /*
 * TYPEDEF STRUCTS
@@ -228,9 +221,9 @@ int LogLevel = 100;
 enum{finish,wait_SL,wait_SH,start};
 int get_address = start;
 
-char* Local_Address = "";
+char* Local_Address;
 
-pkt_ptr pkt_queue;
+pkt_ptr pkt_queue = NULL;
 
 bool zigbee_is_ready = false;
 /* FUNCTIONS */

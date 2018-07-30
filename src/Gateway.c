@@ -208,7 +208,7 @@ void BHM_routine(){
 }
 
 
-Error_code startThread(pthread_t threads ,void * (*thfunct)(void*), void *arg){
+ErrorCode startThread(pthread_t threads ,void * (*thfunct)(void*), void *arg){
 
     pthread_attr_t attr;
 

@@ -123,7 +123,7 @@ void *CommUnit_routine(){
         
 
         }
-    CommUnit_cleanup_exit();
+    //CommUnit_cleanup_exit();
     //return;
  }
 
@@ -159,7 +159,7 @@ void *buffer_dequeue(Buffer buffer){
 void buffer_enqueue(Buffer buffer, FILE *item){
     /* Wait for the turn to use the queue */
     while(buffer.is_locked){
-        sllep(A_SHORT_TIME);
+        sleep(A_SHORT_TIME);
     }
     buffer.is_locked = true;
     /* If buffer is full currently then just skip Enqueue till there's
@@ -181,13 +181,13 @@ bool is_buffer_empty(Buffer buffer){
     return buffer.is_empty;
 }
 
-void *wifi_reciever(Buffer buffer){
+void *wifi_reciever(Buffer buf){
     while (system_is_shutting_down == false) {
 
         /* Recieving and sending have to be splited up into to threads, since
         they are call back functions. It cost too much if they had to wait for 
         each other. And these two threads should not start in a while loop. */
-        if (recvfrom(s, buffer, BUFFER_SIZE, 0, (struct sockaddr *) &si_other, &slen) == -1)
+        if (recvfrom(s, buf, BUFFER_SIZE, 0, (struct sockaddr *) &si_other, &slen) == -1)
         {
             //die("recvfrom()");
         }

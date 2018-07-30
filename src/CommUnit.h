@@ -53,7 +53,6 @@
 
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
-#define BUFFER_SIZE 1024
 
 /*
 * ENUM
@@ -150,7 +149,7 @@ typedef struct buffer{
 */
 Buffer sendToBeacon, recieveFromBeacon;
 Buffer sendToServer, recieveFromServer;
-
+pkt_ptr pkt_queue = NULL;
 /*
 *   External Variables
 */ 
@@ -226,7 +225,7 @@ void RFHR();
 *
 *  O
 */
-void *wifi_receiver();
+void *wifi_receiver(Buffer buf);
 
 /*
 *  wifi_sender:
@@ -240,7 +239,7 @@ void *wifi_receiver();
 *
 *  O
 */
-void *wifi_sender();
+void *wifi_sender(Buffer buffer);
 
 /*
 *  zigbee_receiver:
@@ -254,7 +253,7 @@ void *wifi_sender();
 *
 *  O
 */
-void *zigbee_receiver();
+void *zigbee_receiver(Buffer buffer);
 
 /*
 *  zigbee_sender:
@@ -268,7 +267,7 @@ void *zigbee_receiver();
 *
 *  O
 */
-void *zigbee_sender();
+void *zigbee_sender(Buffer buffer);
 
 
 void send_command();
