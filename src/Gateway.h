@@ -99,6 +99,36 @@
 /*  */
 #define SERV_PORT 8888
 
+/* */
+#define PORT 8000
+
+/*
+  ERROR CODE
+*/
+typedef enum ErrorCode {
+
+    WORK_SCUCESSFULLY = 0,
+    E_MALLOC = 1,
+    E_OPEN_FILE = 2,
+    E_OPEN_DEVICE = 3,
+    E_OPEN_SOCKET = 4,
+    E_SEND_OBEXFTP_CLIENT = 5,
+    E_SEND_CONNECT_DEVICE = 6,
+    E_SEND_PUT_FILE = 7,
+    E_SEND_DISCONNECT_CLIENT = 8,
+    E_SCAN_SET_HCI_FILTER = 9,
+    E_SCAN_SET_INQUIRY_MODE = 10,
+    E_SCAN_START_INQUIRY = 11,
+    E_SEND_REQUEST_TIMEOUT = 12,
+    E_ADVERTISE_STATUS = 13,
+    E_ADVERTISE_MODE = 14,
+    E_START_THREAD = 15,
+    E_INIT_THREAD_POOL = 16,
+    E_INIT_ZIGBEE = 17,
+    E_ZIGBEE_CONNECT = 18,
+    MAX_ERROR_CODE = 19
+
+} ErrorCode;
 
 /*
 * TYPEDEF STRUCTS
@@ -157,6 +187,12 @@ bool Beacon_address_lock;
 
 bool health_report[MAX_NUMBER_NODES];
 
+
+
+/* UDP Socket Set Up */
+struct sockaddr_in si_other;
+int s, i, slen=sizeof(si_other);
+
 /* ZigBee API Variables */
 struct xbee *xbee;
 
@@ -168,8 +204,6 @@ struct xbee_conAddress address;
 /* The setting for xbee */
 struct xbee_conSettings settings;
 
-/* A variable to get error code */
-xbee_err ret;
 
 /* A variable txRet get Tx return value */
 unsigned char txRet;
@@ -241,7 +275,7 @@ void *NSI_routine();
 *
 *  O
 */
-void address_map_manager();
+void *address_map_manager();
 
 /*
 *  beacon_join_request:
@@ -261,8 +295,7 @@ void address_map_manager();
 *  None
 */
 void beacon_join_request(int *index, char *ID, Coordinates Beacon_Coordinates,
-                         char *Loc_Description[MAX_LENGTH_LOC_DESCRIPTION]
-                         ,char *Barcode);
+                         char *Loc_Description, char *Barcode);
 
 /*
 *  BHM_routine:
@@ -295,8 +328,11 @@ void BHM_routine();
 *
 *  Error_code: The error code for the corresponding error
 */
-Error_code startThread(pthread_t threads, void * (*thfunct)(void*), void *arg);
-
+ErrorCode startThread(pthread_t threads, void * (*thfunct)(void*), void *arg);
+/*
+*
+*/
+void int2str(int num, char *str);
 /*
 *  cleanup_exit:
 *

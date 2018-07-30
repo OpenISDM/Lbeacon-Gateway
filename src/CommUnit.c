@@ -66,7 +66,9 @@ void *CommUnit_routine(){
         
     }
     
-    pthread_t wifi_reciever_thread;
+    
+
+    pthread_t wifi_receiver_thread;
     /* Rename it to prevent from getting confused with the one in
     main thread */
     return_error_value = startThread(wifi_receiver_thread, wifi_receiver, NULL);
@@ -110,26 +112,26 @@ void *CommUnit_routine(){
             FILE *item = buffer_dequeue(recieveFromBeacon);
             buffer_enqueue(sendToServer, item);
         }
-        if(!is_buffer_empty(recieveFromServer))){
+        if(!is_buffer_empty(recieveFromServer)){
             /* Read the file and execute command */
             /* Depends on command category, it can be broadcast to all 
             beacons or for some specific beacons.
             */
         }
 
-        if() sleep(A_SHORT_TIME);
+        if(1) sleep(A_SHORT_TIME);
         
 
         }
     CommUnit_cleanup_exit();
-    return;
+    //return;
  }
 
 void init_buffer(Buffer buffer){
     //clear the buffer by filling null, it might have previously received data
      memset(buffer.content,'\0', BUFFER_SIZE);
     buffer.front = buffer.rear = 0;
-    buffer.is_lock = false;
+    buffer.is_locked = false;
     buffer.is_empty = true;
 }
 
@@ -138,15 +140,15 @@ void init_buffer(Buffer buffer){
 void *buffer_dequeue(Buffer buffer){
 
     /* Wait for the turn to use the queue */
-    while(buffer._is_locked){
+    while(buffer.is_locked){
         sleep(A_SHORT_TIME);
     }
-    buufer.is_locked = true;
+    buffer.is_locked = true;
     if(buffer.front == buffer.rear){
         printf("%s is empty currently, can not dequeue anymore\n",buffer.name);
         buffer.is_empty = true;
         buffer.is_locked = false;
-        return;
+        //return;
     }   
     /* Execute function according the command name */
 
@@ -164,7 +166,7 @@ void buffer_enqueue(Buffer buffer, FILE *item){
     room for it.P.S. Overflow problem will got solved later */
     if( (buffer.front == buffer.rear + 1) || 
     (buffer.front == 0 && buffer.rear == BUFFER_SIZE-1)){
-        printf("Queue is full now\n")
+        printf("Queue is full now\n");
         return;
     }
     /* *front is -1 when the buffer is empty */
@@ -179,19 +181,19 @@ bool is_buffer_empty(Buffer buffer){
     return buffer.is_empty;
 }
 
-void *wifi_reciever(){
+void *wifi_reciever(Buffer buffer){
     while (system_is_shutting_down == false) {
 
         /* Recieving and sending have to be splited up into to threads, since
         they are call back functions. It cost too much if they had to wait for 
         each other. And these two threads should not start in a while loop. */
-        if (recvfrom(s, buffer, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1)
+        if (recvfrom(s, buffer, BUFFER_SIZE, 0, (struct sockaddr *) &si_other, &slen) == -1)
         {
-            die("recvfrom()");
+            //die("recvfrom()");
         }
-        puts(buffer);
+        //puts(buffer);
         /* Dequeue buffer */
-        if(!is_buffer_empty(recieveFromServer){
+        if(!is_buffer_empty(recieveFromServer)){
             FILE *item = buffer_dequeue(recieveFromServer);
             /* Read the file dequeued from buffer, then execute command */
         }

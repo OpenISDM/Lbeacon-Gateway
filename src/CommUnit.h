@@ -72,6 +72,65 @@ typedef enum commandrequest {
     GET_BEACON_INFO = 4
 }CommandRequest;
 
+
+/*
+  ERROR CODE
+*/
+typedef enum ErrorCode {
+
+    WORK_SCUCESSFULLY = 0,
+    E_MALLOC = 1,
+    E_OPEN_FILE = 2,
+    E_OPEN_DEVICE = 3,
+    E_OPEN_SOCKET = 4,
+    E_SEND_OBEXFTP_CLIENT = 5,
+    E_SEND_CONNECT_DEVICE = 6,
+    E_SEND_PUT_FILE = 7,
+    E_SEND_DISCONNECT_CLIENT = 8,
+    E_SCAN_SET_HCI_FILTER = 9,
+    E_SCAN_SET_INQUIRY_MODE = 10,
+    E_SCAN_START_INQUIRY = 11,
+    E_SEND_REQUEST_TIMEOUT = 12,
+    E_ADVERTISE_STATUS = 13,
+    E_ADVERTISE_MODE = 14,
+    E_START_THREAD = 15,
+    E_INIT_THREAD_POOL = 16,
+    E_INIT_ZIGBEE = 17,
+    E_ZIGBEE_CONNECT = 18,
+    MAX_ERROR_CODE = 19
+
+} ErrorCode;
+
+ErrorCode return_error_value;
+
+struct _errordesc {
+    int code;
+    char *message;
+} errordesc[] = {
+
+    {WORK_SCUCESSFULLY, "The code works successfullly"},
+    {E_MALLOC, "Error allocating memory"},
+    {E_OPEN_FILE, "Error opening file"},
+    {E_OPEN_DEVICE, "Error opening the dvice"},
+    {E_OPEN_SOCKET, "Error opening socket"},
+    {E_SEND_OBEXFTP_CLIENT, "Error opening obexftp client"},
+    {E_SEND_CONNECT_DEVICE, "Error connecting to obexftp device"},
+    {E_SEND_PUT_FILE, "Error putting file"},
+    {E_SEND_DISCONNECT_CLIENT, "Disconnecting the client"},
+    {E_SCAN_SET_HCI_FILTER, "Error setting HCI filter"},
+    {E_SCAN_SET_INQUIRY_MODE, "Error settnig inquiry mode"},
+    {E_SCAN_START_INQUIRY, "Error starting inquiry"},
+    {E_SEND_REQUEST_TIMEOUT, "Timeout for sending request"},
+    {E_ADVERTISE_STATUS, "LE set advertise returned status"},
+    {E_ADVERTISE_MODE, "Error setting advertise mode"},
+    {E_START_THREAD, "Error creating thread"},
+    {E_INIT_THREAD_POOL, "Error initializing thread pool"},
+    {E_INIT_ZIGBEE, "Error initializing the zigbee"},
+    {E_ZIGBEE_CONNECT, "Error zigbee connection"},
+    {MAX_ERROR_CODE, "The element is invalid"}
+
+};
+
 /*
 * STRUCT
 */
@@ -98,6 +157,10 @@ Buffer sendToServer, recieveFromServer;
 
 extern bool CommUnit_initialization_complete;
 extern bool system_is_shutting_down;
+extern bool zigbee_is_ready;
+
+extern struct sockaddr_in si_other;
+extern int s, i, slen;
 
 /*
 *  CommUnit_routine:
@@ -163,7 +226,7 @@ void RFHR();
 *
 *  O
 */
-void *wifi_reciever();
+void *wifi_receiver();
 
 /*
 *  wifi_sender:

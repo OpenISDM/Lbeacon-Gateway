@@ -71,11 +71,7 @@ void *NSI_routine(){
 
     int beacon_count = 0;
 
-    /* UDP Socket Set Up */
-    struct sockaddr_in si_other;
-    int s, i, slen=sizeof(si_other);
-    char buf[BUFFER_SIZE];
-    char message[BUFFER_SIZE];
+    
     
     if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {
@@ -131,7 +127,7 @@ void *NSI_routine(){
     if (startThead (address_map_manager()) != WORK_SCUCESSFULLY) {
          printf("addrss_map_manager initialization failed\n");
          initialization_failed = true;
-         NSIcleanupExit( );
+         //NSIcleanupExit( );
     }
     // finish phase 2 initialization (in ways TBD)
     NSI_initialization_complete = true;
@@ -160,11 +156,11 @@ void *NSI_routine(){
     return;
 }
 
-void address_map_manager(){
+void *address_map_manager(){
 
     beacon_count = 1;
     //gateway info
-    unsigned zigbee_macaddr;
+    char *zigbee_macaddr;
     Coordinates gateway_coordinates;
     char * gateway_loc_description;
     char *gateway_barcode;
@@ -181,11 +177,11 @@ void address_map_manager(){
 }
 
 
-void beacon_join_request(int index, char *ID,Coordinates Beacon_Coordinates,
-                         char *Loc_Description[MAX_LENGTH_LOC_DESCRIPTION]
-                         ,char *Barcode){
-    
-    strcpy(beacon_address[index].network_address, index);
+void beacon_join_request(int index, char *ID, Coordinates Beacon_Coordinates,
+                         char *Loc_Description, char *Barcode){
+    char *addr;
+    int2str(index,addr);
+    strcpy(beacon_address[index].network_address, addr);
     strcpy(beacon_address[index].beacon_uuid, ID);
     strcpy(beacon_address[index].loc_description, Loc_Description);
     strcpy(beacon_address[index].beacon_coordinates, Beacon_Coordinates);
@@ -208,7 +204,7 @@ void BHM_routine(){
          sleep(PERIOD_TO_MONITOR);
     }
     ready_to_work = false;
-    BHM_cleanup_exit();
+    //BHM_cleanup_exit();
 }
 
 
@@ -226,6 +222,10 @@ Error_code startThread(pthread_t threads ,void * (*thfunct)(void*), void *arg){
 
   return WORK_SCUCESSFULLY;
 
+}
+
+void int2str(int num, char *str){
+    sprintf(str, "%d", num);
 }
 
 void cleanup_exit(){
