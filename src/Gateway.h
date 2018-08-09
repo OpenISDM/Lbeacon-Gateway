@@ -54,6 +54,7 @@
 #include <signal.h>
 #include <string.h>
 #include <semaphore.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <sys/ioctl.h>
@@ -90,7 +91,7 @@
 #define PERIOD_TO_MONITOR 1000*100
 
 /*  */
-#define SERV_PORT 8888
+#define SERVER "127.0.0.1"
 
 /* */
 #define PORT 8000
@@ -185,6 +186,7 @@ bool health_report[MAX_NUMBER_NODES];
 /* UDP Socket Set Up */
 struct sockaddr_in si_other;
 int s, i, slen=sizeof(si_other);
+bool wifi_is_ready;
 
 /* ZigBee API Variables */
 struct xbee *xbee;
@@ -225,7 +227,7 @@ char* Local_Address;
 
 pkt_ptr pkt_queue = NULL;
 
-bool zigbee_is_ready = false;
+bool zigbee_is_ready;
 /* FUNCTIONS */
 
 /*
@@ -248,7 +250,7 @@ long long get_system_time();
 - if (PAN ID == 0) scan nearby network and chooses a PAN ID;
 - channel scan to find a good operating channel;
 - ready to access join requests from Lbeacons;
-/* Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h */
+- Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h */
 void *NSI_routine();
 
 /*
@@ -287,7 +289,7 @@ void *address_map_manager();
 *
 *  None
 */
-void beacon_join_request(int *index, char *ID, Coordinates Beacon_Coordinates,
+void beacon_join_request(int index, char *ID, Coordinates Beacon_Coordinates,
                          char *Loc_Description, char *Barcode);
 
 /*
@@ -304,7 +306,7 @@ void beacon_join_request(int *index, char *ID, Coordinates Beacon_Coordinates,
 *
 *  None
 */
-void BHM_routine();
+void *BHM_routine();
 
 /*
 *  startThread:

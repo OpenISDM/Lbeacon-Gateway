@@ -34,6 +34,7 @@
  *
  * Authors:
  *      Gary Xiao		, garyh0205@hotmail.com
+ *      Hank Kung       , hank910140@gmail.com
  */
 
 #include "xbee_API.h"
@@ -78,6 +79,7 @@ xbee_err xbee_initial(char* xbee_mode, char* xbee_device, int xbee_baudrate
     //
     return ret;
 }
+
 
 xbee_err xbee_connector(struct xbee** xbee, struct xbee_con** con
                                                 , pkt_ptr pkt_Queue){
@@ -166,6 +168,58 @@ xbee_err xbee_connector(struct xbee** xbee, struct xbee_con** con
 
     return XBEE_ENONE;
 }
+
+/*
+ * xbee_send_pkt
+ *      For sending pkt to dest address.
+ * Parameter:
+ *      con : a pointer for xbee connector.
+ *      pkt_Queue : A pointer point to the packet queue we use.
+ * Return Value:
+ *      xbee error code
+ *      if 0, work successfully.
+ */
+xbee_err xbee_send_pkt(struct xbee_con* con, pkt_ptr pkt_Queue){ 
+    if(!(is_null(pkt_Queue))){
+        if(!(address_compare(pkt_Queue->front.next->address, pkt_Queue->address))){
+            printf("Not the same, Error\n");
+            return XBEE_ENONE;        
+        }
+        xbee_conTx(con, NULL, pkt_Queue->front.next->content);
+        delpkt(pkt_Queue);
+    }else{
+        printf("pkt_queue is NULL");
+    }
+
+    return XBEE_ENONE;
+}
+
+/*
+ * xbee_check_CallBack
+ *      Check if CallBack is disabled and pkt_Queue is NULL.
+ * Parameter:
+ *      con : a pointer for xbee connector.
+ *      pkt_Queue : A pointer point to the packet queue we use.
+ * Return Value:
+ *      True if CallBack is disabled and pkt_Queue is NULL, else false.
+ *
+ */
+bool xbee_check_CallBack(struct xbee_con* con, pkt_ptr pkt_Queue, bool exclude_pkt_Queue){
+    /* Pointer point_to_CallBack will store the callback function.       */
+    /* If pointer point_to_CallBack is NULL, break the Loop              */
+    void *point_to_CallBack;
+
+    if ((ret = xbee_conCallbackGet(con, (xbee_t_conCallback*)
+        &point_to_CallBack))!= XBEE_ENONE) {
+	return true;
+    }
+
+    if (point_to_CallBack == NULL && (exclude_pkt_Queue || is_null(pkt_Queue))){
+        return true;
+    }
+    return false;
+}
+
 
 /* ---------------------------callback Section------------------------------ */
 /* It will be executed once for each packet that is received on              */

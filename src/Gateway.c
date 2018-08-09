@@ -66,23 +66,24 @@ long long get_system_time() {
 - if (PAN ID == 0) scan nearby network and chooses a PAN ID;
 - channel scan to find a good operating channel;
 - ready to access join requests from Lbeacons;
-/* Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h */
+- Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h */
 void *NSI_routine(){
 
     int beacon_count = 0;
-
+    wifi_is_ready = false;
+    zigbee_is_ready = false;
     
     
     if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {
-        error("Wrong Socket");
+        printf("Wrong Socket");
     }
 
     memset((char *) &si_other, 0, sizeof(si_other));
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(PORT);
      
-    if (inet_aton(SERV_PORT, &si_other.sin_addr) == 0) 
+    if (inet_aton(SERVER, &si_other.sin_addr) == 0) 
     {
         fprintf(stderr, "inet_aton() failed\n");
         exit(1);
@@ -93,7 +94,7 @@ void *NSI_routine(){
     status = system("ping google.com");
     if (-1 != status)
         ping_ret = WEXITSTATUS(status);
-
+    wifi_is_ready = true;
 
     xbee_err xbee_initial(xbee_mode, xbee_device, xbee_baudrate
                             , LogLevel, &xbee, pkt_queue);
@@ -101,17 +102,15 @@ void *NSI_routine(){
     /*--------------Configuration for connection in Data mode----------------*/
     /* In this mode we aim to get Data.                                      */
     /*-----------------------------------------------------------------------*/
-
     printf("Establishing Connection...\n");
     xbee_err xbee_connector(&xbee, &con, pkt_queue);
 
     printf("Connection Successfully Established\n");
 
     /* Start the chain reaction!                                             */
-
     if((ret = xbee_conValidate(con)) != XBEE_ENONE){
         xbee_log(xbee, 1, "con unvalidate ret : %d", ret);
-        return ret;
+        //return ret;
     }
     zigbee_is_ready = true;
 
@@ -124,7 +123,8 @@ void *NSI_routine(){
      // start a thread to maintain beacon_address map. The thread
      // should also check system_is_shutting_down flag periodically
      // and returns when it finds the flag is true.*/
-    if (startThead (address_map_manager()) != WORK_SCUCESSFULLY) {
+     pthread_t addr_map_manager_thread;
+    if (startThread (addr_map_manager_thread,address_map_manager(),NULL) != WORK_SCUCESSFULLY) {
          printf("addrss_map_manager initialization failed\n");
          initialization_failed = true;
          //NSIcleanupExit( );
@@ -153,7 +153,7 @@ void *NSI_routine(){
     ready_to_work = false;
     //NSIcleanupExit();
     // wait for all threads to have exited then returns
-    return;
+    
 }
 
 void *address_map_manager(){
@@ -184,12 +184,17 @@ void beacon_join_request(int index, char *ID, Coordinates Beacon_Coordinates,
     strcpy(beacon_address[index].network_address, addr);
     strcpy(beacon_address[index].beacon_uuid, ID);
     strcpy(beacon_address[index].loc_description, Loc_Description);
-    strcpy(beacon_address[index].beacon_coordinates, Beacon_Coordinates);
+    strcpy(beacon_address[index].beacon_coordinates.X_coordinates, 
+                                Beacon_Coordinates.X_coordinates);
+    strcpy(beacon_address[index].beacon_coordinates.Y_coordinates, 
+                                Beacon_Coordinates.Y_coordinates);
+    strcpy(beacon_address[index].beacon_coordinates.Z_coordinates, 
+                                Beacon_Coordinates.Z_coordinates);
     strcpy(beacon_address[index].barcode, Barcode);
 
 }
 
-void BHM_routine(){
+void *BHM_routine(){
 
     for (int i = 0; i<beacon_count; i++) {
         /* Default value is true; If beacon is failed, then set to false */
@@ -278,7 +283,7 @@ int main(int argc, char **argv)
 
     pthread_t CommUnit_routine_thread;
 
-    return_value = startThread(CommUnit_thread, CommUnit_routine, NULL);
+    return_value = startThread(CommUnit_routine_thread, CommUnit_routine, NULL);
 
     if(return_value != WORK_SCUCESSFULLY){
 

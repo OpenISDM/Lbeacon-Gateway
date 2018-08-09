@@ -33,6 +33,7 @@
  *
  * Authors:
  *      Gary Xiao		, garyh0205@hotmail.com
+ *      Hank Kung       , hank910140@gmail.com
  */
 
 #include "pkt_Queue.h"
@@ -75,8 +76,8 @@ void addpkt(pkt_ptr pkt_queue, int type, char *raw_addr, char *content ) {
 
 
     printf("addpkt start\n");
-    //pPkt newpkt;
-    //memset(newpkt, 0, sizeof(sPkt));
+    pPkt newpkt;
+    memset(newpkt, 0, sizeof(sPkt));
     printf("------Content------\n");
     printf("type    : %s\n", type_to_str(type));
     printf("address : %s\n", raw_addr);
@@ -86,24 +87,24 @@ void addpkt(pkt_ptr pkt_queue, int type, char *raw_addr, char *content ) {
     printf("determine queue is null or not\n");
     if(pkt_queue->len == 0) {
         printf("queue is null\n");
-        //pkt_queue->buffer[pkt_queue->front+1] = newpkt;
-        //(pkt_queue->front)->next = newpkt;
+        pkt_queue->buffer[pkt_queue->front+1] = newpkt;
+        (pkt_queue->front)->next = newpkt;
     }
     pkt_queue->buffer[pkt_queue->front+1].type = type;
-    //newpkt -> type = type;
+    newpkt -> type = type;
 
     Fill_Address(raw_addr, pkt_queue->buffer[pkt_queue->front+1].address);
 
     int cont_len = strlen(content);
-    //newpkt->content = malloc((cont_len+1) * sizeof(char));
-    //memset(newpkt->content, 0, sizeof((cont_len + 1)*sizeof(char)));
+    newpkt->content = malloc((cont_len+1) * sizeof(char));
+    memset(newpkt->content, 0, sizeof((cont_len + 1)*sizeof(char)));
     strncpy(newpkt -> content, content, cont_len);
     newpkt->content[cont_len] = '\0';
     printf("Set next NULL\n");
-    //newpkt->next = NULL;
+    newpkt->next = NULL;
     printf("Add to Queue\n");
     //edit from here
-    //pkt_queue->buffer[pkt_queue->rear]
+    pkt_queue->buffer[pkt_queue->rear]
     (pkt_queue->rear)->next = newpkt;
     printf("Add to Queue\n");
     pkt_queue->rear = newpkt;
@@ -127,7 +128,7 @@ void delpkt(pkt_ptr pkt_queue) {
         pkt_queue->locker = unLock_Queue;
         return;
     }
-
+    
     sPkt* tmpnode;
     tmpnode = (pkt_queue->front)->next;
     (pkt_queue->front)->next = tmpnode->next;

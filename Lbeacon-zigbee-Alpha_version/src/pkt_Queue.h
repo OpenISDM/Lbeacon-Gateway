@@ -60,7 +60,7 @@ struct pkt {
 	// Data
 	char *content;
 
-  //struct pkt *next;
+    struct pkt *next;
   //turn the buffer to static
 };
 

@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "../libxbee3/include/xbee.h"
 #include "pkt_Queue.h"
 
@@ -58,6 +59,10 @@ xbee_err xbee_initial(char* xbee_mode, char* xbee_device, int xbee_baudrate
 // A function for setting up xbee connection
 xbee_err xbee_connector(struct xbee** xbee, struct xbee_con** con
                                                 , pkt_ptr pkt_Queue);
+// A function for sending pkt to dest address.
+xbee_err xbee_send_pkt(struct xbee_con* con, pkt_ptr pkt_Queue);
+
+bool xbee_check_CallBack(struct xbee_con* con, pkt_ptr pkt_Queue, bool exclude_pkt_Queue);
 
 /* CallBack for Data Received */
 void CallBack(struct xbee *xbee, struct xbee_con *con, struct xbee_pkt **pkt

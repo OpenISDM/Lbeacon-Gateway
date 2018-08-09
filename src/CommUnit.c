@@ -63,7 +63,7 @@ void *CommUnit_routine(){
 
     //wait for NSI get ready
     while(!zigbee_is_ready){
-        
+        sleep(A_LONG_TIME);
     }
     
     
@@ -107,21 +107,9 @@ void *CommUnit_routine(){
 
         /* If both Zigbee queue and UDP queue are empty then sleep 
         a short time*/
-        if(!is_buffer_empty(recieveFromBeacon))
-        {
-            FILE *item = buffer_dequeue(recieveFromBeacon);
-            buffer_enqueue(sendToServer, item);
-        }
-        if(!is_buffer_empty(recieveFromServer)){
-            /* Read the file and execute command */
-            /* Depends on command category, it can be broadcast to all 
-            beacons or for some specific beacons.
-            */
-        }
 
         if(1) sleep(A_SHORT_TIME);
         
-
         }
     //CommUnit_cleanup_exit();
     //return;
@@ -129,7 +117,7 @@ void *CommUnit_routine(){
 
 void init_buffer(Buffer buffer){
     //clear the buffer by filling null, it might have previously received data
-     memset(buffer.content,'\0', BUFFER_SIZE);
+    memset(buffer.content,'\0', BUFFER_SIZE);
     buffer.front = buffer.rear = 0;
     buffer.is_locked = false;
     buffer.is_empty = true;
@@ -220,14 +208,14 @@ void *zigbee_sender(){
         if(!is_buffer_empty(sendToBeacon)){
             //get item from front
             //send item by ZigBee API
-            //move front back once
+            
         }
 
     }
 
 }
 
-void send_command(const char* command){
+void generate_command(const char *command){
     char *transaction = "0000";
     strcpy(transaction,command);
     printf("command content: %s",*transaction);

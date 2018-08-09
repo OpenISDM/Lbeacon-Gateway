@@ -149,7 +149,7 @@ typedef struct buffer{
 */
 Buffer sendToBeacon, recieveFromBeacon;
 Buffer sendToServer, recieveFromServer;
-pkt_ptr pkt_queue = NULL;
+
 /*
 *   External Variables
 */ 
@@ -157,9 +157,12 @@ pkt_ptr pkt_queue = NULL;
 extern bool CommUnit_initialization_complete;
 extern bool system_is_shutting_down;
 extern bool zigbee_is_ready;
+extern bool wifi_is_ready;
 
 extern struct sockaddr_in si_other;
 extern int s, i, slen;
+
+extern pkt_ptr pkt_queue;
 
 /*
 *  CommUnit_routine:
@@ -270,4 +273,4 @@ void *zigbee_receiver(Buffer buffer);
 void *zigbee_sender(Buffer buffer);
 
 
-void send_command();
+void generate_command(const char *command);
