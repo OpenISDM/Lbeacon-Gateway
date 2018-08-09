@@ -58,24 +58,6 @@
 #define A_LONG_TIME 5000
 
 /*
-* ENUM
-*/
-
-typedef enum commandrequest {
-    /* Request for health report */
-    HEALTH_REPORT = 0,
-    /**/
-    BEACON_JOIN_REQUEST = 1,
-    /* Server web sends coordinates of the beacon */
-    SET_BEACON_COORDINATES = 2,
-    /**/
-    REMOVE_BEACON = 3,
-    /**/
-    GET_BEACON_INFO = 4
-}CommandRequest;
-
-
-/*
   ERROR CODE
 */
 typedef enum ErrorCode {
@@ -109,7 +91,6 @@ struct _errordesc {
     int code;
     char *message;
 } errordesc[] = {
-
     {WORK_SCUCESSFULLY, "The code works successfullly"},
     {E_MALLOC, "Error allocating memory"},
     {E_OPEN_FILE, "Error opening file"},
@@ -165,7 +146,8 @@ extern bool wifi_is_ready;
 extern struct sockaddr_in si_other;
 extern int s, i, slen;
 
-extern pkt_ptr pkt_queue;
+extern pkt_ptr pkt_send_queue;
+extern pkt_ptr pkt_recv_queue;
 extern struct xbee *xbee;
 extern struct xbee_con *con;
 

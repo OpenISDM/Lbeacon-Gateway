@@ -40,17 +40,13 @@
 
 /* Initialize Queue                                                          */
 void init_Packet_Queue(pkt_ptr pkt_queue) {
-
     pkt_queue->locker = false;
-
     bool status;
     do{
         status = pkt_queue -> locker;
         pkt_queue -> locker = true;
     }while(status == false);
-
     pkt_queue -> front.next = pkt_queue -> rear.next = NULL;
-
     pkt_queue -> locker = false;
 }
 
@@ -99,7 +95,6 @@ void addpkt(pkt_ptr pkt_queue, int type, char *raw_addr, char *content ) {
 
     display_pkt("Addedpkt", newpkt);
     pkt_queue->locker = false;
-
     return;
 }
 
@@ -136,7 +131,7 @@ void delpkt(pkt_ptr pkt_queue) {
     return;
 }
 
-char* print_address(unsigned char* address){
+char *print_address(unsigned char* address){
     char* char_addr = malloc(sizeof(char)*17);
     memset(char_addr, 0, sizeof(char)*17);
     sprintf(char_addr, "%02x%02x%02x%02x%02x%02x%02x%02x", address[0]
@@ -145,7 +140,7 @@ char* print_address(unsigned char* address){
     return char_addr;
 }
 
-char* type_to_str(int type){
+char *type_to_str(int type){
     switch(type){
         case Data:
             return "Data";
@@ -159,7 +154,7 @@ char* type_to_str(int type){
 }
 
 /* Fill the address from raw(char) to addr(Hex)                              */
-void Fill_Address(char *raw,unsigned char* addr){
+void Fill_Address(char *raw,unsigned char *addr){
     for(int i = 0;i < 8;i++){
         char tmp[2];
         tmp[0] = raw[i*2];
@@ -170,18 +165,18 @@ void Fill_Address(char *raw,unsigned char* addr){
     printf("\n");
 }
 
-bool address_compare(unsigned char* addr1,unsigned char* addr2){
+bool address_compare(unsigned char *addr1,unsigned char *addr2){
     if (memcmp(addr1, addr2, 8) == 0){
         return true;
     }
     return false;
 }
 
-void address_copy(unsigned char* src_addr, unsigned char* dest_addr){
+void address_copy(unsigned char *src_addr, unsigned char *dest_addr){
     memcpy(dest_addr, src_addr, 8);
 }
 
-void display_pkt(char* content, pPkt pkt){
+void display_pkt(char *content, pPkt pkt){
     if(pkt == NULL)
         return;
     char* char_addr = print_address(pkt->address);

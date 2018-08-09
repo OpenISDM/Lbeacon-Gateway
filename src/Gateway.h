@@ -90,39 +90,11 @@
 /* The time intervial between each beacon health self-testing */
 #define PERIOD_TO_MONITOR 1000*100
 
-/*  */
+/* server IP address */
 #define SERVER "127.0.0.1"
 
-/* */
+/* Gateway IP address*/
 #define PORT 8000
-
-// /*
-//   ERROR CODE
-// */
-// typedef enum ErrorCode {
-
-//     WORK_SCUCESSFULLY = 0,
-//     E_MALLOC = 1,
-//     E_OPEN_FILE = 2,
-//     E_OPEN_DEVICE = 3,
-//     E_OPEN_SOCKET = 4,
-//     E_SEND_OBEXFTP_CLIENT = 5,
-//     E_SEND_CONNECT_DEVICE = 6,
-//     E_SEND_PUT_FILE = 7,
-//     E_SEND_DISCONNECT_CLIENT = 8,
-//     E_SCAN_SET_HCI_FILTER = 9,
-//     E_SCAN_SET_INQUIRY_MODE = 10,
-//     E_SCAN_START_INQUIRY = 11,
-//     E_SEND_REQUEST_TIMEOUT = 12,
-//     E_ADVERTISE_STATUS = 13,
-//     E_ADVERTISE_MODE = 14,
-//     E_START_THREAD = 15,
-//     E_INIT_THREAD_POOL = 16,
-//     E_INIT_ZIGBEE = 17,
-//     E_ZIGBEE_CONNECT = 18,
-//     MAX_ERROR_CODE = 19
-
-// } ErrorCode;
 
 /*
 * TYPEDEF STRUCTS
@@ -220,14 +192,18 @@ int LogLevel = 100;
 // 2 send second address 
 // 0 success
 
-enum{finish,wait_SL,wait_SH,start};
+enum{finish, wait_SL, wait_SH, start};
 int get_address = start;
 
 char* Local_Address;
 
-pkt_ptr pkt_queue = NULL;
+/* sending and recieving queue of gateway to beacons */
+pkt_ptr pkt_send_queue = NULL;
+pkt_ptr pkt_recv_queue = NULL;
 
+/* Flag to state the connection of xbee */
 bool zigbee_is_ready;
+
 /* FUNCTIONS */
 
 /*
@@ -246,11 +222,23 @@ bool zigbee_is_ready;
 */
 long long get_system_time();
 
-/* coordinator initializes the zigbee network:
-- if (PAN ID == 0) scan nearby network and chooses a PAN ID;
-- channel scan to find a good operating channel;
-- ready to access join requests from Lbeacons;
-- Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h */
+/*
+*  NSI_routine:
+*
+*  Coordinator initializes the zigbee network:
+*  if (PAN ID == 0) scan nearby network and chooses a PAN ID;
+*  channel scan to find a good operating channel;
+*  ready to access join requests from Lbeacons;
+*  Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h 
+*
+*  Parameters:
+*
+*  None
+*
+*  Return value:
+*
+*  None
+*/
 void *NSI_routine();
 
 /*
@@ -275,15 +263,16 @@ void *address_map_manager();
 /*
 *  beacon_join_request:
 *  This function is executed when a beacon sends command to join the gateway
-*  and fills the table with the inputs. And set the network_address according
+*  and fills the table with the inputs. Set the network_address according
 *  the current number of beacons.
 *
 *  Parameters:
 *
-*  ID -
-*  Coordinates -
-*  Loc_Description[MAX_LENGTH_LOC_DESCRIPTION -
-*  Barcode -
+*  index - index of the address map table
+*  *ID - 
+*  *Coordinates - Pointerto the beacon GPS coordinates 
+*  *Loc_Description - Pointer to the beacon literal location description
+*  *Barcode - Pointer to the beacon Barcode 
 *
 *  Return value:
 *
@@ -300,7 +289,7 @@ void beacon_join_request(int index, char *ID, Coordinates Beacon_Coordinates,
 *
 *  Parameters:
 *
-*  Node
+*  None
 *
 *  Return value:
 *
@@ -324,8 +313,16 @@ void *BHM_routine();
 *  Error_code: The error code for the corresponding error
 */
 ErrorCode startThread(pthread_t threads, void * (*thfunct)(void*), void *arg);
+
 /*
+*  int2st:
 *
+*  This function aims to turn integer to string
+*
+*  Parameters:
+*
+*  num - inputed integer number
+*  *str - outputed string
 */
 void int2str(int num, char *str);
 /*

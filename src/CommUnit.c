@@ -184,7 +184,7 @@ void *wifi_reciever(Buffer buf){
         char *content;
         char *type;
         generate_command(content, type);
-        addpkt(&pkt_queue, Data, Gateway, content);
+        addpkt(&pkt_send_queue, Data, Gateway, content);
 
         /* Dequeue buffer */
         if(!is_buffer_empty(recieveFromServer)){
@@ -209,24 +209,25 @@ void *zigbee_reciever(){
 
 void *zigbee_sender(){
     while (system_is_shutting_down == false) {
-        if(!is_buffer_empty(sendToBeacon)){
+        /* If the sneding queue is not empty. */
+        if(pkt_send_queue->front.next != pkt_send_queue->rear.next){
             //send item by ZigBee API
-            xbee_send_pkt(con, &pkt_queue);
-            xbee_connector(&xbee, &con, &pkt_queue);
+            xbee_send_pkt(con, &pkt_send_queue);
+            xbee_connector(&xbee, &con, &pkt_send_queue);
         }
         else
             sleep(A_SHORT_TIME);
 
     }
     printf("Stop xbee ...\n");
-    Free_Packet_Queue(&pkt_queue);
+    Free_Packet_Queue(&pkt_send_queue);
 
     /* Close connection                                                      */
     if ((ret = xbee_conEnd(con)) != XBEE_ENONE) {
         xbee_log(xbee, 10, "xbee_conEnd() returned: %d", ret);
         return ret;
     }
-    Free_Packet_Queue(&pkt_queue);
+    Free_Packet_Queue(&pkt_send_queue);
     printf("Stop connection Succeeded\n");
 
     /* Close xbee                                                            */
@@ -240,6 +241,6 @@ void generate_command(const char *command, const char *type){
         char *transaction = Broadcast;
         strcpy(transaction,command);
         printf("command content: %s", transaction);
-        addpkt(pkt_queue, Data, Broadcast, transaction);
+        addpkt(pkt_send_queue, Data, Broadcast, transaction);
     }
 }

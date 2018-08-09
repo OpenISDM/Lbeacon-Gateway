@@ -96,6 +96,9 @@ void *NSI_routine(){
         ping_ret = WEXITSTATUS(status);
     wifi_is_ready = true;
 
+    /* xbee connection starts */
+    init_Packet_Queue(pkt_send_queue);
+    init_Packet_Queue(pkt_recv_queue);
     xbee_err xbee_initial(xbee_mode, xbee_device, xbee_baudrate
                             , LogLevel, &xbee, pkt_queue);
     printf("Start establishing Connection to xbee\n");

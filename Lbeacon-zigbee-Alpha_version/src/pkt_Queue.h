@@ -66,7 +66,7 @@ struct pkt {
 };
 
 typedef struct pkt sPkt;
-typedef sPkt* pPkt;
+typedef sPkt *pPkt;
 
 
 
@@ -79,13 +79,13 @@ struct pkt_header {
     sPkt front;
     sPkt rear;
     //sPkt buffer[BUFFER_SIZE]; 
-    
+
     unsigned char address[8];
     bool locker;
 };
 
 typedef struct pkt_header spkt_ptr;
-typedef spkt_ptr* pkt_ptr;
+typedef spkt_ptr *pkt_ptr;
 
 /* init_Packet_Queue
  *  Initialize Queue for packets
@@ -141,7 +141,7 @@ void delallpkt(pkt_ptr pkt_queue);
  * Return Value:
  *     Return a char pointer which is it's type name.
  */
-char* type_to_str(int type);
+char *type_to_str(int type);
 
 /*
  * print_address
@@ -151,7 +151,7 @@ char* type_to_str(int type);
  * Return Value:
  *     char_addr: A address stored in char convert from address.
  */
-char* print_address(unsigned char* address);
+char *print_address(unsigned char* address);
 
 /* display_pkt
  *     display the packet we decide to see.

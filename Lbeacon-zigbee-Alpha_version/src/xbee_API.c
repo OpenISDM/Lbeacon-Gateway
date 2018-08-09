@@ -44,8 +44,8 @@
 /*-----------------------------------------------------------------------*/
 /* xbee_setup(struct xbee **retXbee, const char *xbee_mode               */
 /* , char *xbee_device, int xbee_baudrate)                               */
-xbee_err xbee_initial(char* xbee_mode, char* xbee_device, int xbee_baudrate
-                        , int LogLevel, struct xbee** xbee, pkt_ptr pkt_Queue){
+xbee_err xbee_initial(char *xbee_mode, char *xbee_device, int xbee_baudrate
+                        , int LogLevel, struct xbee **xbee, pkt_ptr pkt_Queue){
     printf("Start Connecting to xbee\n");
     printf("xbee Setup\n");
     printf("xbee Mode : %s\n",xbee_mode);
@@ -81,7 +81,7 @@ xbee_err xbee_initial(char* xbee_mode, char* xbee_device, int xbee_baudrate
 }
 
 
-xbee_err xbee_connector(struct xbee** xbee, struct xbee_con** con
+xbee_err xbee_connector(struct xbee **xbee, struct xbee_con **con
                                                 , pkt_ptr pkt_Queue){
 
     int Mode;
@@ -96,20 +96,20 @@ xbee_err xbee_connector(struct xbee** xbee, struct xbee_con** con
     address.addr64_enabled = 1;
 
     printf("Fill Address to the Connector\n");
-    //
-    if(pkt_Queue->front->next != NULL){
+    /**/
+    if(pkt_Queue->front.next != NULL){
         printf("pkt_Queue->front->next != NULL\n");
         for(int i=0 ; i < 8 ; i++){
-            address.addr64[i] = pkt_Queue->front->next->address[i];
+            address.addr64[i] = pkt_Queue->front.next->address[i];
         }
-        Mode = pkt_Queue->front->next->type;
+        Mode = pkt_Queue->front.next->type;
     }
     else{
         Mode = Data;
     }
 
     printf("Fill Address Success\n");
-    char* strMode = type_to_str(Mode);
+    char *strMode = type_to_str(Mode);
     printf("Mode : %s\n", strMode);
     if(Mode == Local_AT){
         if((ret = xbee_conNew(*xbee, con, strMode, NULL)) != XBEE_ENONE) {
@@ -159,8 +159,8 @@ xbee_err xbee_connector(struct xbee** xbee, struct xbee_con** con
         return ret;
     }
 
-    if(pkt_Queue->front->next != NULL){
-        display_pkt("Packet Information", pkt_Queue->front->next);
+    if(pkt_Queue->front.next != NULL){
+        display_pkt("Packet Information", pkt_Queue->front.next);
         //
     }
 
@@ -169,16 +169,6 @@ xbee_err xbee_connector(struct xbee** xbee, struct xbee_con** con
     return XBEE_ENONE;
 }
 
-/*
- * xbee_send_pkt
- *      For sending pkt to dest address.
- * Parameter:
- *      con : a pointer for xbee connector.
- *      pkt_Queue : A pointer point to the packet queue we use.
- * Return Value:
- *      xbee error code
- *      if 0, work successfully.
- */
 xbee_err xbee_send_pkt(struct xbee_con* con, pkt_ptr pkt_Queue){ 
     if(!(is_null(pkt_Queue))){
         if(!(address_compare(pkt_Queue->front.next->address, pkt_Queue->address))){
@@ -194,16 +184,6 @@ xbee_err xbee_send_pkt(struct xbee_con* con, pkt_ptr pkt_Queue){
     return XBEE_ENONE;
 }
 
-/*
- * xbee_check_CallBack
- *      Check if CallBack is disabled and pkt_Queue is NULL.
- * Parameter:
- *      con : a pointer for xbee connector.
- *      pkt_Queue : A pointer point to the packet queue we use.
- * Return Value:
- *      True if CallBack is disabled and pkt_Queue is NULL, else false.
- *
- */
 bool xbee_check_CallBack(struct xbee_con* con, pkt_ptr pkt_Queue, bool exclude_pkt_Queue){
     /* Pointer point_to_CallBack will store the callback function.       */
     /* If pointer point_to_CallBack is NULL, break the Loop              */
