@@ -51,6 +51,9 @@
 #include <sys/socket.h>
 #include "../Lbeacon-zigbee-Alpha_version/src/xbee_API.h"
 
+#ifndef CommUnit_H
+#define CommUnit_H
+
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
 
@@ -163,6 +166,8 @@ extern struct sockaddr_in si_other;
 extern int s, i, slen;
 
 extern pkt_ptr pkt_queue;
+extern struct xbee *xbee;
+extern struct xbee_con *con;
 
 /*
 *  CommUnit_routine:
@@ -273,4 +278,6 @@ void *zigbee_receiver(Buffer buffer);
 void *zigbee_sender(Buffer buffer);
 
 
-void generate_command(const char *command);
+void generate_command(const char *command, const char *type);
+
+#endif

@@ -41,111 +41,98 @@
 /* Initialize Queue                                                          */
 void init_Packet_Queue(pkt_ptr pkt_queue) {
 
-    pkt_queue->buffer ={0};
+    pkt_queue->locker = false;
 
-    pkt_queue->locker = Lock_Queue;
-    pkt_queue->len    = 0;
-    //pkt_queue->front = malloc(sizeof(sPkt));
-    //memset(pkt_queue->front, 0, sizeof(sPkt));
-    pkt_queue->rear  = pkt_queue->front = 0;
-    //pkt_queue->front->next = NULL;
-    pkt_queue->locker = unLock_Queue;
+    bool status;
+    do{
+        status = pkt_queue -> locker;
+        pkt_queue -> locker = true;
+    }while(status == false);
+
+    pkt_queue -> front.next = pkt_queue -> rear.next = NULL;
+
+    pkt_queue -> locker = false;
 }
 
-// void Free_Packet_Queue(pkt_ptr pkt_queue){
+void Free_Packet_Queue(pkt_ptr pkt_queue){
+    while (!(is_null(pkt_queue))){
+        delpkt(pkt_queue);
+    }
+    printf("pkt_queue released\n");
+}
 
-//     delallpkt(pkt_queue);
-
-//     Locker status;
-//     do{
-//         status = pkt_queue->locker;
-//         pkt_queue->locker = Lock_Queue;
-//     }while(status != unLock_Queue);
-
-//     free(pkt_queue->front);
-//     free(pkt_queue);
-// }
 //change buffer
 /* A function for create new packet in queue                                 */
 void addpkt(pkt_ptr pkt_queue, int type, char *raw_addr, char *content ) {
-    Locker status;
+    bool status;
     do{
         status = pkt_queue->locker;
-        pkt_queue->locker = Lock_Queue;
-    }while(status != unLock_Queue);
-
+        pkt_queue->locker = true;
+    }while(status == true);
 
     printf("addpkt start\n");
-    pPkt newpkt;
-    memset(newpkt, 0, sizeof(sPkt));
+
+    pPkt newpkt = malloc(sizeof(sPkt));
+
     printf("------Content------\n");
     printf("type    : %s\n", type_to_str(type));
     printf("address : %s\n", raw_addr);
     printf("content : %s\n", content);
     printf("-------------------\n");
 
-    printf("determine queue is null or not\n");
-    if(pkt_queue->len == 0) {
+    if(is_null(pkt_queue)) {
         printf("queue is null\n");
-        pkt_queue->buffer[pkt_queue->front+1] = newpkt;
-        (pkt_queue->front)->next = newpkt;
+        pkt_queue->front.next = newpkt;
+        pkt_queue->rear.next = newpkt;
     }
-    pkt_queue->buffer[pkt_queue->front+1].type = type;
-    newpkt -> type = type;
-
-    Fill_Address(raw_addr, pkt_queue->buffer[pkt_queue->front+1].address);
-
+    newpkt->type = type;
+    Fill_Address(raw_addr, newpkt->address);
     int cont_len = strlen(content);
     newpkt->content = malloc((cont_len+1) * sizeof(char));
     memset(newpkt->content, 0, sizeof((cont_len + 1)*sizeof(char)));
-    strncpy(newpkt -> content, content, cont_len);
+    strncpy(newpkt->content, content, cont_len);
     newpkt->content[cont_len] = '\0';
-    printf("Set next NULL\n");
     newpkt->next = NULL;
-    printf("Add to Queue\n");
-    //edit from here
-    pkt_queue->buffer[pkt_queue->rear]
-    (pkt_queue->rear)->next = newpkt;
-    printf("Add to Queue\n");
-    pkt_queue->rear = newpkt;
+    if(pkt_queue->rear.next != NULL)
+        pkt_queue->rear.next->next = newpkt;
+    pkt_queue->rear.next = newpkt;
 
-    display_pkt("Addedpkt", pkt_queue->rear);
-    pkt_queue->len+= 1;
-    pkt_queue->locker = unLock_Queue;
+    display_pkt("Addedpkt", newpkt);
+    pkt_queue->locker = false;
+
     return;
 }
 
 /* A function for delete a sended Packet in queue                            */
 void delpkt(pkt_ptr pkt_queue) {
-    Locker status;
+    bool status;
     do{
         status = pkt_queue->locker;
-        pkt_queue->locker = Lock_Queue;
-    }while(status != unLock_Queue);
+        pkt_queue->locker = true;
+    }while(status == true);
 
-    if(pkt_queue->len == 0) {
+    if(is_null(pkt_queue)) {
         printf("Packet Queue is empty!\n");
-        pkt_queue->locker = unLock_Queue;
+        pkt_queue->locker = false;
         return;
     }
-    
-    sPkt* tmpnode;
-    tmpnode = (pkt_queue->front)->next;
-    (pkt_queue->front)->next = tmpnode->next;
-    display_pkt("deledpkt",tmpnode);
-    free(tmpnode->content);
-    free(tmpnode);
-    pkt_queue->len-= 1;
-    pkt_queue->locker = unLock_Queue;
-    return;
-}
 
-void delallpkt(pkt_ptr pkt_queue) {
-    while (pkt_queue->len != 0){
-        delpkt(pkt_queue);
-        printf("delall\n");
+    sPkt tmpnode;
+    tmpnode.next = pkt_queue->front.next;
+    if(pkt_queue->front.next == pkt_queue->rear.next){
+        pkt_queue->front.next = NULL;
+        pkt_queue->rear.next = NULL;
     }
-    printf("End delall\n");
+    else{
+        pkt_queue->front.next = pkt_queue->front.next->next;
+    }
+
+    display_pkt("deledpkt", tmpnode.next);
+    free(tmpnode.next->content);
+    tmpnode.next->next = NULL;
+    free(tmpnode.next);
+    pkt_queue->locker = false;
+
     return;
 }
 
@@ -183,7 +170,20 @@ void Fill_Address(char *raw,unsigned char* addr){
     printf("\n");
 }
 
+bool address_compare(unsigned char* addr1,unsigned char* addr2){
+    if (memcmp(addr1, addr2, 8) == 0){
+        return true;
+    }
+    return false;
+}
+
+void address_copy(unsigned char* src_addr, unsigned char* dest_addr){
+    memcpy(dest_addr, src_addr, 8);
+}
+
 void display_pkt(char* content, pPkt pkt){
+    if(pkt == NULL)
+        return;
     char* char_addr = print_address(pkt->address);
     printf("------ %12s ------\n",content);
     printf("type    : %s\n", type_to_str(pkt->type));
@@ -191,4 +191,28 @@ void display_pkt(char* content, pPkt pkt){
     printf("content : %s\n", pkt->content);
     printf("--------------------------\n");
     free(char_addr);
+    return;
+}
+
+bool is_null(pkt_ptr pkt_queue){
+    if (pkt_queue->front.next == NULL && pkt_queue->rear.next == NULL){
+        return true;
+    }
+    return false;
+}
+
+int queue_len(pkt_ptr pkt_queue){
+    int count = 0 ;
+    if (is_null(pkt_queue)){
+        printf("Queue is NULL\n");
+        return 0;
+    }
+    pPkt tmpnode;
+    tmpnode = pkt_queue->front.next;
+    while(tmpnode != pkt_queue->rear.next){
+        tmpnode = tmpnode->next;
+        count ++;
+    }
+    count ++;
+    return count;
 }

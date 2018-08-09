@@ -175,11 +175,17 @@ void *wifi_reciever(Buffer buf){
         /* Recieving and sending have to be splited up into to threads, since
         they are call back functions. It cost too much if they had to wait for 
         each other. And these two threads should not start in a while loop. */
-        if (recvfrom(s, buf, BUFFER_SIZE, 0, (struct sockaddr *) &si_other, &slen) == -1)
+        if (recvfrom(s, (Buffer)recieveFromServer, BUFFER_SIZE, 0, (struct sockaddr *) &si_other, &slen) == -1)
         {
             //die("recvfrom()");
         }
         //puts(buffer);
+        /* get string from the file sent by server */ 
+        char *content;
+        char *type;
+        generate_command(content, type);
+        addpkt(&pkt_queue, Data, Gateway, content);
+
         /* Dequeue buffer */
         if(!is_buffer_empty(recieveFromServer)){
             FILE *item = buffer_dequeue(recieveFromServer);
@@ -192,7 +198,6 @@ void *wifi_sender(){
     while (system_is_shutting_down == false) {
 
     }
-
 }
 
 void *zigbee_reciever(){
@@ -200,25 +205,41 @@ void *zigbee_reciever(){
         //recieve the string from beacon, then pack it into
         //a file.
     }
-
 }
 
 void *zigbee_sender(){
     while (system_is_shutting_down == false) {
         if(!is_buffer_empty(sendToBeacon)){
-            //get item from front
             //send item by ZigBee API
-            
+            xbee_send_pkt(con, &pkt_queue);
+            xbee_connector(&xbee, &con, &pkt_queue);
         }
+        else
+            sleep(A_SHORT_TIME);
 
     }
+    printf("Stop xbee ...\n");
+    Free_Packet_Queue(&pkt_queue);
 
+    /* Close connection                                                      */
+    if ((ret = xbee_conEnd(con)) != XBEE_ENONE) {
+        xbee_log(xbee, 10, "xbee_conEnd() returned: %d", ret);
+        return ret;
+    }
+    Free_Packet_Queue(&pkt_queue);
+    printf("Stop connection Succeeded\n");
+
+    /* Close xbee                                                            */
+    xbee_shutdown(xbee);
+    printf("Shutdown Xbee Succeeded\n");
 }
 
-void generate_command(const char *command){
-    char *transaction = "0000";
-    strcpy(transaction,command);
-    printf("command content: %s",*transaction);
-    /* still don't know what "type" parameter stands for */
-    addpkt(pkt_queue, 0, Broadcast, transaction);
+void generate_command(const char *command, const char *type){
+    /* If it's a pulling message */
+    if(type == "0000"){
+        char *transaction = Broadcast;
+        strcpy(transaction,command);
+        printf("command content: %s", transaction);
+        addpkt(pkt_queue, Data, Broadcast, transaction);
+    }
 }
