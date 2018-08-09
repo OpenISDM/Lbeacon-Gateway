@@ -73,7 +73,14 @@ void *NSI_routine(){
     wifi_is_ready = false;
     zigbee_is_ready = false;
     
-    
+    /* UDP connection starts */
+    Buffer sendToServer;
+    sendToServer.name = "sendToServer"; 
+    Buffer recieveFromServer;
+    recieveFromServer.name = "recieveFromServer";
+
+    init_buffer(sendToServer);
+    init_buffer(recieveFromServer);
     if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
     {
         printf("Wrong Socket");
@@ -142,11 +149,9 @@ void *NSI_routine(){
          sleep(A_SHORT_TIME);
     }
     
-    // ready to work, check for system shutdown flag periodically
-
+    /* Ready to work, check for system shutdown flag periodically */
     while (system_is_shutting_down == false) {
         //do a chunk of work and/or sleep for a short time
-     
         sleep(A_SHORT_TIME);
     }
 
@@ -170,7 +175,7 @@ void *address_map_manager(){
     
     //Fill the gateway information into the address table
     //Gateway's index is always 0
-    beacon_join_request(0, zigbee_macaddr, gateway_coordinates,
+    beacon_join_request(0, zigbee_macaddr, zigbee_macaddr, gateway_coordinates,
                         gateway_loc_description, gateway_barcode);
     while(system_is_shutting_down == false){
         
@@ -180,12 +185,13 @@ void *address_map_manager(){
 }
 
 
-void beacon_join_request(int index, char *ID, Coordinates Beacon_Coordinates,
+void beacon_join_request(int index, char *ID, char *mac, Coordinates Beacon_Coordinates,
                          char *Loc_Description, char *Barcode){
     char *addr;
     int2str(index,addr);
     strcpy(beacon_address[index].network_address, addr);
     strcpy(beacon_address[index].beacon_uuid, ID);
+    strcpy(beacon_address[index].mac_addr, mac);
     strcpy(beacon_address[index].loc_description, Loc_Description);
     strcpy(beacon_address[index].beacon_coordinates.X_coordinates, 
                                 Beacon_Coordinates.X_coordinates);

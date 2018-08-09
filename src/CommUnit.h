@@ -54,8 +54,27 @@
 #ifndef CommUnit_H
 #define CommUnit_H
 
+/* 
+* CONSTANTS 
+*/
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
+
+/* Maximum number of nodes (LBeacons) per star network */
+#define MAX_NUMBER_NODES 32
+
+/*Length of the beacon's UUID*/
+#define UUID_LENGTH 32
+
+/*Length of the address of the network */
+#define NETWORK_ADD_LENGTH 16
+
+/* Maximum number of characters in location description*/
+#define MAX_LENGTH_LOC_DESCRIPTION  64
+
+#define COORDINATE_LENGTH 64
+
+#define BARCODE_SIZE 64
 
 /*
   ERROR CODE
@@ -115,13 +134,35 @@ struct _errordesc {
 };
 
 /*
-* STRUCT
+* TYPEDEF STRUCTS
 */
+
+typedef struct{
+
+  char X_coordinates[COORDINATE_LENGTH];
+  char Y_coordinates[COORDINATE_LENGTH];
+  char Z_coordinates[COORDINATE_LENGTH];
+
+}Coordinates;
+
+typedef struct{
+
+  char network_address[NETWORK_ADD_LENGTH];
+  char beacon_uuid[UUID_LENGTH];
+  char *mac_addr;
+  Coordinates beacon_coordinates;
+  char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
+  char barcode[BARCODE_SIZE];
+
+
+}Address_map;
+/* An array of address maps */
+Address_map beacon_address[MAX_NUMBER_NODES];
 
 /* */
 typedef struct buffer{
     char *name;
-    FILE content[BUFFER_SIZE];
+    char content[BUFFER_SIZE];
     int front;
     int rear;
     bool is_locked;

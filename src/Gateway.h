@@ -65,28 +65,6 @@
 #include <unistd.h>
 #include "CommUnit.h"
 
-
-
-/* 
-* CONSTANTS 
-*/
-
-/* Maximum number of nodes (LBeacons) per star network */
-#define MAX_NUMBER_NODES 32
-
-/*Length of the beacon's UUID*/
-#define UUID_LENGTH 32
-
-/*Length of the address of the network */
-#define NETWORK_ADD_LENGTH 16
-
-/* Maximum number of characters in location description*/
-#define MAX_LENGTH_LOC_DESCRIPTION  64
-
-#define COORDINATE_LENGTH 64
-
-#define BARCODE_SIZE 64
-
 /* The time intervial between each beacon health self-testing */
 #define PERIOD_TO_MONITOR 1000*100
 
@@ -95,29 +73,6 @@
 
 /* Gateway IP address*/
 #define PORT 8000
-
-/*
-* TYPEDEF STRUCTS
-*/
-
-typedef struct{
-
-  char X_coordinates[COORDINATE_LENGTH];
-  char Y_coordinates[COORDINATE_LENGTH];
-  char Z_coordinates[COORDINATE_LENGTH];
-
-}Coordinates;
-
-typedef struct{
-
-  char network_address[NETWORK_ADD_LENGTH];
-  char beacon_uuid[UUID_LENGTH];
-  Coordinates beacon_coordinates;
-  char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
-  char barcode[BARCODE_SIZE];
-
-
-}Address_map;
 
 /*
 * GLOBAL VARIABLES
@@ -142,9 +97,6 @@ bool initialization_failed;
 bool NSI_initialization_complete;
 bool BHM_initialization_complete;
 bool CommUnit_initialization_complete;
-
-/* An array of address maps */
-Address_map beacon_address[MAX_NUMBER_NODES];
 
 //current number of beacons
 int beacon_count;
@@ -278,7 +230,7 @@ void *address_map_manager();
 *
 *  None
 */
-void beacon_join_request(int index, char *ID, Coordinates Beacon_Coordinates,
+void beacon_join_request(int index, char *ID, char *mac, Coordinates Beacon_Coordinates,
                          char *Loc_Description, char *Barcode);
 
 /*

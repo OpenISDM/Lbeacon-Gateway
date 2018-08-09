@@ -53,10 +53,6 @@ void *CommUnit_routine(){
     //Buffer recieveFromBeacon.name = "recieveFromBeacon";
     //Buffer sendToServer.name = "sendToServer"; 
     //Buffer recieveFromServer.name = "recieveFromServer";
-    //init_buffer(sendToBeacon);
-    //init_buffer(recieveFromBeacon);
-    //init_buffer(sendToServer);
-    //init_buffer(recieveFromServer);
 
     /* When initialization completes */
     CommUnit_initialization_complete = true;
@@ -111,8 +107,6 @@ void *CommUnit_routine(){
         if(1) sleep(A_SHORT_TIME);
         
         }
-    //CommUnit_cleanup_exit();
-    //return;
  }
 
 void init_buffer(Buffer buffer){
@@ -175,11 +169,10 @@ void *wifi_reciever(Buffer buf){
         /* Recieving and sending have to be splited up into to threads, since
         they are call back functions. It cost too much if they had to wait for 
         each other. And these two threads should not start in a while loop. */
-        if (recvfrom(s, (Buffer)recieveFromServer, BUFFER_SIZE, 0, (struct sockaddr *) &si_other, &slen) == -1)
+        if (recvfrom(s, recieveFromServer.content, BUFFER_SIZE, 0, (struct sockaddr *) &si_other, &slen) == -1)
         {
             //die("recvfrom()");
         }
-        //puts(buffer);
         /* get string from the file sent by server */ 
         char *content;
         char *type;
@@ -202,15 +195,34 @@ void *wifi_sender(){
 
 void *zigbee_reciever(){
     while (system_is_shutting_down == false) {
-        //recieve the string from beacon, then pack it into
-        //a file.
+        /* If the recieving queue is not empty. */
+        if(!is_null(pkt_recv_queue)){
+            //
+        }
+        else
+            sleep(A_SHORT_TIME);
+
     }
+    printf("Stop xbee ...\n");
+    Free_Packet_Queue(&pkt_recv_queue);
+
+    /* Close connection                                                      */
+    if ((ret = xbee_conEnd(con)) != XBEE_ENONE) {
+        xbee_log(xbee, 10, "xbee_conEnd() returned: %d", ret);
+        return ret;
+    }
+    Free_Packet_Queue(&pkt_recv_queue);
+    printf("Stop connection Succeeded\n");
+
+    /* Close xbee                                                            */
+    xbee_shutdown(xbee);
+    printf("Shutdown Xbee Succeeded\n");
 }
 
 void *zigbee_sender(){
     while (system_is_shutting_down == false) {
         /* If the sneding queue is not empty. */
-        if(pkt_send_queue->front.next != pkt_send_queue->rear.next){
+        if(is_null(pkt_send_queue)){
             //send item by ZigBee API
             xbee_send_pkt(con, &pkt_send_queue);
             xbee_connector(&xbee, &con, &pkt_send_queue);
@@ -237,10 +249,23 @@ void *zigbee_sender(){
 
 void generate_command(const char *command, const char *type){
     /* If it's a pulling message */
+    char *transaction;
     if(type == "0000"){
-        char *transaction = Broadcast;
-        strcpy(transaction,command);
+        transaction = Broadcast;
+        strcat(transaction,command);
         printf("command content: %s", transaction);
         addpkt(pkt_send_queue, Data, Broadcast, transaction);
+    }
+    else{
+        for(int i =0; i<=MAX_ERROR_CODE; i++){
+            if(beacon_address[i].beacon_uuid == type){
+                char *mac = beacon_address[i].mac_addr;
+                transaction = mac;
+                strcat(transaction,command);
+                printf("command content: %s", transaction);
+                addpkt(pkt_send_queue, Data, mac, transaction);
+                break;
+            }
+        }
     }
 }
