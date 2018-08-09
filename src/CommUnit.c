@@ -58,7 +58,7 @@ void *CommUnit_routine(){
     //init_buffer(sendToServer);
     //init_buffer(recieveFromServer);
 
-    //when initialization completes,
+    /* When initialization completes */
     CommUnit_initialization_complete = true;
 
     //wait for NSI get ready
