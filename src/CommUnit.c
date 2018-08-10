@@ -258,7 +258,7 @@ void generate_command(const char *command, const char *type){
     }
     else{
         for(int i =0; i<=MAX_ERROR_CODE; i++){
-            if(beacon_address[i].beacon_uuid == type){
+            if(beacon_address[i].network_address == type){
                 char *mac = beacon_address[i].mac_addr;
                 transaction = mac;
                 strcat(transaction,command);

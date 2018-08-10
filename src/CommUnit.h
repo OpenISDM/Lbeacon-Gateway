@@ -192,15 +192,29 @@ extern pkt_ptr pkt_recv_queue;
 extern struct xbee *xbee;
 extern struct xbee_con *con;
 
+extern ErrorCode startThread(pthread_t threads, void * (*thfunct)(void*), void *arg);
+
 /*
 *  CommUnit_routine:
+*
+*  The function held all packets sent and recieved from server and beacon
+*  after NSI module initializes UDP and ZigBee network setup.
+*
+*  Parameters:
+*
+*  Node
+*
+*  Return value:
+*
+*  None
 */
 void *CommUnit_routine();
 
 /*
 *  init_buffer:
 *
-*
+*  The function fills the attributes of buffer storing the packets between
+*  gateway and server.
 *
 *  Parameters:
 *
@@ -213,17 +227,48 @@ void *CommUnit_routine();
 void init_buffer(Buffer buffer);
 
 /*
+*  buffer_dequeue:
 *
+*
+*
+*  Parameters:
+*
+*  buffer - 
+*
+*  Return value:
+*
+*  None
 */
 void *buffer_dequeue(Buffer buffer);
 
 /*
+*  buffer_enqueue:
 *
+*
+*
+*  Parameters:
+*
+*  buffer -
+*  *item -
+*
+*  Return value:
+*
+*  None
 */
 void buffer_enqueue(Buffer buffer, FILE *item);
 
 /*
+*  is_buffer_empty:
 *
+*
+*
+*  Parameters:
+*
+*  buffer - 
+*
+*  Return value:
+*
+*  None
 */
 bool is_buffer_empty(Buffer buffer);
 

@@ -142,7 +142,7 @@ void *NSI_routine(){
     // finish phase 2 initialization (in ways TBD)
     NSI_initialization_complete = true;
     
-     // wait for other components to complete initialization
+    // wait for other components to complete initialization
     while ( (system_is_shutting_down == false) &&
     (ready_to_work == false))
     {
