@@ -65,8 +65,8 @@
 #include <unistd.h>
 #include "CommUnit.h"
 
-/* The time intervial between each beacon health self-testing */
-#define PERIOD_TO_MONITOR 1000*100
+/* The gernal timeout for waiting */
+#define TIMEOUT 3000
 
 /* server IP address */
 #define SERVER "127.0.0.1"
@@ -103,7 +103,34 @@ int beacon_count;
 // NSI is the only writer of beacon_address; it has many readers.
 bool Beacon_address_lock;
 
-bool health_report[MAX_NUMBER_NODES];
+
+
+/*
+* TYPEDEF STRUCTS
+*/
+
+typedef struct{
+
+  char X_coordinates[COORDINATE_LENGTH];
+  char Y_coordinates[COORDINATE_LENGTH];
+  char Z_coordinates[COORDINATE_LENGTH];
+
+}Coordinates;
+
+
+/* A struct linking network address assigned to a LBeacon to its UUID, 
+   corrnidate , and location description. */
+typedef struct{
+
+  char network_address[NETWORK_ADD_LENGTH];
+  char beacon_uuid[UUID_LENGTH];
+  char *mac_addr;
+  Coordinates beacon_coordinates;
+  char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
+
+
+
+}Address_map;
 
 
 
@@ -112,32 +139,7 @@ struct sockaddr_in si_other;
 int s, i, slen=sizeof(si_other);
 bool wifi_is_ready;
 
-/* ZigBee API Variables */
-struct xbee *xbee;
 
-struct xbee_con *con;
-
-/* The address stored the destination MAC of xbee */
-struct xbee_conAddress address;
-
-/* The setting for xbee */
-struct xbee_conSettings settings;
-
-
-/* A variable txRet get Tx return value */
-unsigned char txRet;
-
-const char *xbee_mode = "xbeeZB";
-
-char *xbee_device = "/dev/ttyAMA0";
-
-int xbee_baudrate = 9600;
-
-//A 64-bit extended PAN ID for join Network
-char *PAN_ID = "0000000000000000";
-
-//0:disable Log, 100:enable Log
-int LogLevel = 100;
 
 // A flag to indicate if all part of address are get. 
 // 3 send first address 
@@ -211,6 +213,22 @@ void *NSI_routine();
 *  O
 */
 void *address_map_manager();
+
+/*
+*  CommUnit_routine:
+*
+*  The function held all packets sent and recieved from server and beacon
+*  after NSI module initializes UDP and ZigBee network setup.
+*
+*  Parameters:
+*
+*  Node
+*
+*  Return value:
+*
+*  None
+*/
+void *CommUnit_routine();
 
 /*
 *  beacon_join_request:

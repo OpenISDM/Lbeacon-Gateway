@@ -47,67 +47,7 @@
 
 #include "CommUnit.h"
 
-void *CommUnit_routine(){
 
-    //Buffer sendToBeacon.name = "sendToBeacon";
-    //Buffer recieveFromBeacon.name = "recieveFromBeacon";
-    //Buffer sendToServer.name = "sendToServer"; 
-    //Buffer recieveFromServer.name = "recieveFromServer";
-
-    /* When initialization completes */
-    CommUnit_initialization_complete = true;
-
-    //wait for NSI get ready
-    while(!zigbee_is_ready){
-        sleep(A_LONG_TIME);
-    }
-    
-    
-
-    pthread_t wifi_receiver_thread;
-    /* Rename it to prevent from getting confused with the one in
-    main thread */
-    return_error_value = startThread(wifi_receiver_thread, wifi_receiver, NULL);
-
-    if(return_error_value != WORK_SCUCESSFULLY){
-
-        perror(errordesc[E_START_THREAD].message);
-    }
-
-    pthread_t wifi_sender_thread;
-    return_error_value = startThread(wifi_sender_thread, wifi_sender, NULL);
-
-    if(return_error_value != WORK_SCUCESSFULLY){
-
-        perror(errordesc[E_START_THREAD].message);
-    }
-
-    pthread_t zigbee_receiver_thread;
-    return_error_value = startThread(zigbee_receiver_thread, zigbee_receiver, NULL);
-
-    if(return_error_value != WORK_SCUCESSFULLY){
-
-        perror(errordesc[E_START_THREAD].message);
-
-    }
-    pthread_t zigbee_sender_thread;
-    return_error_value = startThread(zigbee_sender_thread, zigbee_sender, NULL);
-
-    if(return_error_value != WORK_SCUCESSFULLY){
-
-        perror(errordesc[E_START_THREAD].message);
-    }
-
-    while (system_is_shutting_down == false) {
-        //   do a chunk of work and/or sleep for a short time
-
-        /* If both Zigbee queue and UDP queue are empty then sleep 
-        a short time*/
-
-        if(1) sleep(A_SHORT_TIME);
-        
-        }
- }
 
 void init_buffer(Buffer buffer){
     //clear the buffer by filling null, it might have previously received data
