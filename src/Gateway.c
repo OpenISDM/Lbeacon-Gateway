@@ -1,46 +1,47 @@
 /*
-* Copyright (c) 2016 Academia Sinica, Institute of Information Science
-*
-* License:
-*
-*      GPL 3.0 : The content of this file is subject to the terms and
-*      cnditions defined in file 'COPYING.txt', which is part of this source
-*      code package.
-*
-* Project Name:
-*
-*      BeDIPS
-*
-* File Description:
-*
-*      This file contains the program to transmit the data or information from
-*      LBeacons through Zigbee or UDP. Main tasks includes network setup and 
-*      initialization, Beacon health monitor and comminication unit. Gateway 
-*      takes the role as coordinator.
-*
-* File Name:
-*
-*      Gateway.c
-*
-* Abstract:
-*
-*      BeDIPS uses LBeacons to deliver 3D coordinates and textual
-*      descriptions of their locations to users' devices. Basically, a
-*      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
-*      coordinates and location description of every LBeacon are retrieved
-*      from BeDIS (Building/environment Data and Information System) and
-*      stored locally during deployment and maintenance times. Once
-*      initialized, each LBeacon broadcasts its coordinates and location
-*      description to Bluetooth enabled user devices within its coverage
-*      area.
-*
-* Authors:
-*
-*      Han Wang, hollywang@iis.sinica.edu.tw
-*      Jake Lee, jakelee@iis.sinica.edu.tw
-*      Johnson Su, johnsonsu@iis.sinica.edu.tw
-*      Hank Kung, hank910140@gmail.com
-*      
+ Copyright (c) 2016 Academia Sinica, Institute of Information Science
+
+ License:
+
+      GPL 3.0 : The content of this file is subject to the terms and
+      cnditions defined in file 'COPYING.txt', which is part of this source
+      code package.
+
+ Project Name:
+
+      BeDIPS
+
+ File Description:
+
+      This file contains the program to transmit the data or information from
+      LBeacons through Zigbee or UDP. Main tasks includes network setup and 
+      initialization, Beacon health monitor and comminication unit. Gateway 
+      takes the role as coordinator.
+
+ File Name:
+
+      Gateway.c
+
+ Abstract:
+
+      BeDIPS uses LBeacons to deliver 3D coordinates and textual
+      descriptions of their locations to users' devices. Basically, a
+      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
+      coordinates and location description of every LBeacon are retrieved
+      from BeDIS (Building/environment Data and Information System) and
+      stored locally during deployment and maintenance times. Once
+      initialized, each LBeacon broadcasts its coordinates and location
+      description to Bluetooth enabled user devices within its coverage
+      area.
+
+ Authors:
+
+      Han Wang, hollywang@iis.sinica.edu.tw
+      Jake Lee, jakelee@iis.sinica.edu.tw
+      Johnson Su, johnsonsu@iis.sinica.edu.tw
+      Hank Kung, hank910140@gmail.com
+      Ray Chao, raychao5566@gmail.com
+      
 */
 
 
@@ -48,97 +49,56 @@
 
 
 
-long long get_system_time() {
-    /* A struct that stores the time */
-    struct timeb t;
-
-    /* Return value as a long long type */
-    long long system_time;
-
-    /* Convert time from Epoch to time in milliseconds of a long long type */
-    ftime(&t);
-    system_time = 1000 * t.time + t.millitm;
-
-    return system_time;
-}
-
 /* coordinator initializes the zigbee network:
 - if (PAN ID == 0) scan nearby network and chooses a PAN ID;
 - channel scan to find a good operating channel;
 - ready to access join requests from Lbeacons;
 - Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h */
-void *NSI_routine(){
+void initialize_network(){
 
-    int beacon_count = 0;
-    wifi_is_ready = false;
-    zigbee_is_ready = false;
-    
-    /* UDP connection starts */
-    Buffer sendToServer;
-    sendToServer.name = "sendToServer"; 
-    Buffer recieveFromServer;
-    recieveFromServer.name = "recieveFromServer";
 
+    int status; 
+
+    /* Initialize two buffer for sever*/
     init_buffer(sendToServer);
     init_buffer(recieveFromServer);
-    if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-    {
-        printf("Wrong Socket");
-    }
 
-    memset((char *) &si_other, 0, sizeof(si_other));
-    si_other.sin_family = AF_INET;
-    si_other.sin_port = htons(PORT);
-     
-    if (inet_aton(SERVER, &si_other.sin_addr) == 0) 
-    {
-        fprintf(stderr, "inet_aton() failed\n");
-        exit(1);
-    }
+    /* Initialize two buffers for LBeacon */
+    init_buffer(sendToBeacon);
+    init_buffer(recieveFromBeacon);
+    
 
-    // Make sure WiFi has been correctly configured ....
-    int ping_ret, status;
+    /* set up WIFI connection */
+    /* open temporary wpa_supplicant.conf file to setup wifi environment*/
+    FILE *cfgfile = fopen("/etc/wpa_supplicant/wpa_supplicant.conf ","w");
+    fwrite(*cfgfile,"ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+                update_config=1
+                country=CN
+                network={
+                ssid="Wifi_ssid"
+                psk="passphrasehere"
+                priority=5
+                }");
+    
+    fclose(*cfgfile);
+    /* check if WiFi is connected .... */
     status = system("ping google.com");
-    if (-1 != status)
-        ping_ret = WEXITSTATUS(status);
+    if (-1 != status){
+        printf("Wifi is not connected....\n")
+        system("sudo reboot");
+            return;
+    }
+
+    /* wifi connection is completed, set the flag wifi_is_ready to true */
     wifi_is_ready = true;
 
-    /* xbee connection starts */
-    init_Packet_Queue(pkt_send_queue);
-    init_Packet_Queue(pkt_recv_queue);
-    xbee_err xbee_initial(xbee_mode, xbee_device, xbee_baudrate
-                            , LogLevel, &xbee, pkt_queue);
-    printf("Start establishing Connection to xbee\n");
-    /*--------------Configuration for connection in Data mode----------------*/
-    /* In this mode we aim to get Data.                                      */
-    /*-----------------------------------------------------------------------*/
-    printf("Establishing Connection...\n");
-    xbee_err xbee_connector(&xbee, &con, pkt_queue);
-
-    printf("Connection Successfully Established\n");
-
-    /* Start the chain reaction!                                             */
-    if((ret = xbee_conValidate(con)) != XBEE_ENONE){
-        xbee_log(xbee, 1, "con unvalidate ret : %d", ret);
-        //return ret;
-    }
+    /* Initialize Zigbee, after finishing, set the flag zigbee_is_ready to 
+       true */   
     zigbee_is_ready = true;
 
     /* ZigBee connection done */
 
 
-     /* initialize beacon_address []
-     - enter a 16-bit network address in each address_map struct in the array
-     .....
-     // start a thread to maintain beacon_address map. The thread
-     // should also check system_is_shutting_down flag periodically
-     // and returns when it finds the flag is true.*/
-     pthread_t addr_map_manager_thread;
-    if (startThread (addr_map_manager_thread,address_map_manager(),NULL) != WORK_SCUCESSFULLY) {
-         printf("addrss_map_manager initialization failed\n");
-         initialization_failed = true;
-         //NSIcleanupExit( );
-    }
     // finish phase 2 initialization (in ways TBD)
     NSI_initialization_complete = true;
     
@@ -164,7 +124,7 @@ void *NSI_routine(){
     
 }
 
-void *address_map_manager(){
+void *address_map_manager(){ 
 
     beacon_count = 1;
     //gateway info
@@ -186,13 +146,9 @@ void *address_map_manager(){
 
 void *CommUnit_routine(){
 
-    //Buffer sendToBeacon.name = "sendToBeacon";
-    //Buffer recieveFromBeacon.name = "recieveFromBeacon";
-    //Buffer sendToServer.name = "sendToServer"; 
-    //Buffer recieveFromServer.name = "recieveFromServer";
 
     /* When initialization completes */
-    CommUnit_initialization_complete = true;
+    Network_initialization_complete = true;
 
     //wait for NSI get ready
     while(!zigbee_is_ready){
@@ -200,35 +156,45 @@ void *CommUnit_routine(){
     }
     
     
-
+    /* Create four subthreads for sending and receiving data from or to 
+       LBeacon and server */
+    /* This subthread is created to receive the data form sever via wifi */    
     pthread_t wifi_receiver_thread;
-    /* Rename it to prevent from getting confused with the one in
-    main thread */
-    return_error_value = startThread(wifi_receiver_thread, wifi_receiver, NULL);
+
+    return_error_value = startThread(wifi_receiver_thread, 
+                                     wifi_receiver, NULL);
 
     if(return_error_value != WORK_SCUCESSFULLY){
 
         perror(errordesc[E_START_THREAD].message);
     }
-
+    
+    /* This subthread is created to send the data to sever via wifi */
     pthread_t wifi_sender_thread;
-    return_error_value = startThread(wifi_sender_thread, wifi_sender, NULL);
+    return_error_value = startThread(wifi_sender_thread, 
+                                     wifi_sender, NULL);
 
     if(return_error_value != WORK_SCUCESSFULLY){
 
         perror(errordesc[E_START_THREAD].message);
     }
 
+    /* This subthread is created to receive the data from LBeacon via 
+       zigbee */
     pthread_t zigbee_receiver_thread;
-    return_error_value = startThread(zigbee_receiver_thread, zigbee_receiver, NULL);
+    return_error_value = startThread(zigbee_receiver_thread, 
+                                     zigbee_receiver, NULL);
 
     if(return_error_value != WORK_SCUCESSFULLY){
 
         perror(errordesc[E_START_THREAD].message);
 
     }
+    /* This subthread is created to send the data to LBeacon via 
+       zigbee */
     pthread_t zigbee_sender_thread;
-    return_error_value = startThread(zigbee_sender_thread, zigbee_sender, NULL);
+    return_error_value = startThread(zigbee_sender_thread, 
+                                     zigbee_sender, NULL);
 
     if(return_error_value != WORK_SCUCESSFULLY){
 
@@ -236,7 +202,6 @@ void *CommUnit_routine(){
     }
 
     while (system_is_shutting_down == false) {
-        //   do a chunk of work and/or sleep for a short time
 
         /* If both Zigbee queue and UDP queue are empty then sleep 
         a short time*/
@@ -246,24 +211,6 @@ void *CommUnit_routine(){
         }
  }
 
-
-void beacon_join_request(int index, char *ID, char *mac, Coordinates Beacon_Coordinates,
-                         char *Loc_Description, char *Barcode){
-    char *addr;
-    int2str(index,addr);
-    strcpy(beacon_address[index].network_address, addr);
-    strcpy(beacon_address[index].beacon_uuid, ID);
-    strcpy(beacon_address[index].mac_addr, mac);
-    strcpy(beacon_address[index].loc_description, Loc_Description);
-    strcpy(beacon_address[index].beacon_coordinates.X_coordinates, 
-                                Beacon_Coordinates.X_coordinates);
-    strcpy(beacon_address[index].beacon_coordinates.Y_coordinates, 
-                                Beacon_Coordinates.Y_coordinates);
-    strcpy(beacon_address[index].beacon_coordinates.Z_coordinates, 
-                                Beacon_Coordinates.Z_coordinates);
-    strcpy(beacon_address[index].barcode, Barcode);
-
-}
 
 void *BHM_routine(){
 
@@ -300,9 +247,7 @@ ErrorCode startThread(pthread_t threads ,void * (*thfunct)(void*), void *arg){
 
 }
 
-void int2str(int num, char *str){
-    sprintf(str, "%d", num);
-}
+
 
 void cleanup_exit(){
 
@@ -322,6 +267,8 @@ int main(int argc, char **argv)
     NSI_initialization_complete = false;
     BHM_initialization_complete = false;
     CommUnit_initialization_complete = false;
+    wifi_is_ready = false;
+    zigbee_is_ready = false;
 
     int return_value;
 

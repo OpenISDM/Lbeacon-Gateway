@@ -68,12 +68,19 @@
 /* The gernal timeout for waiting */
 #define TIMEOUT 3000
 
-/* server IP address */
-#define SERVER "127.0.0.1"
+/* Maximum number of nodes (LBeacons) per star network */
+#define MAX_NUMBER_NODES 32
 
-/* Gateway IP address*/
-#define PORT 8000
+/*Length of the beacon's UUID*/
+#define UUID_LENGTH 32
 
+/*Length of the address of the network */
+#define NETWORK_ADD_LENGTH 16
+
+/* Maximum number of characters in location description*/
+#define MAX_LENGTH_LOC_DESCRIPTION  64
+
+#define COORDINATE_LENGTH 64
 /*
 * GLOBAL VARIABLES
 */
@@ -103,6 +110,9 @@ int beacon_count;
 // NSI is the only writer of beacon_address; it has many readers.
 bool Beacon_address_lock;
 
+bool wifi_is_ready;
+/* Flag to state the connection of xbee */
+bool zigbee_is_ready;
 
 
 /*
@@ -122,7 +132,6 @@ typedef struct{
    corrnidate , and location description. */
 typedef struct{
 
-  char network_address[NETWORK_ADD_LENGTH];
   char beacon_uuid[UUID_LENGTH];
   char *mac_addr;
   Coordinates beacon_coordinates;
@@ -132,66 +141,45 @@ typedef struct{
 
 }Address_map;
 
+/* An array of address maps */
+Address_map beacon_address[MAX_NUMBER_NODES];
 
 
-/* UDP Socket Set Up */
-struct sockaddr_in si_other;
-int s, i, slen=sizeof(si_other);
-bool wifi_is_ready;
-
-
-
-// A flag to indicate if all part of address are get. 
-// 3 send first address 
-// 2 send second address 
-// 0 success
-
-enum{finish, wait_SL, wait_SH, start};
-int get_address = start;
-
-char* Local_Address;
-
-/* sending and recieving queue of gateway to beacons */
-pkt_ptr pkt_send_queue = NULL;
-pkt_ptr pkt_recv_queue = NULL;
-
-/* Flag to state the connection of xbee */
-bool zigbee_is_ready;
 
 /* FUNCTIONS */
 
 /*
-*  get_system_time:
-*
-*  This helper function fetches the current time according to the system
-*  clock in terms of the number of milliseconds since January 1, 1970.
-*
-*  Parameters:
-*
-*  None
-*
-*  Return value:
-*
-*  system_time - system time in milliseconds
+  get_system_time:
+
+  This helper function fetches the current time according to the system
+  clock in terms of the number of milliseconds since January 1, 1970.
+
+  Parameters:
+
+  None
+
+  Return value:
+
+  system_time - system time in milliseconds
 */
 long long get_system_time();
 
 /*
-*  NSI_routine:
-*
-*  Coordinator initializes the zigbee network:
-*  if (PAN ID == 0) scan nearby network and chooses a PAN ID;
-*  channel scan to find a good operating channel;
-*  ready to access join requests from Lbeacons;
-*  Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h 
-*
-*  Parameters:
-*
-*  None
-*
-*  Return value:
-*
-*  None
+  NSI_routine:
+
+  Coordinator initializes the zigbee network:
+  if (PAN ID == 0) scan nearby network and chooses a PAN ID;
+  channel scan to find a good operating channel;
+  ready to access join requests from Lbeacons;
+  Set up Zigbee connection by calling Zigbee_routine in LBeacon_Zigbee.h 
+
+  Parameters:
+
+  None
+
+  Return value:
+
+  None
 */
 void *NSI_routine();
 
@@ -230,26 +218,7 @@ void *address_map_manager();
 */
 void *CommUnit_routine();
 
-/*
-*  beacon_join_request:
-*  This function is executed when a beacon sends command to join the gateway
-*  and fills the table with the inputs. Set the network_address according
-*  the current number of beacons.
-*
-*  Parameters:
-*
-*  index - index of the address map table
-*  *ID - 
-*  *Coordinates - Pointerto the beacon GPS coordinates 
-*  *Loc_Description - Pointer to the beacon literal location description
-*  *Barcode - Pointer to the beacon Barcode 
-*
-*  Return value:
-*
-*  None
-*/
-void beacon_join_request(int index, char *ID, char *mac, Coordinates Beacon_Coordinates,
-                         char *Loc_Description, char *Barcode);
+
 
 /*
 *  BHM_routine:

@@ -49,6 +49,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include "xbee_API.h"
 
 #ifndef CommUnit_H
@@ -60,21 +62,15 @@
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
 
-/* Maximum number of nodes (LBeacons) per star network */
-#define MAX_NUMBER_NODES 32
 
-/*Length of the beacon's UUID*/
-#define UUID_LENGTH 32
 
-/*Length of the address of the network */
-#define NETWORK_ADD_LENGTH 16
 
-/* Maximum number of characters in location description*/
-#define MAX_LENGTH_LOC_DESCRIPTION  64
 
-#define COORDINATE_LENGTH 64
+/* server IP address */
+#define SERVER "140.114.71.26"
 
-#define BARCODE_SIZE 64
+/* Gateway IP address*/
+#define PORT 3306
 
 
 /* A buffer head for receiving and getting content from LBeacon or server */
@@ -83,6 +79,7 @@ typedef struct buffer{
     bool is_locked;
     bool is_empty;
 }BufferHead;
+
 
 /*
 *   Variables
@@ -227,7 +224,27 @@ void *zigbee_receiver(Buffer buffer);
 */
 void *zigbee_sender(Buffer buffer);
 
+/*
+*  beacon_join_request:
+*  This function is executed when a beacon sends command to join the gateway
+*  and fills the table with the inputs. Set the network_address according
+*  the current number of beacons.
+*
+*  Parameters:
+*
+*  index - index of the address map table
+*  *ID - 
+*  *Coordinates - Pointerto the beacon GPS coordinates 
+*  *Loc_Description - Pointer to the beacon literal location description
+*  *Barcode - Pointer to the beacon Barcode 
+*
+*  Return value:
+*
+*  None
+*/
+void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
+                         char *Loc_Description);
 
-void generate_command(const char *command, const char *type);
+
 
 #endif
