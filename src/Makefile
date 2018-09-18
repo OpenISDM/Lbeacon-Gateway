@@ -1,25 +1,22 @@
 # Gateway
 #---------------------------------------------------------------------------
 CC = gcc
-OBJS = Gateway.o Utilities.o LinkedList.o
-CFLAGS = -g
-LIB = -L/usr/local/lib
+OBJS =  Utilities.o LinkedList.o pkt_Queue.o xbee_Serial.o xbee_API.o
+CFLAGS = -std=gnu99
 
 #---------------------------------------------------------------------------
 all: Gateway
 Gateway: $(OBJS)
-	$(CC) $(OBJS) $(CFLAGS) -o Gateway $(LIB) -lrt -lpthread -lmulticobex -lbfb -lbluetooth -lobexftp -lopenobex
-Gateway.o: Gateway.c Gateway.h
-	$(CC) Gateway.c $(CFLAGS) $(LIB) -c
+	$(CC) $(CFLAGS) $(OBJS) Gateway.c Gateway.h -o Gateway -lxbee -lrt -lpthread -lmulticobex -lbfb -lbluetooth -lobexftp -lopenobex
 Utilities.o: Utilities.c Utilities.h
-	$(CC) Utilities.c $(CFLAGS) $(LIB) -c
+	$(CC) $(CFLAGS) Utilities.c Utilities.h -c
 LinkedList.o: LinkedList.c LinkedList.h
-	$(CC) LinkedList.c $(CFLAGS) $(LIB) -c
+	$(CC) $(CFLAGS) LinkedList.c -c
 pkt_Queue.o: pkt_Queue.c pkt_Queue.h
-	$(CC) pkt_Queue.c pkt_Queue.h -lxbee -c
+	$(CC) $(CFLAGS) pkt_Queue.c pkt_Queue.h -c
 xbee_Serial.o: xbee_Serial.c xbee_Serial.h
-	$(CC) xbee_Serial.c xbee_Serial.h -c
+	$(CC) $(CFLAGS) xbee_Serial.c xbee_Serial.h -c
 xbee_API.o: xbee_API.c xbee_API.h
-	$(CC) xbee_API.c xbee_API.h  -lxbee -c
+	$(CC) $(CFLAGS) xbee_API.c xbee_API.h -c
 clean:
-	@rm -rf *.o
+	rm -f *.o *.out *.h.gch

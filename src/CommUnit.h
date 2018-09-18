@@ -13,16 +13,16 @@
 
  File Description:
 
-       Communication unit: In the alpha version,the sole function of this 
-       component is to support the communication of NSI and BHM with location 
+       Communication unit: In the alpha version,the sole function of this
+       component is to support the communication of NSI and BHM with location
        beacons and the BeDIS server. (In a later version that contains iGaD,
-       this components also receives commands from iGaD in the gateway and 
-       the BeDIS server and broadcasts the commands tolocal LBeacons.) 
-       Messages exchange happens in CommUnit. This file contain the 
-       formats of every kind of message and the buffers which store 
-       messages.And provide with functions which are executed according 
+       this components also receives commands from iGaD in the gateway and
+       the BeDIS server and broadcasts the commands tolocal LBeacons.)
+       Messages exchange happens in CommUnit. This file contain the
+       formats of every kind of message and the buffers which store
+       messages.And provide with functions which are executed according
        the messages received.
-       
+
  File Name:
 
      CommUnit.h
@@ -40,11 +40,11 @@
       area.
 
  Authors:
- 
-    Han Wang, hollywang@iis.sinica.edu.tw
+
+	  Han Wang, hollywang@iis.sinica.edu.tw
       Hank Kung, hank910140@gmail.com
-    Ray Chao, raychao5566@gmail.com
-      
+	  Ray Chao, raychao5566@gmail.com
+
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,13 +59,13 @@
 #ifndef CommUnit_H
 #define CommUnit_H
 
-/* 
-* CONSTANTS 
+/*
+* CONSTANTS
 */
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
 
-
+#define COORDINATE_LENGTH 64
 
 /* server IP address */
 #define SERVER "140.114.71.26"
@@ -81,16 +81,23 @@ typedef struct Buffer{
     bool is_empty;
 } BufferHead;
 
-/* A node of buffer to store received data. Each node has its mac address of 
+/* A node of buffer to store received data. Each node has its mac address of
    source Beacon and the content */
 typedef struct BufferNode{
-    
+
     struct List_Entry buffer_entry;
     char *mac_addr;
     char *content;
-    
+
 } BufferNode;
 
+typedef struct{
+
+  char X_coordinates[COORDINATE_LENGTH];
+  char Y_coordinates[COORDINATE_LENGTH];
+  char Z_coordinates[COORDINATE_LENGTH];
+
+}Coordinates;
 
 /*
    VARIBLES
@@ -99,8 +106,8 @@ typedef struct BufferNode{
 /* A buffer for storing the command message received from the sever. */
 BufferHead recieveFromServer;
 
-/* Two buffer lists storing the track data or health report received 
-   from the LBeacons. The content in this buffer is waiting to be 
+/* Two buffer lists storing the track data or health report received
+   from the LBeacons. The content in this buffer is waiting to be
    sent to the sever */
 BufferHead buffer_track_list, buffer_health_list;
 
@@ -120,61 +127,61 @@ BufferHead buffer_track_list, buffer_health_list;
 
   None
 */
-void init_buffer(Buffer buffer);
+void init_buffer(BufferHead buffer);
 
 
 
 /*
   wifi_reciever:
 
-  This function listens the request or command received from the 
-  sever. After getting the message, push the data in to the buffer.
+	This function listens the request or command received from the
+	sever. After getting the message, push the data in to the buffer.
 
   Parameters:
 
-  None
+ 	None
 
   Return value:
 
-    None
+  	None
 */
-void *wifi_receiver(Buffer buf);
+void *wifi_receiver(BufferHead buf);
 
 /*
   wifi_sender:
-  
-  This function sends the file to the sever via wifi
+
+	This function sends the file to the sever via wifi
 
   Parameters:
 
-    file_name - the file name that is assigned to be sent to the sever
+  	file_name - the file name that is assigned to be sent to the sever
 
   Return value:
 
-    None
+  	None
 */
 void sned_via_wifi(char *file_name);
 
 
 /*
   beacon_join_request:
-    
-    This function is executed when a beacon sends command to join the gateway
-    and fills the table with the inputs. Set the network_address according
-    the current number of beacons.
+
+  	This function is executed when a beacon sends command to join the gateway
+  	and fills the table with the inputs. Set the network_address according
+  	the current number of beacons.
 
   Parameters:
 
-  
-    ID - The UUIzd of the LBeacon
-    mac - The mac address of the xbee 
-    Coordinates - Pointerto the beacon coordinates 
-    Loc_Description - Pointer to the beacon literal location description
-  
+
+  	ID - The UUIzd of the LBeacon
+  	mac - The mac address of the xbee
+  	Coordinates - Pointerto the beacon coordinates
+  	Loc_Description - Pointer to the beacon literal location description
+
 
   Return value:
 
-    None
+  	None
 
 */
 void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
@@ -182,15 +189,15 @@ void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
 
 /*
   zigbee_init:
-    
-    This function initilizes the zigbee's necessory object.  
-  
+
+    This function initilizes the zigbee's necessory object.
+
   Parameters:
-    
+
     zigbee - the struct of necessary parameter and data
-  
+
   Return value:
-    
+
     int: The error code for the corresponding error or successful
 
 */
@@ -198,15 +205,15 @@ int zigbee_init();
 
 /*
   zigbee_free:
-    
+
     When called, this function frees the necessory element.
-  
+
   Parameters:
-    
+
     zigbee - the struct of necessary parameter and data
-  
+
   Return value:
-    
+
     none
 */
 void zigbee_free();
