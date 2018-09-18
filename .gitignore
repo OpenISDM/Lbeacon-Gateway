@@ -34,3 +34,6 @@
 
 *.DS_Store
 *.vscode
+
+# Backup file
+*.bak
