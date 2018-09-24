@@ -82,9 +82,88 @@
 /* Maximum number of characters in location description*/
 #define MAX_LENGTH_LOC_DESCRIPTION  64
 
+
+
+
 /*
- * GLOBAL VARIABLES
+  TYPEDEF STRUCTS
+*/
+
+/* The configuration file structure */
+
+typedef struct Config {
+   
+   /* The number of LBeacon nodes in the star network of this gateway */
+   int allowed_number_of_nodes;
+
+   /* The flag is true when health reports from LBeacon are requested by the
+   BeDIS sever. */
+   bool is_health_reporting_polled;
+
+   /* The time period for gateway sending requests to LBeacon */
+   int period_between_RFHR;
+
+   /* The number of worker threads used by the communication unit for sending
+   and receiving packets to and from LBeacons and the sever. */
+   int number_worker_thread;
+
+   /* The number of priority levels at which worker threads execute. */
+   int number_priority_levels;
+    
+
+} GatewayConfig;
+
+
+typedef struct{
+
+  char X_coordinates[COORDINATE_LENGTH];
+  char Y_coordinates[COORDINATE_LENGTH];
+  char Z_coordinates[COORDINATE_LENGTH];
+
+}Coordinates;
+
+
+/* A struct linking network address assigned to a LBeacon to its UUID,
+   corrnidate , and location description. */
+typedef struct{
+
+  char beacon_uuid[UUID_LENGTH];
+  char* mac_addr;
+  Coordinates beacon_coordinates;
+  char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
+
+}Address_map;
+
+
+/* A node of buffer to store received data. Each node has its mac address of
+   source Beacon and the content */
+typedef struct BufferNode{
+
+    struct List_Entry buffer_entry;
+    char *net_address; /* zigbee network address */
+    char *content;
+
+} BufferNode;
+
+
+/* A buffer head for receiving and getting content from LBeacon or server */
+typedef struct buffer_list_head{
+    
+    struct List_Entry buffer_entry;
+    pthread_mutex_t list_lock; /* A per list lock */
+    int num_in_list; /* Current number of msg buffers in the list */
+
+} BufferListHead;
+
+
+
+/*
+  GLOBAL VARIABLES
  */
+
+/* Gateway config struct */
+GatewayConfig config;
+
 
 /* A global flag that is initially false and is set nby main thread to ture
  * when initialization completes Afterward, the flag is used by other threads
@@ -99,24 +178,40 @@ bool ready_to_work;
  */
 bool NSI_initialization_complete;
 
-//current number of beacons
-int beacon_count;
+/* Message buffer list heads */
+BufferListHead per_LBeacon_buffer_list_head[MAX_NUMBER_NODES];
+BufferListHead NSI_receive_buffer_list_head;
+BufferListHead NSI_send_buffer_list_head;
+BufferListHead BHM_receive_buffer_list_head;
+BufferListHead BHM_send_buffer_list_head;
+BufferListHead Command_msg_buffer_list_head;
 
-/* A struct linking network address assigned to a LBeacon to its UUID,
-   corrnidate , and location description. */
-typedef struct{
-
-  char beacon_uuid[UUID_LENGTH];
-  char* mac_addr;
-  Coordinates beacon_coordinates;
-  char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
-
-}Address_map;
 
 /* An array of address maps */
 Address_map beacon_address[MAX_NUMBER_NODES];
 
+/* Current number of LBeacons */
+int LBeacon_count;
+
 /* FUNCTIONS */
+
+/*
+  get_config:
+
+      This function reads the specified config file line by line until the
+      end of file and copies the data in the lines into the GatewayConfig 
+      struct global variable.
+
+  Parameters:
+
+      file_name - the name of the config file that stores gateway data
+
+  Return value: 
+
+      config - GatewayConfig struct 
+*/
+
+GatewayConfig get_config(char *file_name);
 
 /*
   startThread:

@@ -46,6 +46,66 @@
 
 #include "Gateway.h"
 
+
+GatewayConfig get_config(char *file_name) {
+
+    /* Return value is a struct containing all config information */
+    GatewayConfig config;
+
+    FILE *file = fopen(file_name, "r");
+    if (file == NULL) {
+
+        /* Error handling */
+        perror(errordesc[E_OPEN_FILE].message);
+        zlog_info(category_health_report, 
+                  errordesc[E_OPEN_FILE].message);
+        cleanup_exit();
+        return;
+
+    }
+    else {
+    /* Create spaces for storing the string of the current line being read */
+    char config_setting[CONFIG_BUFFER_SIZE];
+    char *config_message[CONFIG_FILE_LENGTH];
+
+     /* Keep reading each line and store into the config struct */
+    fgets(config_setting, sizeof(config_setting), file);
+    config_message[0] = strstr((char *)config_setting, DELIMITER);
+    config_message[0] = config_message[0] + strlen(DELIMITER);
+    
+    config.allowed_number_of_nodes = atoi(config_message[0]);
+
+    fgets(config_setting, sizeof(config_setting), file);
+    config_message[1] = strstr((char *)config_setting, DELIMITER);
+    config_message[1] = config_message[1] + strlen(DELIMITER);
+    
+
+    fgets(config_setting, sizeof(config_setting), file);
+    config_message[2] = strstr((char *)config_setting, DELIMITER);
+    config_message[2] = config_message[2] + strlen(DELIMITER);
+    
+    config.period_between_RFHR = atoi(config_message[2]);
+
+    fgets(config_setting, sizeof(config_setting), file);
+    config_message[3] = strstr((char *)config_setting, DELIMITER);
+    config_message[3] = config_message[3] + strlen(DELIMITER);
+   
+    config.number_worker_thread = atoi(config_message[3]);
+
+    fgets(config_setting, sizeof(config_setting), file);
+    config_message[4] = strstr((char *)config_setting, DELIMITER);
+    config_message[4] = config_message[4] + strlen(DELIMITER);
+    
+    config.number_priority_levels = atoi(config_message[4]);
+
+
+    fclose(file);
+    }
+
+    return config;
+}
+
+
 void *Initialize_network(){
 
     printf("Enter Initialize_network\n");

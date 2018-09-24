@@ -135,30 +135,22 @@ typedef enum ErrorCode{
 //
 //};
 
-/* A buffer head for receiving and getting content from LBeacon or server */
-typedef struct buffer_list_head{
-    List_Entry buffer_entry;
-    bool is_locked;
-    bool is_empty;
-} BufferListHead;
+/*
+  TYPEDEF STRUCTS
+*/
 
-/* A node of buffer to store received data. Each node has its mac address of
-   source Beacon and the content */
-typedef struct BufferNode{
 
-    struct List_Entry buffer_entry;
-    char *mac_addr;
-    char *content;
-
-} BufferNode;
-
-typedef struct{
-
-  char X_coordinates[COORDINATE_LENGTH];
-  char Y_coordinates[COORDINATE_LENGTH];
-  char Z_coordinates[COORDINATE_LENGTH];
-
-}Coordinates;
+typedef enum pkt_types {
+  tracked_object_data = 1;
+  health_report = 2;
+  data_for_LBeacon = 3;
+  poll_for_tracked_object_data = 9;
+  RFHR_to_Lbeacons = 10;
+  poll_for_RFHR_from_sever = 11;
+  request_to_join = 12;
+  zigbee_network_control = 13;
+  maximum_type = 15;  
+} PktType;
 
 /*
    VARIBLES
