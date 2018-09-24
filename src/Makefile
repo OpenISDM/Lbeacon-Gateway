@@ -1,7 +1,7 @@
 # Gateway
 #---------------------------------------------------------------------------
 CC = gcc
-OBJS =  Utilities.o LinkedList.o pkt_Queue.o xbee_Serial.o xbee_API.o
+OBJS =  Utilities.o LinkedList.o Mempool.o pkt_Queue.o xbee_Serial.o xbee_API.o
 CFLAGS = -std=gnu99
 
 #---------------------------------------------------------------------------
@@ -12,6 +12,8 @@ Utilities.o: Utilities.c Utilities.h
 	$(CC) $(CFLAGS) Utilities.c Utilities.h -c
 LinkedList.o: LinkedList.c LinkedList.h
 	$(CC) $(CFLAGS) LinkedList.c -c
+Mempool.o: Mempool.c Mempool.h
+	$(CC) Mempool.c Mempool.h $(LIB) -c
 pkt_Queue.o: pkt_Queue.c pkt_Queue.h
 	$(CC) $(CFLAGS) pkt_Queue.c pkt_Queue.h -c
 xbee_Serial.o: xbee_Serial.c xbee_Serial.h
