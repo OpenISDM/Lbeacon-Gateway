@@ -41,145 +41,25 @@
 
  Authors:
 
-      Holly Wang, hollywang@iis.sinica.edu.tw
-      Ray Chao, raychao5566@gmail.com
+      Holly Wang    , hollywang@iis.sinica.edu.tw
+      Ray Chao      , raychao5566@gmail.com
+      Gary Xiao     , garyh0205@hotmail.com
 
 */
 
 #include "CommUnit.h"
 
+void init_buffer(BufferListHead buffer){
 
-
-void init_buffer(BufferHead buffer){
-
-    init_entry(buffer.buffer_entry);
+    init_entry(&(buffer.buffer_entry));
     buffer.is_locked = false;
     buffer.is_empty = true;
 }
 
-
-void *wifi_reciever(){
-
-    while (ready_to_work == true) {
-
-        /* Set up the network */
-        struct sockaddr_in server_address;
-        memset(&server_address, 0, sizeof(server_address));
-        server_address.sin_family = AF_INET;
-
-        /* creates binary representation of server name
-        /* and stores it as sin_addr*/
-        inet_pton(AF_INET, server_name, &server_address.sin_addr);
-
-        /* port in network order format */
-        server_address.sin_port = htons(server_port);
-
-        /* open socket */
-        int sock;
-        if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
-
-            printf("could not create socket\n");
-
-            return 1;
-
-        }
-        /* Recieving and sending have to be splited up into to threads, since
-        they are call back functions. It cost too much if they had to wait for
-        each other. And these two threads should not start in a while loop. */
-        if (recvfrom(...) == -1)
-        {
-            /* error in recieving the file */
-        }
-        /* Get the command from the sever, add the message or command to the
-           buffer */
-        Add_to_buffer(recieveFromServer);
-
-
-    }
-
-
-}
-
-void sned_via_wifi(char *file_name){
-
-    while (system_is_shutting_down == false) {
-
-        /* If two buffers are all empty, sleep for a while */
-        while(buffer_track_list.is_empty == true &&
-              buffer_health_list.is_empty == true){
-
-            sleep(A_SHORT_TIME);
-
-        }
-
-
-        /* set the destination server IP */
-        struct sockaddr_in server_address;
-        memset(&server_address, 0, sizeof(server_address));
-        server_address.sin_family = AF_INET;
-
-        /* creates binary representation of server name
-        /* and stores it as sin_addr*/
-        inet_pton(AF_INET, server_name, &server_address.sin_addr);
-
-        /* port in network order format */
-        server_address.sin_port = htons(server_port);
-
-        /* open socket */
-        int sock;
-
-        if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
-
-                    printf("could not create socket\n");
-                    return;
-
-        }
-
-
-
-        /* send data via sendto() function to send data to sever */
-        sendto(...);
-
-        /* received echoed data back for hand shacking with sever*/
-        recvfrom(...);
-
-
-
-        /* close the socket */
-        close(sock);
-
-
-
-    }
-
-
-}
-
-
-
-void beacon_join_request(char *ID, char *mac,
-                         Coordinates Beacon_Coordinates,
-                         char *Loc_Description){
-
-    /* Copy all the necessary information received from the LBeacon to the
-       address map. */
-    strcpy(beacon_address[index].beacon_uuid, ID);
-    strcpy(beacon_address[index].mac_addr, mac);
-    strcpy(beacon_address[index].loc_description, Loc_Description);
-    strcpy(beacon_address[index].beacon_coordinates.X_coordinates,
-                                Beacon_Coordinates.X_coordinates);
-    strcpy(beacon_address[index].beacon_coordinates.Y_coordinates,
-                                Beacon_Coordinates.Y_coordinates);
-    strcpy(beacon_address[index].beacon_coordinates.Z_coordinates,
-                                Beacon_Coordinates.Z_coordinates);
-
-
-
-}
-
-
-
 int zigbee_init(){
+
+    /* Struct for storing necessary objects for zigbee connection */
+    extern sxbee_config xbee_config;
 
     /* The error indicator returns from the libxbee library */
     int error_indicator;
@@ -204,55 +84,28 @@ int zigbee_init(){
 
     xbee_initial(&xbee_config);
 
-#ifdef Debugging
-
-    zlog_debug(category_debug, "Establishing Connection...");
-
-#endif
-
     xbee_connector(&xbee_config);
-
-
-#ifdef Debugging
-
-    zlog_debug(category_debug,
-               "Zigbee Connection Successfully Established");
-
-#endif
-
-    zlog_info(category_health_report,
-              "Zigbee Connection Successfully Established");
 
     /* Start the chain reaction                                             */
     if((error_indicator = xbee_conValidate(xbee_config.con)) != XBEE_ENONE){
 
-#ifdef Debugging
-
-        zlog_debug(category_debug, "con unvalidate ret : %d",
-                   error_indicator);
-
-#endif
-
-        perror(error_xbee[E_XBEE_VALIDATE].message);
-        zlog_info(category_health_report,
-                  error_xbee[E_XBEE_VALIDATE].message);
+        //perror(errordesc[E_XBEE_VALIDATE].message);
 
         return E_XBEE_VALIDATE;
     }
 
-    return WOEK_SUCCESSFULLY;
+    return WORK_SUCCESSFULLY;
 }
 
 
 
 void zigbee_free(){
 
+    /* Struct for storing necessary objects for zigbee connection */
+    extern sxbee_config xbee_config;
 
     /* Release the xbee elements and close the connection. */
     xbee_release(&xbee_config);
-
-    zlog_info(category_health_report,
-              "Stop Xbee connection Succeeded\n");
 
     return;
 

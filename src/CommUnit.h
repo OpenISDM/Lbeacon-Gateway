@@ -41,11 +41,13 @@
 
  Authors:
 
-	  Han Wang, hollywang@iis.sinica.edu.tw
-      Hank Kung, hank910140@gmail.com
-	  Ray Chao, raychao5566@gmail.com
+    Han Wang      , hollywang@iis.sinica.edu.tw
+      Hank Kung     , hank910140@gmail.com
+    Ray Chao      , raychao5566@gmail.com
+      Gary Xiao     , garyh0205@hotmail.com
 
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -53,6 +55,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "xbee_API.h"
 #include "LinkedList.h"
 
@@ -68,18 +71,76 @@
 #define COORDINATE_LENGTH 64
 
 /* server IP address */
-#define SERVER "140.114.71.26"
+//#define SERVER "140.114.71.26"
 
 /* Gateway IP address*/
-#define PORT 3306
+//#define PORT 3306
 
+#define XBEE_MODE "xbeeZB"
+
+#define XBEE_DEVICE "/dev/ttyAMA0"
+
+#define XBEE_DATASTREAM -1
+
+#define XBEE_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/xbee_config.conf"
+
+/* Struct for storing necessary objects for zigbee connection */
+sxbee_config xbee_config;
+
+/* ErrorCode */
+
+typedef enum ErrorCode{
+
+    WORK_SUCCESSFULLY = 0,
+    E_WIFI_CONNECT_FAIL = 1,
+    E_ZIGBEE_INIT_FAIL = 2,
+    E_XBEE_VALIDATE = 3,
+    E_START_COMMUNICAT_ROUTINE_THREAD = 4,
+    E_START_BHM_ROUTINE_THREAD = 5,
+    E_START_TRACKING_THREAD = 6,
+    E_START_THREAD = 7
+
+} ErrorCode;
+
+//struct errdesc {
+//    int code;
+//    char *message;
+//} errordesc[] = {
+//
+//    {WORK_SUCCESSFULLY, "The code works successfullly"},
+//    //{E_MALLOC, "Error allocating memory"},
+//    //{E_OPEN_FILE, "Error opening file"},
+//    //{E_OPEN_DEVICE, "Error opening the dvice"},
+//    //{E_OPEN_SOCKET, "Error opening socket"},
+//    //{E_SEND_OBEXFTP_CLIENT, "Error opening obexftp client"},
+//    //{E_SEND_CONNECT_DEVICE, "Error connecting to obexftp device"},
+//    //{E_SEND_PUSH_FILE, "Error pushing file to device"},
+//    //{E_SEND_DISCONNECT_CLIENT, "Disconnecting the client"},
+//    //{E_SCAN_SET_HCI_FILTER, "Error setting HCI filter"},
+//    //{E_SCAN_SET_INQUIRY_MODE, "Error settnig inquiry mode"},
+//    //{E_SCAN_START_INQUIRY, "Error starting inquiry"},
+//    //{E_SEND_REQUEST_TIMEOUT, "Sending request timeout"},
+//    //{E_ADVERTISE_STATUS, "LE set advertise returned status"},
+//    //{E_ADVERTISE_MODE, "Error setting advertise mode"},
+//    {E_START_THREAD, "Error start thread"},
+//    {E_START_COMMUNICAT_ROUTINE_THREAD, "Error start CommUnit reoutine thread"},
+//    {E_START_BHM_ROUTINE_THREAD, "Error start BHM routine thread"},
+//    {E_START_TRACKING_THREAD, "Error start Tracking thread"},
+//    //{E_INIT_THREAD_POOL, "Error initializing thread pool"},
+//    //{E_INIT_ZIGBEE, "Error initializing the zigbee"},
+//    //{E_ZIGBEE_CONNECT, "Error zigbee connection"},
+//    //{E_EMPTY_FILE, "Empty file"},
+//    //{E_ADD_WORK_THREAD, "Error adding work to the work thread"},
+//    //{MAX_ERROR_CODE, "The element is invalid"}
+//
+//};
 
 /* A buffer head for receiving and getting content from LBeacon or server */
-typedef struct Buffer{
-    struct List_Entry buffer_entry;
+typedef struct buffer_list_head{
+    List_Entry buffer_entry;
     bool is_locked;
     bool is_empty;
-} BufferHead;
+} BufferListHead;
 
 /* A node of buffer to store received data. Each node has its mac address of
    source Beacon and the content */
@@ -104,14 +165,12 @@ typedef struct{
 */
 
 /* A buffer for storing the command message received from the sever. */
-BufferHead recieveFromServer;
+//BufferListHead receiveFromServer;
 
 /* Two buffer lists storing the track data or health report received
    from the LBeacons. The content in this buffer is waiting to be
    sent to the sever */
-BufferHead buffer_track_list, buffer_health_list;
-
-
+//BufferListHead buffer_track_list, buffer_health_list;
 
 /*
   init_buffer:
@@ -127,65 +186,63 @@ BufferHead buffer_track_list, buffer_health_list;
 
   None
 */
-void init_buffer(BufferHead buffer);
-
-
+void init_buffer(BufferListHead buffer);
 
 /*
   wifi_reciever:
 
-	This function listens the request or command received from the
-	sever. After getting the message, push the data in to the buffer.
+  This function listens the request or command received from the
+  sever. After getting the message, push the data in to the buffer.
 
   Parameters:
 
- 	None
+  None
 
   Return value:
 
-  	None
+    None
 */
-void *wifi_receiver(BufferHead buf);
+//void *wifi_receiver(BufferListHead buf);
 
 /*
   wifi_sender:
 
-	This function sends the file to the sever via wifi
+  This function sends the file to the sever via wifi
 
   Parameters:
 
-  	file_name - the file name that is assigned to be sent to the sever
+    file_name - the file name that is assigned to be sent to the sever
 
   Return value:
 
-  	None
+    None
 */
-void sned_via_wifi(char *file_name);
+//void sned_via_wifi(char *file_name);
 
 
 /*
   beacon_join_request:
 
-  	This function is executed when a beacon sends command to join the gateway
-  	and fills the table with the inputs. Set the network_address according
-  	the current number of beacons.
+    This function is executed when a beacon sends command to join the gateway
+    and fills the table with the inputs. Set the network_address according
+    the current number of beacons.
 
   Parameters:
 
 
-  	ID - The UUIzd of the LBeacon
-  	mac - The mac address of the xbee
-  	Coordinates - Pointerto the beacon coordinates
-  	Loc_Description - Pointer to the beacon literal location description
+    ID - The UUIzd of the LBeacon
+    mac - The mac address of the xbee
+    Coordinates - Pointerto the beacon coordinates
+    Loc_Description - Pointer to the beacon literal location description
 
 
   Return value:
 
-  	None
+    None
 
 */
-void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
-                         char *Loc_Description);
+//void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
+//                         char *Loc_Description);
 
 /*
   zigbee_init:
@@ -217,8 +274,5 @@ int zigbee_init();
     none
 */
 void zigbee_free();
-
-
-
 
 #endif
