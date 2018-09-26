@@ -1,43 +1,43 @@
 /*
- * Copyright (c) 2016 Academia Sinica, Institute of Information Science
- *
- * License:
- *
- *     GPL 3.0 : The content of this file is subject to the terms and
- *     conditions defined in file 'COPYING.txt', which is part of this source
- *     code package.
- *
- * Project Name:
- *
- *     BeDIPS
- *
- * File Description:
- *
- *     This is the header file containing the function declarations and
- *     variables used in the Gateway.c file.
- *
- * File Name:
- *
- *     Gateway.h
- *
- * Abstract:
- *
- *     BeDIPS uses LBeacons to deliver 3D coordinates and textual
- *     descriptions of their locations to users' devices. Basically, a
- *     LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
- *     coordinates and location description of every LBeacon are retrieved
- *     from BeDIS (Building/environment Data and Information System) and
- *     stored locally during deployment and maintenance times. Once
- *     initialized, each LBeacon broadcasts its coordinates and location
- *     description to Bluetooth enabled user devices within its coverage
- *     area.
- *
- * Authors:
- *
- *     Han Wang     , hollywang@iis.sinica.edu.tw
- *     Hank Kung    , hank910140@gmail.com
- *     Ray Chao     , raychao5566@gmail.com
- *     Gary Xiao    , garyh0205@hotmail.com
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
+
+  License:
+
+      GPL 3.0 : The content of this file is subject to the terms and
+      conditions defined in file 'COPYING.txt', which is part of this source
+      code package.
+
+  Project Name:
+
+      BeDIPS
+
+  File Description:
+
+      This is the header file containing the declarations of functions and
+      variables used in the Gateway.c file.
+
+  File Name:
+
+      Gateway.h
+
+  Abstract:
+
+      BeDIPS uses LBeacons to deliver 3D coordinates and textual
+      descriptions of their locations to users' devices. Basically, a
+      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
+      coordinates and location description of every LBeacon are retrieved
+      from BeDIS (Building/environment Data and Information System) and
+      stored locally during deployment and maintenance times. Once
+      initialized, each LBeacon broadcasts its coordinates and location
+      description to Bluetooth enabled user devices within its coverage
+      area.
+
+  Authors:
+
+      Han Wang     , hollywang@iis.sinica.edu.tw
+      Hank Kung    , hank910140@gmail.com
+      Ray Chao     , raychao5566@gmail.com
+      Gary Xiao    , garyh0205@hotmail.com
  */
 
 
@@ -67,7 +67,7 @@
 #ifndef GATEWAY_H
 #define GATEWAY_H
 
-/* The gernal timeout for waiting */
+/* The genernal timeout for waiting in number of millisconds */
 #define TIMEOUT 3000
 
 /* Maximum number of nodes (LBeacons) per star network */
@@ -76,14 +76,14 @@
 /*Length of the beacon's UUID*/
 #define UUID_LENGTH 32
 
-/*Length of the address of the network */
+/*Length of address of the network in number of bits */
 #define NETWORK_ADD_LENGTH 16
 
-/* Maximum number of characters in location description*/
+/* Maximum number of characters in location description */
 #define MAX_LENGTH_LOC_DESCRIPTION  64
 
-
-
+/* Length of coordinates in number of bits */
+#define COORDINATE_LENGTH 64
 
 /*
   TYPEDEF STRUCTS
@@ -92,7 +92,7 @@
 /* The configuration file structure */
 
 typedef struct Config {
-   
+
    /* The number of LBeacon nodes in the star network of this gateway */
    int allowed_number_of_nodes;
 
@@ -109,7 +109,7 @@ typedef struct Config {
 
    /* The number of priority levels at which worker threads execute. */
    int number_priority_levels;
-    
+
 
 } GatewayConfig;
 
@@ -124,7 +124,7 @@ typedef struct{
 
 
 /* A struct linking network address assigned to a LBeacon to its UUID,
-   corrnidate , and location description. */
+   coordinates, and location description. */
 typedef struct{
 
   char beacon_uuid[UUID_LENGTH];
@@ -148,13 +148,12 @@ typedef struct BufferNode{
 
 /* A buffer head for receiving and getting content from LBeacon or server */
 typedef struct buffer_list_head{
-    
+
     struct List_Entry buffer_entry;
     pthread_mutex_t list_lock; /* A per list lock */
     int num_in_list; /* Current number of msg buffers in the list */
 
 } BufferListHead;
-
 
 
 /*
@@ -164,19 +163,20 @@ typedef struct buffer_list_head{
 /* Gateway config struct */
 GatewayConfig config;
 
-
-/* A global flag that is initially false and is set nby main thread to ture
- * when initialization completes Afterward, the flag is used by other threads
- * to inform the main thread the need to shutdown.
+/* A global flag that is initially false and is set by main thread to true
+   when initialization completes Afterward, the flag is used by other threads
+   to inform the main thread the need to shutdown.
  */
 bool ready_to_work;
 
-/* Initialization of gateway components invole network activates that may take
- * time. The main thread should wait until their initialization is sufficiently
- * compete. These flags enable the modules to inform the main thread when it
- * happens.
+/* Initialization of gateway components invole network activates that may
+   take time. These flags enable each module to inform the main thread when
+   its initialization completes.
  */
 bool NSI_initialization_complete;
+bool BHM_initialization_complete;
+bool CommUnit_initialization_complete;
+bool initialization_failed;
 
 /* Message buffer list heads */
 BufferListHead per_LBeacon_buffer_list_head[MAX_NUMBER_NODES];
@@ -188,27 +188,29 @@ BufferListHead Command_msg_buffer_list_head;
 
 
 /* An array of address maps */
-Address_map beacon_address[MAX_NUMBER_NODES];
+Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
 
 /* Current number of LBeacons */
 int LBeacon_count;
 
-/* FUNCTIONS */
+/*
+  FUNCTIONS
+*/
 
 /*
   get_config:
 
       This function reads the specified config file line by line until the
-      end of file and copies the data in the lines into the GatewayConfig 
+      end of file and copies the data in the lines into the GatewayConfig
       struct global variable.
 
   Parameters:
 
       file_name - the name of the config file that stores gateway data
 
-  Return value: 
+  Return value:
 
-      config - GatewayConfig struct 
+      config - GatewayConfig struct
 */
 
 GatewayConfig get_config(char *file_name);
@@ -245,5 +247,46 @@ ErrorCode startThread(pthread_t* threads, void* (*thfunct)(void*), void* arg);
     None
  */
 void *Initialize_network();
+
+/*
+  CommUnit_routine:
+
+  The function is executed by the main thread of the communication unit that
+  is responsible for sending and receiving packets to and from the sever and
+  LBeacons after the NSI moudle initializes WiFi and Zigbee networks. It
+  creates threads to supervise the communication process.
+
+  Parameters:
+
+    Node
+
+  Return value:
+
+    None
+
+*/
+void *CommUnit_routine();
+
+
+
+/*
+  BHM_routine:
+
+  This function integrates the health report collected from all the LBeacons
+  and write them in the file. After that send this file to the sever via
+  comminication unit.
+
+  Parameters:
+
+    None
+
+  Return value:
+
+    None
+
+*/
+void *BHM_routine();
+
+
 
 #endif
