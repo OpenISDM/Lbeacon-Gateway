@@ -110,3 +110,237 @@ void zigbee_free(){
     return;
 
 }
+
+void beacon_join_request(char *ID, char *mac,
+                         Coordinates Beacon_Coordinates,
+                         char *Loc_Description){
+
+    /* Copy all the necessary information received from the LBeacon to the
+       address map. */
+    strcpy(beacon_address[index].beacon_uuid, ID);
+    strcpy(beacon_address[index].mac_addr, mac);
+    strcpy(beacon_address[index].loc_description, Loc_Description);
+    strcpy(beacon_address[index].beacon_coordinates.X_coordinates,
+                                Beacon_Coordinates.X_coordinates);
+    strcpy(beacon_address[index].beacon_coordinates.Y_coordinates,
+                                Beacon_Coordinates.Y_coordinates);
+    strcpy(beacon_address[index].beacon_coordinates.Z_coordinates,
+                                Beacon_Coordinates.Z_coordinates);
+
+
+
+}
+
+void *wifi_send(){
+
+    while (ready_to_work == true) {
+
+        /* If two buffers are all empty, sleep for a while */
+        while(buffer_track_list.is_empty == true &&
+              buffer_health_list.is_empty == true){
+
+            sleep(A_SHORT_TIME);
+
+        }
+
+        /* set the destination server IP */
+        struct sockaddr_in server_address;
+        memset(&server_address, 0, sizeof(server_address));
+        server_address.sin_family = AF_INET;
+
+        /* creates binary representation of server name
+        /* and stores it as sin_addr*/
+        inet_pton(AF_INET, server_name, &server_address.sin_addr);
+
+        /* port in network order format */
+        server_address.sin_port = htons(server_port);
+
+        /* open socket */
+        int sock;
+
+        if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
+
+                    printf("could not create socket\n");
+                    return;
+
+        }
+
+        /* send data via sendto() function to send data to sever */
+        sendto(...);
+
+        /* received echoed data back for hand shacking with sever*/
+        recvfrom(...);
+
+        /* close the socket */
+        close(sock);
+
+    }
+
+}
+
+void *wifi_receieve(){
+
+    while (ready_to_work == true) {
+
+        /* Set up the network */
+        struct sockaddr_in server_address;
+        memset(&server_address, 0, sizeof(server_address));
+        server_address.sin_family = AF_INET;
+
+        /* creates binary representation of server name
+        /* and stores it as sin_addr*/
+        inet_pton(AF_INET, server_name, &server_address.sin_addr);
+
+        /* port in network order format */
+        server_address.sin_port = htons(server_port);
+
+        /* open socket */
+        int sock;
+        if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
+
+            printf("could not create socket\n");
+
+        }
+        /* Recieving and sending have to be splited up into to threads, since
+        they are call back functions. It cost too much if they had to wait for
+        each other. And these two threads should not start in a while loop. */
+        if (recvfrom(...) == -1)
+        {
+            /* error in recieving the file */
+        }
+        /* Get the command from the sever, add the message or command to the
+           buffer */
+        Add_to_buffer(recieveFromServer);
+
+    }
+
+}
+
+void *zigbee_send(){
+
+    while(ready_to_work == true) {
+
+        /* There is no any received command from the sever, sleep for a
+           while. Or the timer for counting down the time to ask for the
+           data is still counting down, go to sleep */
+        while(recieveFromServer.is_empty == true || TIMEOUT){
+
+        sleep(A_SHORT_TIME);
+
+        }
+
+        /* Dequeue the "recieveFromServer" buffer to get the command or
+           request to ask for track object data or health repot */
+
+        /* Send the command or message to the LBeacons via zigbee */
+        for(int beacon_number = 0; beacon_number < MAX_NUMBER_NODES;
+            beacon_number++){
+
+            /* Add the content that to be sent to the gateway to the packet
+               queue */
+            addpkt(&xbee_config.pkt_Queue, Data,
+                   beacon_address[beacon_number], zig_message);
+
+            /* If there are remain some packet need to send in the Queue,
+               send the packet */
+            xbee_send_pkt(&xbee_config);
+
+        }
+
+        xbee_connector(&xbee_config);
+
+        usleep(XBEE_TIMEOUT);
+
+    }
+}
+
+void *zigbee_receive(){
+    buffer_ptr;
+    buffer_node_ptr;
+
+    while(ready_to_work == true){
+        /* Check the connection of call back is enable */
+        if(xbee_check_CallBack(&xbee_config, false)){
+
+            /* Error handling TODO */
+
+        }
+
+        /* Get the packet in the receive queue received from the LBeacon */
+        pPkt temppkt = get_pkt(&xbee_config.Received_Queue);
+
+        if(temppkt != NULL){
+
+            /* Allocate form zigbee packet memory pool a buffer for received
+              data and copy the data from Xbee receive queue to the buffer. */
+            buffer_ptr = mp_alloc(&zig_pkt_mempool);
+            buffer_node_ptr = mp_alloc(&buff_node_mempool);
+            if(buffer_ptr == NULL || buffer_node_ptr == NULL){
+
+                    ready_to_work = false;
+                    return;
+            }else{
+              /* Copy the content to the buffer_node */
+              memcpy(xbee_config.Received_Queue, buffrt_ptr, num_bytes);
+
+              /* Get the zigbee network address from the content and look up from
+                Lbeacon_address_map the  UUID of the LBeacon, and the
+                buffer_index. */
+
+              /* Insert the buffer node into the buffer list with the
+                 buffer_index */
+
+            }
+            switch(buffer_ptr -> content.pkt_header.pkt_types){
+
+              case "health_report":
+                /* Acquire BHM_recieve_buffer_list_head.list_lock, Insert
+                  the buffer_node in BHM_receive_buffer_list, increament
+                  num_in_list by 1 and release list_lock. */
+
+                  /* Delete the packet and return the indicator back. */
+                  delpkt(&xbee_config.Received_Queue);
+
+                  break;
+              case "tracked_object_data":
+              case "data_for_Lbeacon":
+                  /* look up from the address map the buffer_index based on
+                    the zigbee net address */
+
+                  /* Acquire
+                    per_LBeacon_buffer_list_head[buffer_index].list_lock,
+                    insert the buffer_node in per_LBeacon_buffer_list
+                    [buffer_index], increament num_in_list by 1 and release
+                    list_lock. */
+
+                    /* Delete the packet and return the indicator back. */
+                    delpkt(&xbee_config.Received_Queue);
+
+                    break;
+
+              case "request_to_join":
+                  /* The packet is a request for registration. Acquire
+                  NSI_send_buffer_list_head.list_lock, insert
+                  the buffer_node in the list, increament
+                  num_in_list element by 1 and release list_lock. */
+
+                  /* Get the content of the message to match to the address map,
+                     e.g., mac_address for xbee, UUID, and so on. */
+                     beacon_join_request(zigbee_macaddr, zigbee_macaddr,
+                                          gateway_coordinates,
+                                          gateway_loc_description);
+
+                  /* Delete the packet and return the indicator back. */
+                      delpkt(&xbee_config.Received_Queue);
+
+                    break;
+
+              default:
+
+                break;
+
+            }
+
+        }
+    }
+}

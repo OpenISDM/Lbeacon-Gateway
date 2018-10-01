@@ -1,178 +1,292 @@
 /*
- * Copyright (c) 2016 Academia Sinica, Institute of Information Science
- *
- * License:
- *
- *     GPL 3.0 : The content of this file is subject to the terms and
- *     cnditions defined in file 'COPYING.txt', which is part of this source
- *     code package.
- *
- * Project Name:
- *
- *     BeDIPS
- *
- * File Description:
- *
- *     This file contains the program to transmit the data or information from
- *     LBeacons through Zigbee or UDP. Main tasks includes network setup and
- *     initialization, Beacon health monitor and comminication unit. Gateway
- *     takes the role as coordinator.
- *
- * File Name:
- *
- *     Gateway.c
- *
- * Abstract:
- *
- *     BeDIPS uses LBeacons to deliver 3D coordinates and textual
- *     descriptions of their locations to users' devices. Basically, a
- *     LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
- *     coordinates and location description of every LBeacon are retrieved
- *     from BeDIS (Building/environment Data and Information System) and
- *     stored locally during deployment and maintenance times. Once
- *     initialized, each LBeacon broadcasts its coordinates and location
- *     description to Bluetooth enabled user devices within its coverage
- *     area.
- *
- * Authors:
- *
- *     Han Wang     , hollywang@iis.sinica.edu.tw
- *     Jake Lee     , jakelee@iis.sinica.edu.tw
- *     Johnson Su   , johnsonsu@iis.sinica.edu.tw
- *     Hank Kung    , hank910140@gmail.com
- *     Ray Chao     , raychao5566@gmail.com
- *     Gary Xiao    , garyh0205@hotmail.com
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
+
+  License:
+
+      GPL 3.0 : The content of this file is subject to the terms and
+      conditions defined in file 'COPYING.txt', which is part of this source
+      code package.
+
+  Project Name:
+
+      BeDIPS
+
+  File Description:
+
+      This is the header file containing the declarations of functions and
+      variables used in the Gateway.c file.
+
+  File Name:
+
+      Gateway.h
+
+  Abstract:
+
+      BeDIPS uses LBeacons to deliver 3D coordinates and textual
+      descriptions of their locations to users' devices. Basically, a
+      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
+      coordinates and location description of every LBeacon are retrieved
+      from BeDIS (Building/environment Data and Information System) and
+      stored locally during deployment and maintenance times. Once
+      initialized, each LBeacon broadcasts its coordinates and location
+      description to Bluetooth enabled user devices within its coverage
+      area.
+
+  Authors:
+
+      Han Wang     , hollywang@iis.sinica.edu.tw
+      Hank Kung    , hank910140@gmail.com
+      Ray Chao     , raychao5566@gmail.com
+      Gary Xiao    , garyh0205@hotmail.com
  */
 
-#include "Gateway.h"
 
-void *Initialize_network(){
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <signal.h>
+#include <string.h>
+#include <semaphore.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/timeb.h>
+#include <time.h>
+#include <unistd.h>
+#include "CommUnit.h"
 
-    printf("Enter Initialize_network\n");
+#ifndef GATEWAY_H
+#define GATEWAY_H
 
-    int return_value;
+/* The genernal timeout for waiting in number of millisconds */
+#define TIMEOUT 3000
 
-    //ErrorCode status;
+/* Maximum number of nodes (LBeacons) per star network */
+#define MAX_NUMBER_NODES 32
 
-    /* Initialize buffers for sever*/
+/*Length of the beacon's UUID*/
+#define UUID_LENGTH 32
 
-    //init_buffer(buffer_health_list);
+/*Length of address of the network in number of bits */
+#define NETWORK_ADD_LENGTH 16
 
-    //init_buffer(buffer_track_list);
+/* Maximum number of characters in location description */
+#define MAX_LENGTH_LOC_DESCRIPTION  64
 
-    //init_buffer(recieveFromServer);
+/* Length of coordinates in number of bits */
+#define COORDINATE_LENGTH 64
 
-    /* set up WIFI connection */
-    /* open temporary wpa_supplicant.conf file to setup wifi environment*/
-    /*
-    FILE *cfgfile = fopen("/etc/wpa_supplicant/wpa_supplicant.conf ","w");
-    fwrite(*cfgfile,"ctrl_interface=DIR=/var/run/wpa_supplicant\nGROUP=netdev\n\
-    update_config=1\ncountry=CN\nnetwork={\nssid=\"Wifi_ssid\"\npsk=\"\
-    passphrasehere\"\npriority=5\n}");
-    */
-    //TODO check whether wpa_supplicant file content is correct.
+/*
+  TYPEDEF STRUCTS
+*/
 
-    //fclose(*cfgfile);
+/* The configuration file structure */
 
-    /* check if WiFi is connected .... */
-    //TODO need to find another way to check connection status.
-    //
-    //status = system("ping google.com");
-    //if (status = E_WIFI_CONNECT_FAIL){
-    //    printf("Wifi is not connected....\n")
-    //    int count =5;
-    //    while(count != 0){
-    //      printf("retry count %d", 6 - count);
-    //      status = system("ping google.com");
-    //    }
-    //    system("sudo reboot");
-    //        return;
-    //
-    //    }
+typedef struct Config {
 
-    //return E_WIFI_CONNECT_FAIL;
+   /* The number of LBeacon nodes in the star network of this gateway */
+   int allowed_number_of_nodes;
 
-    printf("Start Init Zigbee\n");
+   /* The flag is true when health reports from LBeacon are requested by the
+   BeDIS sever. */
+   bool is_health_reporting_polled;
 
-    if(return_value = zigbee_init() != WORK_SUCCESSFULLY){
-        /* Error handling and return */
+   /* The time period for gateway sending requests to LBeacon */
+   int period_between_RFHR;
 
-        //perror(errordesc[E_ZIGBEE_INIT_FAIL].message);
+   /* The number of worker threads used by the communication unit for sending
+   and receiving packets to and from LBeacons and the sever. */
+   int number_worker_thread;
 
-        printf("Initialize Zigbee Fail.\n");
+   /* The number of priority levels at which worker threads execute. */
+   int number_priority_levels;
 
-        pthread_exit(0);
 
-    }
+} GatewayConfig;
 
-    printf("Initialize Zigbee Success.\n");
 
-    ready_to_work = true;
+typedef struct{
 
-    NSI_initialization_complete = true;
+  char X_coordinates[COORDINATE_LENGTH];
+  char Y_coordinates[COORDINATE_LENGTH];
+  char Z_coordinates[COORDINATE_LENGTH];
 
-    while( ready_to_work == true ){
-        //printf("Trans to false\n");
-        //ready_to_work = false;
-    }
+}Coordinates;
 
-    zigbee_free();
 
-}
+/* A struct linking network address assigned to a LBeacon to its UUID,
+   coordinates, and location description. */
+typedef struct{
 
-ErrorCode startThread(pthread_t* threads ,void * (*thfunct)(void*), void *arg){
+  char beacon_uuid[UUID_LENGTH];
+  char* mac_addr;
+  Coordinates beacon_coordinates;
+  char loc_description[MAX_LENGTH_LOC_DESCRIPTION];
 
-    pthread_attr_t attr;
+}Address_map;
 
-    if ( pthread_attr_init(&attr) != 0
-      || pthread_create(threads, &attr, thfunct, arg) != 0
-      || pthread_attr_destroy(&attr) != 0
-  /* || pthread_detach(*threads) != 0 */){
 
-          printf("Start Thread Error.\n");
-          return E_START_THREAD;
+/* A node of buffer to store received data. Each node has its mac address of
+   source Beacon and the content */
+typedef struct BufferNode{
 
-    }
+    struct List_Entry buffer_entry;
+    char *net_address; /* zigbee network address */
+    char *content;
 
-    printf("Start Thread Success.\n");
-    return WORK_SUCCESSFULLY;
+} BufferNode;
 
-}
 
-int main(int argc, char **argv){
+/* A buffer head for receiving and getting content from LBeacon or server */
+typedef struct buffer_list_head{
 
-    int return_value;
+    struct List_Entry buffer_entry;
+    pthread_mutex_t list_lock; /* A per list lock */
+    int num_in_list; /* Current number of msg buffers in the list */
 
-    NSI_initialization_complete = false;
+} BufferListHead;
 
-    ready_to_work = false;
 
-    /* Network Setup and Initialization for Zigbee and Wifi */
+/*
+  GLOBAL VARIABLES
+ */
 
-    pthread_t NSI_routine_thrad;
+/* Gateway config struct */
+GatewayConfig config;
 
-    return_value = startThread(&NSI_routine_thrad, Initialize_network, NULL);
+/* A global flag that is initially false and is set by main thread to true
+   when initialization completes Afterward, the flag is used by other threads
+   to inform the main thread the need to shutdown.
+ */
+bool ready_to_work;
 
-    if(return_value != WORK_SUCCESSFULLY){
+/* Initialization of gateway components invole network activates that may
+   take time. These flags enable each module to inform the main thread when
+   its initialization completes.
+ */
+bool NSI_initialization_complete;
+bool BHM_initialization_complete;
+bool CommUnit_initialization_complete;
+bool initialization_failed;
 
-      //perror(errordesc[return_value].message);
+/* Message buffer list heads */
+BufferListHead per_LBeacon_buffer_list_head[MAX_NUMBER_NODES];
+BufferListHead NSI_receive_buffer_list_head;
+BufferListHead NSI_send_buffer_list_head;
+BufferListHead BHM_receive_buffer_list_head;
+BufferListHead BHM_send_buffer_list_head;
+BufferListHead Command_msg_buffer_list_head;
 
-      return return_value;
 
-    }
+/* An array of address maps */
+Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
 
-    perror("NSI_SUCCESS");
+/* Current number of LBeacons */
+int LBeacon_count;
 
-    return_value = pthread_join(NSI_routine_thrad, NULL);
+/*
+  FUNCTIONS
+*/
 
-    if (return_value != WORK_SUCCESSFULLY) {
+/*
+  get_config:
 
-        //perror(strerror(errno));
+      This function reads the specified config file line by line until the
+      end of file and copies the data in the lines into the GatewayConfig
+      struct global variable.
 
-        return return_value;
+  Parameters:
 
-    }
+      file_name - the name of the config file that stores gateway data
 
-    return WORK_SUCCESSFULLY;
+  Return value:
 
-}
+      config - GatewayConfig struct
+*/
+
+GatewayConfig get_config(char *file_name);
+
+/*
+  startThread:
+
+  This function initializes the threads.
+
+  Parameters:
+
+  threads - name of the thread
+  thfunct - the function for thread to do
+  arg - the argument for thread's function
+
+  Return value:
+
+  Error_code: The error code for the corresponding error
+*/
+ErrorCode startThread(pthread_t* threads, void* (*thfunct)(void*), void* arg);
+
+/*
+  Initialize_network:
+
+  Initialize and set up all the necessary component for the zigee
+  and wifi network.
+
+  Parameters:
+
+    None
+
+  Return value:
+
+    None
+ */
+void *Initialize_network();
+
+/*
+  CommUnit_routine:
+
+  The function is executed by the main thread of the communication unit that
+  is responsible for sending and receiving packets to and from the sever and
+  LBeacons after the NSI moudle initializes WiFi and Zigbee networks. It
+  creates threads to supervise the communication process.
+
+  Parameters:
+
+    Node
+
+  Return value:
+
+    None
+
+*/
+void *CommUnit_routine();
+
+
+
+/*
+  BHM_routine:
+
+  This function integrates the health report collected from all the LBeacons
+  and write them in the file. After that send this file to the sever via
+  comminication unit.
+
+  Parameters:
+
+    None
+
+  Return value:
+
+    None
+
+*/
+void *BHM_routine();
+
+
+
+#endif
