@@ -67,13 +67,17 @@
 #ifndef GATEWAY_H
 #define GATEWAY_H
 
-/* The genernal timeout for waiting in number of millisconds */
+/* The general timeout for waiting in number of millisconds */
 #define TIMEOUT 3000
 
-/* Maximum number of nodes (LBeacons) per star network */
+/* Maximum length of time in milliseconds for the low priority message list(s)
+there have not been served */
+#define MAX_STARVATION_TIME 3600000
+
+/* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 32
 
-/*Length of the beacon's UUID*/
+/*Length of the beacon's UUID in number of characters */
 #define UUID_LENGTH 32
 
 /*Length of address of the network in number of bits */
@@ -85,6 +89,18 @@
 /* Length of coordinates in number of bits */
 #define COORDINATE_LENGTH 64
 
+/* Number of message_buffer list */
+#define NUM_MSG_BUFFER_LISTS 7
+
+/* Number of priority levels for thread execution */
+#define NUMBER_PRIORITIES 3
+
+/* Names of priority levels */
+#define NORMAL_PRIORITY 0
+#define HIGH_PRIORITY 2
+#define LOW_PRIORITY -2
+
+
 /*
   TYPEDEF STRUCTS
 */
@@ -93,12 +109,13 @@
 
 typedef struct Config {
 
-   /* The number of LBeacon nodes in the star network of this gateway */
-   int allowed_number_of_nodes;
+   /* The allowed number of LBeacon nodes in the star network of this gateway.
+   It may be less than MAX_NUMBER_NODES */
+   int allowed_number_nodes;
 
    /* The flag is true when health reports from LBeacon are requested by the
    BeDIS sever. */
-   bool is_health_reporting_polled;
+   bool is_health_report_polled;
 
    /* The time period for gateway sending requests to LBeacon */
    int period_between_RFHR;
@@ -107,8 +124,9 @@ typedef struct Config {
    and receiving packets to and from LBeacons and the sever. */
    int number_worker_thread;
 
-   /* The number of priority levels at which worker threads execute. */
-   int number_priority_levels;
+   /* Priority levels at which worker threads execute when send and receive
+   different type of messages. */
+   /* void * assign_priority */
 
 
 } GatewayConfig;
@@ -135,26 +153,35 @@ typedef struct{
 }Address_map;
 
 
-/* A node of buffer to store received data. Each node has its mac address of
-   source Beacon and the content */
+/* A node of buffer to store received data or/and date to be sent */
 typedef struct BufferNode{
 
     struct List_Entry buffer_entry;
-    char *net_address; /* zigbee network address */
-    char *content;
+    char *net_address; /* zigbee network address of the source or destination*/
+    char *content; /* pointer to where the data is stored 
 
 } BufferNode;
 
 
-/* A buffer head for receiving and getting content from LBeacon or server */
+/* Head of a list of message buffers  */
 typedef struct buffer_list_head{
 
     struct List_Entry buffer_entry;
     pthread_mutex_t list_lock; /* A per list lock */
     int num_in_list; /* Current number of msg buffers in the list */
+    int priority_boast; /* Number of levels stative to normal priority */
+    void *process_msg;
 
 } BufferListHead;
 
+
+/* A node of buffer_list_heads to be inserted into a priority_node_list */
+typedef struct priority_list{
+
+  BufferListHead *buffer_list_head;
+  struct List_Entry list_entry; 
+  
+} PriorityListNode;
 
 /*
   GLOBAL VARIABLES
