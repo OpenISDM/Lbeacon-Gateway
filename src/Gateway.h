@@ -191,14 +191,14 @@ typedef struct priority_list{
 GatewayConfig config;
 
 /* A global flag that is initially false and is set by main thread to true
-   when initialization completes Afterward, the flag is used by other threads
+   when initialization completes. Afterward, the flag is used by other threads
    to inform the main thread the need to shutdown.
  */
 bool ready_to_work;
 
-/* Initialization of gateway components invole network activates that may
+/* Initialization of gateway components involves network activation that may
    take time. These flags enable each module to inform the main thread when
-   its initialization completes.
+   its initialization completes or has failed.
  */
 bool NSI_initialization_complete;
 bool BHM_initialization_complete;
@@ -206,13 +206,17 @@ bool CommUnit_initialization_complete;
 bool initialization_failed;
 
 /* Message buffer list heads */
-BufferListHead per_LBeacon_buffer_list_head[MAX_NUMBER_NODES];
+BufferListHead LBeacon_buffer_list_head;
+BufferListHead LBeacon_receive_buffer_list_head;
 BufferListHead NSI_receive_buffer_list_head;
 BufferListHead NSI_send_buffer_list_head;
 BufferListHead BHM_receive_buffer_list_head;
 BufferListHead BHM_send_buffer_list_head;
 BufferListHead Command_msg_buffer_list_head;
 
+/* Head of priority list used to determined the order buffer lists are checked.
+*/
+PriorityListNode priority_list_head;
 
 /* An array of address maps */
 Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
@@ -245,25 +249,25 @@ GatewayConfig get_config(char *file_name);
 /*
   startThread:
 
-  This function initializes the threads.
+    This function initializes the specified thread.
 
   Parameters:
 
-  threads - name of the thread
-  thfunct - the function for thread to do
-  arg - the argument for thread's function
+    threads - name of the thread
+    thfunct - the function for thread to execute
+    arg - the argument for thread's function
 
   Return value:
 
-  Error_code: The error code for the corresponding error
+    Error_code: The error code for the corresponding error
 */
 ErrorCode startThread(pthread_t* threads, void* (*thfunct)(void*), void* arg);
 
 /*
   Initialize_network:
 
-  Initialize and set up all the necessary component for the zigee
-  and wifi network.
+    This function initializes and sets up all the necessary component for the 
+    Zigbee and Wifi networks. It is the thread function of NSI thread.
 
   Parameters:
 
@@ -272,16 +276,55 @@ ErrorCode startThread(pthread_t* threads, void* (*thfunct)(void*), void* arg);
   Return value:
 
     None
+ 
  */
 void *Initialize_network();
+
+
+/* 
+  Init_buffer:
+  
+    This function initializes the list entry in the specified buffer_list_head
+    and calls the assign_priority function to set the value of priority_boast 
+    and procee_meg function.
+
+  Parameters:
+
+    buffer_list_head - A specified buffer_list_head
+
+  Return value:
+
+    Error_code: The error code for the corresponding error
+*/
+
+void Init_buffer();
+
+/* 
+  Assign_priority:
+
+    This function sets the priority level at which message in a buffer_list are
+    processed and the function used to process the messages. When the system 
+    may use one of many scheduling strategies this function is specified by 
+    the configuration structure. 
+
+  Parameters:
+
+    buffer_list_head - A specified buffer_list_head
+
+  Return value:
+
+    None
+
+*/
+void Assign_priority();
 
 /*
   CommUnit_routine:
 
   The function is executed by the main thread of the communication unit that
   is responsible for sending and receiving packets to and from the sever and
-  LBeacons after the NSI moudle initializes WiFi and Zigbee networks. It
-  creates threads to supervise the communication process.
+  LBeacons after the NSI module has initialized WiFi and Zigbee networks. It
+  creates threads to carry out the communication process.
 
   Parameters:
 
@@ -300,7 +343,7 @@ void *CommUnit_routine();
   BHM_routine:
 
   This function integrates the health report collected from all the LBeacons
-  and write them in the file. After that send this file to the sever via
+  and writes them to a file, and then have the file sent to the sever by
   comminication unit.
 
   Parameters:
