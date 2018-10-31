@@ -58,15 +58,6 @@ void init_buffer(BufferListHead *buffer){
     buffer -> num_in_list = 0;
 }
 
-void free_buffer(BufferListHead *buffer){
-
-    init_entry( &(buffer -> buffer_entry));
-
-    pthread_mutex_destroy( &buffer -> list_lock, 0);
-
-    buffer -> num_in_list = 0;
-}
-
 int zigbee_init(){
 
     /* Struct for storing necessary objects for zigbee connection */
@@ -133,8 +124,6 @@ void beacon_join_request(char *ID, char *mac,
                                 Beacon_Coordinates.Y_coordinates);
     strcpy(beacon_address[index].beacon_coordinates.Z_coordinates,
                                 Beacon_Coordinates.Z_coordinates);
-
-
 
 }
 

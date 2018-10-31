@@ -86,9 +86,13 @@ sxbee_config xbee_config;
 typedef enum ErrorCode{
 
     WORK_SUCCESSFULLY = 0,
+
     E_WIFI_CONNECT_FAIL = 1,
+
     E_ZIGBEE_INIT_FAIL = 2,
+
     E_XBEE_VALIDATE = 3,
+
     E_START_COMMUNICAT_ROUTINE_THREAD = 4,
     E_START_BHM_ROUTINE_THREAD = 5,
     E_START_TRACKING_THREAD = 6,
@@ -97,6 +101,7 @@ typedef enum ErrorCode{
 } ErrorCode;
 
 typedef enum pkt_types {
+
     tracked_object_data = 1;
     health_report = 2;
     data_for_LBeacon = 3;
@@ -106,6 +111,7 @@ typedef enum pkt_types {
     request_to_join = 12;
     zigbee_network_control = 13;
     maximum_type = 15;
+
 } PktType;
 
 /*
@@ -125,133 +131,133 @@ typedef enum pkt_types {
 void init_buffer(BufferListHead *buffer);
 
 /*
-  free_buffer:
+ free_buffer:
 
-      The function to release the buffer.
+     The function to release the buffer.
 
-  Parameters:
+ Parameters:
 
-      Node
+     Node
 
-  Return value:
+ Return value:
 
-      None
+     None
 
  */
 void free_buffer(BufferListHead *buffer);
 
 /*
-  wifi_recieve:
+ wifi_recieve:
 
-      This function listens the request or command received from the server.
-      After getting the message, push the data in to the buffer.
+     This function listens the request or command received from the server.
+     After getting the message, push the data in to the buffer.
 
-  Parameters:
+ Parameters:
 
-      None
+     None
 
-  Return value:
+ Return value:
 
-      None
+     None
  */
 void *wifi_receive();
 
 /*
-  wifi_send:
+ wifi_send:
 
-      This function sends the file to the sever via Wi-Fi.
+     This function sends the file to the sever via Wi-Fi.
 
-  Parameters:
+ Parameters:
 
-      None
+     None
 
-  Return value:
+ Return value:
 
-      None
+     None
  */
 void *wifi_send();
 
 /*
-  zigbee_receive:
+ zigbee_receive:
 
-      This function listens the data received from the Beacon.
-      After getting the message, push the data in to the buffer.
+     This function listens the data received from the Beacon.
+     After getting the message, push the data in to the buffer.
 
-  Parameters:
+ Parameters:
 
-      None
+     None
 
-  Return value:
+ Return value:
 
-      None
+     None
  */
 void *zigbee_receive();
 
 /*
-  zigbee_send:
+ zigbee_send:
 
-      This function sends the data to the Beacon via Zigbee.
+     This function sends the data to the Beacon via Zigbee.
 
-  Parameters:
+ Parameters:
 
-      None
+     None
 
-  Return value:
+ Return value:
 
-      None
+     None
  */
 void *zigbee_send();
 
 /*
-  beacon_join_request:
+ beacon_join_request:
 
-      This function is executed when a beacon sends command to join the gateway
-      and fills the table with the inputs. Set the network_address according
-      the current number of beacons.
+     This function is executed when a beacon sends command to join the gateway
+     and fills the table with the inputs. Set the network_address according
+     the current number of beacons.
 
-  Parameters:
+ Parameters:
 
-      ID - The UUIzd of the LBeacon
-      mac - The mac address of the xbee
-      Coordinates - Pointerto the beacon coordinates
-      Loc_Description - Pointer to the beacon literal location description
+     ID - The UUIzd of the LBeacon
+     mac - The mac address of the xbee
+     Coordinates - Pointerto the beacon coordinates
+     Loc_Description - Pointer to the beacon literal location description
 
-  Return value:
+ Return value:
 
-      None
+     None
 
  */
 void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
                          char *Loc_Description);
 
 /*
-  zigbee_init:
+ zigbee_init:
 
-      This function initilizes the zigbee's necessory object.
+     This function initilizes the zigbee's necessory object.
 
-  Parameters:
+ Parameters:
 
-      zigbee - the struct of necessary parameter and data
+     zigbee - the struct of necessary parameter and data
 
-  Return value:
+ Return value:
 
-      int: The error code for the corresponding error or successful
+     int: The error code for the corresponding error or successful
 
  */
 int zigbee_init();
 
 /*
-  zigbee_free:
+ zigbee_free:
 
-      When called, this function frees the necessory element.
+     When called, this function frees the necessory element.
 
-  Parameters:
+ Parameters:
 
-      zigbee - the struct of necessary parameter and data
+     zigbee - the struct of necessary parameter and data
 
-  Return value:
+ Return value:
 
-      None
+     None
 
  */
 void zigbee_free();

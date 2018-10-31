@@ -1,48 +1,48 @@
 /*
-  Copyright (c) 2016 Academia Sinica, Institute of Information Science
+ Copyright (c) 2016 Academia Sinica, Institute of Information Science
 
-  License:
+ License:
 
-      GPL 3.0 : The content of this file is subject to the terms and
-      cnditions defined in file 'COPYING.txt', which is part of this source
-      code package.
+     GPL 3.0 : The content of this file is subject to the terms and
+     cnditions defined in file 'COPYING.txt', which is part of this source
+     code package.
 
-  Project Name:
+ Project Name:
 
-      BeDIPS
+     BeDIPS
 
-  File Description:
+ File Description:
 
-      This file contains the program to transmit and receive data to and from
-      LBeacon and the sever through Zigbee and Wi-Fi networks, and programs
-      executed by network setup and initialization, Beacon health monitor and
-      comminication unit. Gateway takes the role of the coordinator in the
-      local zigbee network.
+     This file contains the program to transmit and receive data to and from
+     LBeacon and the sever through Zigbee and Wi-Fi networks, and programs
+     executed by network setup and initialization, Beacon health monitor and
+     comminication unit. Gateway takes the role of the coordinator in the
+     local zigbee network.
 
-  File Name:
+ File Name:
 
-      Gateway.c
+     Gateway.c
 
-  Abstract:
+ Abstract:
 
-      BeDIPS uses LBeacons to deliver 3D coordinates and textual
-      descriptions of their locations to users' devices. Basically, a
-      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
-      coordinates and location description of every LBeacon are retrieved
-      from BeDIS (Building/environment Data and Information System) and
-      stored locally during deployment and maintenance times. Once
-      initialized, each LBeacon broadcasts its coordinates and location
-      description to Bluetooth enabled user devices within its coverage
-      area.
+     BeDIPS uses LBeacons to deliver 3D coordinates and textual
+     descriptions of their locations to users' devices. Basically, a
+     LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
+     coordinates and location description of every LBeacon are retrieved
+     from BeDIS (Building/environment Data and Information System) and
+     stored locally during deployment and maintenance times. Once
+     initialized, each LBeacon broadcasts its coordinates and location
+     description to Bluetooth enabled user devices within its coverage
+     area.
 
-  Authors:
+ Authors:
 
-      Han Wang     , hollywang@iis.sinica.edu.tw
-      Jake Lee     , jakelee@iis.sinica.edu.tw
-      Johnson Su   , johnsonsu@iis.sinica.edu.tw
-      Hank Kung    , hank910140@gmail.com
-      Ray Chao     , raychao5566@gmail.com
-      Gary Xiao    , garyh0205@hotmail.com
+     Han Wang     , hollywang@iis.sinica.edu.tw
+     Jake Lee     , jakelee@iis.sinica.edu.tw
+     Johnson Su   , johnsonsu@iis.sinica.edu.tw
+     Hank Kung    , hank910140@gmail.com
+     Ray Chao     , raychao5566@gmail.com
+     Gary Xiao    , garyh0205@hotmail.com
 
  */
 
