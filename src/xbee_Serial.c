@@ -64,19 +64,19 @@ int xbee_Serial_Power_Reset(int Wiring_Pi_Pin){
 int xbee_Serial_init(int *xbee_datastream, char *xbee_device){
 
     //Open in non blocking read/write mode  // | O_NOCTTY | O_NDELAY
-    if ((*xbee_datastream = open(xbee_device, O_RDWR )) == -1)
+    if (( *xbee_datastream = open(xbee_device, O_RDWR )) == -1)
 
         return Serial_init_Fail;
 
     // set new parameters to the serial device
     struct termios newtio;
 
-    fcntl(*xbee_datastream, F_SETFL, 0);
+    fcntl( *xbee_datastream, F_SETFL, 0);
     // set everything to 0
-    bzero(&newtio, sizeof(newtio));
+    bzero( &newtio, sizeof(newtio));
 
     // again set everything to 0
-    bzero(&newtio, sizeof(newtio));
+    bzero( &newtio, sizeof(newtio));
 
     newtio.c_cflag |= baudrate; // Set Baudrate first time
     newtio.c_cflag |= CLOCAL; // Local line - do not change "owner" of port
@@ -95,23 +95,23 @@ int xbee_Serial_init(int *xbee_datastream, char *xbee_device){
     newtio.c_oflag = 0;
 
     // Set teh baudrate for sure
-    cfsetispeed(&newtio, baudrate);
-    cfsetospeed(&newtio, baudrate);
+    cfsetispeed( &newtio, baudrate);
+    cfsetospeed( &newtio, baudrate);
 
     newtio.c_cc[VTIME] = 10; /* inter-character timer  */
     newtio.c_cc[VMIN] = 0; /* blocking read until  */
 
-    tcflush(*xbee_datastream, TCIFLUSH); // flush pending data
+    tcflush( *xbee_datastream, TCIFLUSH); // flush pending data
 
     // set the new defined settings
-    if (tcsetattr(*xbee_datastream, TCSANOW, &newtio))
+    if (tcsetattr( *xbee_datastream, TCSANOW, &newtio))
 
         return Serial_Setting_Fail;
 
     return 0;
 }
 
-int xbee_Serial_Tx(int* xbee_datastream, char* Data){
+int xbee_Serial_Tx(int *xbee_datastream, char *Data){
 
     //----- TX BYTES -----
     unsigned char tx_buffer[xbee_Serial_buffer + 1];
@@ -126,9 +126,9 @@ int xbee_Serial_Tx(int* xbee_datastream, char* Data){
 
         *p_tx_buffer++ = Data[i];
 
-    if (*xbee_datastream != -1){
+    if ( *xbee_datastream != -1){
 
-        int count = write(*xbee_datastream, &tx_buffer[0],
+        int count = write( *xbee_datastream, &tx_buffer[0],
                             (p_tx_buffer - &tx_buffer[0]));
 
         //Datastream, bytes to write, number of bytes to write
@@ -145,7 +145,7 @@ int xbee_Serial_Tx(int* xbee_datastream, char* Data){
     return 0;
 }
 
-int xbee_Serial_Rx(int *xbee_datastream, char* Data){
+int xbee_Serial_Rx(int *xbee_datastream, char *Data){
 
     int Waiting;
 
@@ -179,7 +179,7 @@ int xbee_Serial_Rx(int *xbee_datastream, char* Data){
 
             memset(rx_buffer, 0, sizeof(char) * (xbee_Serial_buffer + 1));
 
-            rx_length = read(*xbee_datastream, (void*)rx_buffer
+            rx_length = read( *xbee_datastream, (void *)rx_buffer
                            , xbee_Serial_buffer);
 
             if(rx_length == 0){
@@ -251,7 +251,7 @@ char* xbee_Serial_Return(int *xbee_datastream){
 
         //Datastream, buffer to store in, number of bytes to read (max)
 
-        rx_length = read(*xbee_datastream, (void*)rx_buffer
+        rx_length = read( *xbee_datastream, (void *)rx_buffer
                        , xbee_Serial_buffer);
 
         //Bytes received
@@ -264,7 +264,7 @@ char* xbee_Serial_Return(int *xbee_datastream){
 
         return "NULL";
 
-    char* return_received = malloc(sizeof(char)*rx_length);
+    char* return_received = malloc(sizeof(char) * rx_length);
 
     for(int n = 0; n < rx_length; n++ )
 
@@ -365,7 +365,7 @@ char* xbee_Send_Command_result(int *xbee_datastream, char *Command){
 
     usleep(xbee_usleep_time);
 
-    char* result =  xbee_Serial_Return(xbee_datastream);
+    char *result =  xbee_Serial_Return(xbee_datastream);
 
     return result;
 }

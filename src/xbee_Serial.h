@@ -118,7 +118,7 @@ int xbee_Serial_Power_Reset(int Wiring_Pi_Pin);
  *          If not 0, somthing wrong.
  *
  */
-int xbee_Serial_Tx(int *xbee_datastream, char* Data);
+int xbee_Serial_Tx(int *xbee_datastream, char *Data);
 
 /*
  * xbee_Serial_Rx
@@ -136,7 +136,7 @@ int xbee_Serial_Tx(int *xbee_datastream, char* Data);
  *               If not 0, somthing wrong.
  *
  */
- int xbee_Serial_Rx(int *xbee_datastream, char* Data);
+ int xbee_Serial_Rx(int *xbee_datastream, char *Data);
 
 /*
  * xbee_Serial_Return
@@ -171,8 +171,8 @@ char* xbee_Serial_Return(int *xbee_datastream);
  *          If not 0, somthing wrong.
  *
  */
-int xbee_Send_Command(int *xbee_datastream, char* Command
-                    , char* Command_Result);
+int xbee_Send_Command(int *xbee_datastream, char *Command
+                    , char *Command_Result);
 
 /*
  * xbee_Send_Command
@@ -190,6 +190,6 @@ int xbee_Send_Command(int *xbee_datastream, char* Command
  *           If return NULL, somthing wrong.
  *
  */
- char* xbee_Send_Command_result(int *xbee_datastream, char* Command);
+ char* xbee_Send_Command_result(int *xbee_datastream, char *Command);
 
 #endif

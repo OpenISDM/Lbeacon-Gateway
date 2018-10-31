@@ -88,7 +88,7 @@ typedef struct pkt_header {
 
 } spkt_ptr;
 
-typedef spkt_ptr * pkt_ptr;
+typedef spkt_ptr *pkt_ptr;
 
 /* init_Packet_Queue
  *
@@ -170,7 +170,7 @@ int delpkt(pkt_ptr pkt_queue);
  *     Return a char pointer which is it's type name.
  *
  */
-char* type_to_str(int type);
+char *type_to_str(int type);
 
 /*
  * str_to_type
@@ -186,7 +186,7 @@ char* type_to_str(int type);
  *     Return a int which is it's type num.
  *
  */
-int str_to_type(const char* conType);
+int str_to_type(const char *conType);
 
 /*
  * print_address
@@ -202,7 +202,7 @@ int str_to_type(const char* conType);
  *     char_addr: A address stored in char convert from address.
  *
  */
-char* print_address(unsigned char* address);
+char *print_address(unsigned char *address);
 
 /* display_pkt
  *
@@ -219,7 +219,7 @@ char* print_address(unsigned char* address);
  *     None
  *
  */
-void display_pkt(char* content, pkt_ptr pkt_queue, int pkt_num);
+void display_pkt(char *content, pkt_ptr pkt_queue, int pkt_num);
 
 /* get_pkt
  *
@@ -251,7 +251,7 @@ pPkt get_pkt(pkt_ptr pkt_queue);
  *     None
  *
  */
-void Fill_Address(char *raw, unsigned char* addr);
+void Fill_Address(char *raw, unsigned char *addr);
 
 /*
  * address_compare
@@ -268,7 +268,7 @@ void Fill_Address(char *raw, unsigned char* addr);
  *      bool: if true, the same.
  *
  */
-bool address_compare(unsigned char* addr1,unsigned char* addr2);
+bool address_compare(unsigned char *addr1,unsigned char *addr2);
 
 /*
  * address_copy
@@ -285,7 +285,7 @@ bool address_compare(unsigned char* addr1,unsigned char* addr2);
  *      None
  *
  */
-void address_copy(unsigned char* src_addr, unsigned char* dest_addr);
+void address_copy(unsigned char *src_addr, unsigned char *dest_addr);
 
 /*
  * is_null
