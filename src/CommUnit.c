@@ -213,17 +213,16 @@ void *wifi_receieve(){
 
 }
 
-void *zigbee_send(){
+void *zigbee_send(BufferListHead *buffer){
 
     time_t start_time = time(NULL);
 
     while(ready_to_work == true) {
 
-      if(start_time - time(NULL) >= A_SHORT_TIME || ){
-
-
-        /* Dequeue the "recieveFromServer" buffer to get the command or
-           request to ask for track object data or health repot */
+      /* There is a routine time for a period to send the request for tracking
+      data from LBeacon. The request also be sent when there is a request from
+      the server which means the input buffer is no longer empty. */
+      if(start_time - time(NULL) >= A_SHORT_TIME || buffer->num_in_list != 0){
 
         /* Send the command or message to the LBeacons via zigbee */
         for(int beacon_number = 0; beacon_number < MAX_NUMBER_NODES;
@@ -248,18 +247,6 @@ void *zigbee_send(){
 
 
       }
-
-
-        /* There is no any received command from the sever, sleep for a
-           while. Or the timer for counting down the time to ask for the
-           data is still counting down, go to sleep */
-        while(recieveFromServer.is_empty == true || TIMEOUT){
-
-        sleep(A_SHORT_TIME);
-
-        }
-
-
 
     }
 }
