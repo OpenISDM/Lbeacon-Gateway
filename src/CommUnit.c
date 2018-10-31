@@ -1,33 +1,33 @@
 /*
- Copyright (c) 2016 Academia Sinica, Institute of Information Science
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
 
- License:
+  License:
 
       GPL 3.0 : The content of this file is subject to the terms and
       cnditions defined in file 'COPYING.txt', which is part of this source
       code package.
 
- Project Name:
+  Project Name:
 
       BeDIPS
 
- File Description:
+  File Description:
 
-       Communication unit: In the alpha version,the sole function of this
-       component is to support the communication of NSI and BHM with location
-       beacons and the BeDIS server. (In a later version that contains iGaD,
-       this components also receives commands from iGaD in the gateway and
-       the BeDIS server and broadcasts the commands tolocal LBeacons.)
-       Messages exchange happens in CommUnit. This file contain the
-       formats of every kind of message and the buffers which store
-       messages.And provide with functions which are executed according
-       the messages received.
+      Communication unit: In the alpha version,the sole function of this
+      component is to support the communication of NSI and BHM with location
+      beacons and the BeDIS server. (In a later version that contains iGaD,
+      this components also receives commands from iGaD in the gateway and
+      the BeDIS server and broadcasts the commands tolocal LBeacons.)
+      Messages exchange happens in CommUnit. This file contain the
+      formats of every kind of message and the buffers which store
+      messages.And provide with functions which are executed according
+      the messages received.
 
- File Name:
+  File Name:
 
      CommUnit.c
 
- Abstract:
+  Abstract:
 
       BeDIPS uses LBeacons to deliver 3D coordinates and textual
       descriptions of their locations to users' devices. Basically, a
@@ -39,21 +39,32 @@
       description to Bluetooth enabled user devices within its coverage
       area.
 
- Authors:
+  Authors:
 
       Holly Wang    , hollywang@iis.sinica.edu.tw
       Ray Chao      , raychao5566@gmail.com
       Gary Xiao     , garyh0205@hotmail.com
 
-*/
+ */
 
 #include "CommUnit.h"
 
-void init_buffer(BufferListHead buffer){
+void init_buffer(BufferListHead *buffer){
 
-    init_entry(&(buffer.buffer_entry));
-    buffer.is_locked = false;
-    buffer.is_empty = true;
+    init_entry( &(buffer -> buffer_entry));
+
+    pthread_mutex_init( &buffer -> list_lock, 0);
+
+    buffer -> num_in_list = 0;
+}
+
+void free_buffer(BufferListHead *buffer){
+
+    init_entry( &(buffer -> buffer_entry));
+
+    pthread_mutex_destroy( &buffer -> list_lock, 0);
+
+    buffer -> num_in_list = 0;
 }
 
 int zigbee_init(){
@@ -68,28 +79,26 @@ int zigbee_init(){
 
     xbee_config.xbee_device = XBEE_DEVICE;
 
-    xbee_config.xbee_datastream = XBEE_DATASTREAM;
+    xbee_config.xbee_datastream = -1;
 
     xbee_config.config_location = XBEE_CONFIG_PATH;
 
 
     xbee_Serial_Power_Reset(xbee_Serial_Power_Pin);
 
-    xbee_Serial_init(&xbee_config.xbee_datastream,
+    xbee_Serial_init( &xbee_config.xbee_datastream,
                      xbee_config.xbee_device);
 
-    xbee_LoadConfig(&xbee_config);
+    xbee_LoadConfig( &xbee_config);
 
     close(xbee_config.xbee_datastream);
 
-    xbee_initial(&xbee_config);
+    xbee_initial( &xbee_config);
 
-    xbee_connector(&xbee_config);
+    xbee_connector( &xbee_config);
 
     /* Start the chain reaction                                             */
     if((error_indicator = xbee_conValidate(xbee_config.con)) != XBEE_ENONE){
-
-        //perror(errordesc[E_XBEE_VALIDATE].message);
 
         return E_XBEE_VALIDATE;
     }
@@ -97,15 +106,13 @@ int zigbee_init(){
     return WORK_SUCCESSFULLY;
 }
 
-
-
 void zigbee_free(){
 
     /* Struct for storing necessary objects for zigbee connection */
     extern sxbee_config xbee_config;
 
     /* Release the xbee elements and close the connection. */
-    xbee_release(&xbee_config);
+    xbee_release( &xbee_config);
 
     return;
 
@@ -161,6 +168,7 @@ void *wifi_send(){
         if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
 
                     printf("could not create socket\n");
+
                     return;
 
         }
@@ -238,7 +246,7 @@ void *zigbee_send(){
 
             /* Add the content that to be sent to the gateway to the packet
                queue */
-            addpkt(&xbee_config.pkt_Queue, Data,
+            addpkt( &xbee_config.pkt_Queue, Data,
                    beacon_address[beacon_number], zig_message);
 
             /* If there are remain some packet need to send in the Queue,
@@ -267,14 +275,14 @@ void *zigbee_receive(){
         }
 
         /* Get the packet in the receive queue received from the LBeacon */
-        pPkt temppkt = get_pkt(&xbee_config.Received_Queue);
+        pPkt temppkt = get_pkt( &xbee_config.Received_Queue);
 
         if(temppkt != NULL){
 
             /* Allocate form zigbee packet memory pool a buffer for received
               data and copy the data from Xbee receive queue to the buffer. */
-            buffer_ptr = mp_alloc(&zig_pkt_mempool);
-            buffer_node_ptr = mp_alloc(&buff_node_mempool);
+            buffer_ptr = mp_alloc( &zig_pkt_mempool);
+            buffer_node_ptr = mp_alloc( &buff_node_mempool);
             if(buffer_ptr == NULL || buffer_node_ptr == NULL){
 
                     ready_to_work = false;

@@ -41,12 +41,12 @@
 
  Authors:
 
-    Han Wang      , hollywang@iis.sinica.edu.tw
+      Han Wang      , hollywang@iis.sinica.edu.tw
       Hank Kung     , hank910140@gmail.com
-    Ray Chao      , raychao5566@gmail.com
+      Ray Chao      , raychao5566@gmail.com
       Gary Xiao     , garyh0205@hotmail.com
 
-*/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,33 +59,24 @@
 #include "xbee_API.h"
 #include "LinkedList.h"
 
-#ifndef CommUnit_H
-#define CommUnit_H
+#ifndef COMMUNIT_H
+#define COMMUNIT_H
 
 /*
-* CONSTANTS
-*/
+ * CONSTANTS
+ */
 #define A_SHORT_TIME 1000
 #define A_LONG_TIME 5000
 
 #define COORDINATE_LENGTH 64
 
-/* server IP address */
-//#define SERVER "140.114.71.26"
-
-/* Gateway IP address*/
-//#define PORT 3306
-
 #define XBEE_MODE "xbeeZB"
 
 #define XBEE_DEVICE "/dev/ttyAMA0"
 
-#define XBEE_DATASTREAM -1
-
 #define XBEE_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/xbee_config.conf"
 
-#define Gateway_CONFIG_PATH
-    "/home/pi/Lbeacon-Gateway/config/Gateway_config.conf"
+#define Gateway_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/Gateway_config.conf"
 
 /* Struct for storing necessary objects for zigbee connection */
 sxbee_config xbee_config;
@@ -105,187 +96,164 @@ typedef enum ErrorCode{
 
 } ErrorCode;
 
-struct errdesc {
-    int code;
-    char *message;
-} errordesc[] = {
-
-    {WORK_SUCCESSFULLY, "The code works successfullly"},
-    {E_XBEE_VALIDATE, "zigbee connection unvalidate."}
-    {E_MALLOC, "Error allocating memory"},
-    {E_OPEN_FILE, "Error opening file"},
-    {E_OPEN_DEVICE, "Error opening the dvice"},
-    {E_OPEN_SOCKET, "Error opening socket"},
-    {E_START_THREAD, "Error start thread"},
-    {E_START_COMMUNICAT_ROUTINE_THREAD, "Error start CommUnit reoutine thread"},
-    {E_START_BHM_ROUTINE_THREAD, "Error start BHM routine thread"},
-    {E_START_TRACKING_THREAD, "Error start Tracking thread"},
-    {E_INIT_THREAD_POOL, "Error initializing thread pool"},
-    {E_ZIGBEE_INIT_FAIL, "Error initializing the zigbee"},
-    {E_ZIGBEE_CONNECT, "Error zigbee connection"},
-    {E_EMPTY_FILE, "Empty file"},
-    {E_ADD_WORK_THREAD, "Error adding work to the work thread"}
-};
-
-/*
-  TYPEDEF STRUCTS
-*/
-
-
 typedef enum pkt_types {
-  tracked_object_data = 1;
-  health_report = 2;
-  data_for_LBeacon = 3;
-  poll_for_tracked_object_data = 9;
-  RFHR_to_Lbeacons = 10;
-  poll_for_RFHR_from_sever = 11;
-  request_to_join = 12;
-  zigbee_network_control = 13;
-  maximum_type = 15;
+    tracked_object_data = 1;
+    health_report = 2;
+    data_for_LBeacon = 3;
+    poll_for_tracked_object_data = 9;
+    RFHR_to_Lbeacons = 10;
+    poll_for_RFHR_from_sever = 11;
+    request_to_join = 12;
+    zigbee_network_control = 13;
+    maximum_type = 15;
 } PktType;
-
-/*
-   VARIBLES
-*/
-
-/* A buffer for storing the command message received from the sever. */
-//BufferListHead receiveFromServer;
-
-/* Two buffer lists storing the track data or health report received
-   from the LBeacons. The content in this buffer is waiting to be
-   sent to the sever */
-//BufferListHead buffer_track_list, buffer_health_list;
 
 /*
   init_buffer:
 
-  The function fills the attributes of buffer storing the packets between
-  gateway and server.
+      The function fills the attributes of buffer storing the packets.
 
   Parameters:
 
-  Node
+      Node
 
   Return value:
 
-  None
-*/
-void init_buffer(BufferListHead buffer);
+      None
+
+ */
+void init_buffer(BufferListHead *buffer);
+
+/*
+  free_buffer:
+
+      The function to release the buffer.
+
+  Parameters:
+
+      Node
+
+  Return value:
+
+      None
+
+ */
+void free_buffer(BufferListHead *buffer);
 
 /*
   wifi_recieve:
 
-  This function listens the request or command received from the
-  server. After getting the message, push the data in to the buffer.
+      This function listens the request or command received from the server.
+      After getting the message, push the data in to the buffer.
 
   Parameters:
 
-  None
+      None
 
   Return value:
 
-    None
-*/
+      None
+ */
 void *wifi_receive();
 
 /*
   wifi_send:
 
-  This function sends the file to the sever via Wi-Fi.
+      This function sends the file to the sever via Wi-Fi.
 
   Parameters:
 
-    None
+      None
 
   Return value:
 
-    None
-*/
+      None
+ */
 void *wifi_send();
 
 /*
   zigbee_receive:
 
-  This function listens the data received from the Beacon.
-  After getting the message, push the data in to the buffer.
+      This function listens the data received from the Beacon.
+      After getting the message, push the data in to the buffer.
 
   Parameters:
 
-    None
+      None
 
   Return value:
 
-    None
-*/
+      None
+ */
 void *zigbee_receive();
 
 /*
   zigbee_send:
 
-    This function sends the data to the Beacon via Zigbee.
+      This function sends the data to the Beacon via Zigbee.
 
   Parameters:
 
-    None
+      None
 
   Return value:
 
-    None
-*/
+      None
+ */
 void *zigbee_send();
 
 /*
   beacon_join_request:
 
-    This function is executed when a beacon sends command to join the gateway
-    and fills the table with the inputs. Set the network_address according
-    the current number of beacons.
+      This function is executed when a beacon sends command to join the gateway
+      and fills the table with the inputs. Set the network_address according
+      the current number of beacons.
 
   Parameters:
 
-    ID - The UUIzd of the LBeacon
-    mac - The mac address of the xbee
-    Coordinates - Pointerto the beacon coordinates
-    Loc_Description - Pointer to the beacon literal location description
-
+      ID - The UUIzd of the LBeacon
+      mac - The mac address of the xbee
+      Coordinates - Pointerto the beacon coordinates
+      Loc_Description - Pointer to the beacon literal location description
 
   Return value:
 
-    None
+      None
 
-*/
+ */
 void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
                          char *Loc_Description);
 
 /*
   zigbee_init:
 
-    This function initilizes the zigbee's necessory object.
+      This function initilizes the zigbee's necessory object.
 
   Parameters:
 
-    zigbee - the struct of necessary parameter and data
+      zigbee - the struct of necessary parameter and data
 
   Return value:
 
-    int: The error code for the corresponding error or successful
+      int: The error code for the corresponding error or successful
 
-*/
+ */
 int zigbee_init();
 
 /*
   zigbee_free:
 
-    When called, this function frees the necessory element.
+      When called, this function frees the necessory element.
 
   Parameters:
 
-    zigbee - the struct of necessary parameter and data
+      zigbee - the struct of necessary parameter and data
 
   Return value:
 
-    none
-*/
+      None
+
+ */
 void zigbee_free();
 
 #endif
