@@ -13,21 +13,21 @@
 
  File Description:
 
-      This file contains the declarations and definition of variables 
+      This file contains the declarations and definition of variables
       used in the Mempool.c file.
 
-      Note:  This code is referred from a post by 2013Asker on 20140504 
+      Note: This code is referred from a post by 2013Asker on 20140504
       on the stackexchange website here:
       https://codereview.stackexchange.com/questions/48919/simple-memory-
       pool-using-no-extra-memory
-       
+
 
  File Name:
 
       Mempool.h
 
  Version:
- 
+
        1.2
 
  Abstract:
@@ -45,8 +45,8 @@
  Authors:
 
       Han Wang, hollywang@iis.sinica.edu.tw
+      Gary Xiao, garyh0205@hotmail.com
 
-      
 */
 
 #include <stdlib.h>
@@ -55,6 +55,9 @@
 #define MEMORY_POOL_ERROR 0
 #define MEMORY_POOL_MINIMUM_SIZE sizeof(void *)
 
+#ifndef MEMPOOL_H
+#define MEMPOOL_H
+
 /* The structure of the memory pool */
 typedef struct {
     void **head;
@@ -62,18 +65,16 @@ typedef struct {
     int size;
 } Memory_Pool;
 
-
-
 /*
   mp_init:
 
-    This function allocates memory and initializes the memory pool and links 
+    This function allocates memory and initializes the memory pool and links
     the slots in the pool.
 
   Parameters:
 
-    mp - pointer to a specific memory pool 
-    size - the size of slots in the pool 
+    mp - pointer to a specific memory pool
+    size - the size of slots in the pool
     slots - the number of slots in the memory pool
 
   Return value:
@@ -83,7 +84,6 @@ typedef struct {
 
 int mp_init(Memory_Pool *mp, size_t size, size_t slots);
 
-
 /*
   mp_destroy:
 
@@ -91,7 +91,7 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots);
 
   Parameters:
 
-    mp - pointer to the specific memory pool to be destroyed 
+    mp - pointer to the specific memory pool to be destroyed
 
   Return value:
 
@@ -101,12 +101,11 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots);
 
 void mp_destroy(Memory_Pool *mp);
 
-
 /*
   mp_alloc:
 
-    This function gets a free slot from the memory pool and returns a pointer 
-    to a slot when a free slot is available and return NULL when no free slot 
+    This function gets a free slot from the memory pool and returns a pointer
+    to a slot when a free slot is available and return NULL when no free slot
     is available.
 
   Parameters:
@@ -115,16 +114,15 @@ void mp_destroy(Memory_Pool *mp);
 
   Return value:
 
-    void - the pointer to the struct of a free slot or NULL 
+    void - the pointer to the struct of a free slot or NULL
 */
 
 void *mp_alloc(Memory_Pool *mp);
 
-
 /*
   mp_free:
 
-    This function releases an unused slot back to the memory pool and places 
+    This function releases an unused slot back to the memory pool and places
     it in the head of the free list.
 
   Parameters:
@@ -134,6 +132,8 @@ void *mp_alloc(Memory_Pool *mp);
 
   Return value:
 
-    Errorcode - error code or sucessful message 
+    Errorcode - error code or sucessful message
 */
 int mp_free(Memory_Pool *mp, void *mem);
+
+#endif

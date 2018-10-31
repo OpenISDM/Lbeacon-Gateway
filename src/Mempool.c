@@ -13,20 +13,20 @@
 
  File Description:
 
-      This file contains the program to allow the necessory memory 
-      allocation for the nodes in the linked list. 
+      This file contains the program to allow the necessory memory
+      allocation for the nodes in the linked list.
 
       Note: The code is referred to the site:
       https://codereview.stackexchange.com/questions/48919/simple-memory-
-      pool-%20using-no-extra-memory 
-       
+      pool-%20using-no-extra-memory
+
 
  File Name:
 
       Mempool.c
 
  Version:
- 
+
        1.2
 
  Abstract:
@@ -44,17 +44,14 @@
  Authors:
 
       Han Wang, hollywang@iis.sinica.edu.tw
+      Gary Xiao, garyh0205@hotmail.com
 
-      
 */
 
 #include "Mempool.h"
 
-
-
 int mp_init(Memory_Pool *mp, size_t size, size_t slots)
 {
-  
 
     //allocate memory
     if((mp->memory = malloc(size * slots)) == NULL)
@@ -66,37 +63,30 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots)
 
      //add every slot to the free list
     char *end = (char *)mp->memory + size * slots;
-    
+
     for(char *ite = mp->memory; ite < end; ite += size){
 
-            //store first address
-            void *temp = mp->head;
+        //store first address
+        void *temp = mp->head;
 
-            //link the new node
-            mp->head = ite;
+        //link the new node
+        mp->head = ite;
 
-            //link to the list from new node
-            *mp->head = temp;
-  
+        //link to the list from new node
+        *mp->head = temp;
+
     }
-    
 
     return MEMORY_POOL_SUCCESS;
 }
 
-
-
-
 void mp_destroy(Memory_Pool *mp)
-{   
+{
 
     mp->memory = NULL;
     free(mp->memory);
 
 }
-
-
-
 
 void *mp_alloc(Memory_Pool *mp)
 {
@@ -113,17 +103,16 @@ void *mp_alloc(Memory_Pool *mp)
     return temp;
 }
 
-
-
 int mp_free(Memory_Pool *mp, void *mem)
 {
     //check if mem is correct, i.e. is pointing to the struct of a slot
     //calculate the offset from mem to mp->memory
     int diffrenceinbyte = (mem - mp->memory) * sizeof(mem);
-    
-    if((diffrenceinbyte % mp->size) != 0){  
-        
+
+    if((diffrenceinbyte % mp->size) != 0){
+
         return MEMORY_POOL_ERROR;
+
     }
 
     //store first address
@@ -133,6 +122,5 @@ int mp_free(Memory_Pool *mp, void *mem)
     //link to the list from new node
     *mp->head = temp;
 
-    return MEMORY_POOL_SUCCESS; 
+    return MEMORY_POOL_SUCCESS;
 }
-
