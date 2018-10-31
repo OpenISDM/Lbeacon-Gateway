@@ -114,14 +114,6 @@ void *Initialize_network(){
 
     //ErrorCode status;
 
-    /* Initialize buffers for sever*/
-
-    init_buffer(buffer_health_list);
-
-    init_buffer(buffer_track_list);
-
-    init_buffer(recieveFromServer);
-
     /* set up WIFI connection */
     /* open temporary wpa_supplicant.conf file to setup wifi environment*/
 
@@ -355,14 +347,17 @@ int main(int argc, char **argv){
 
     config = get_config(Gateway_CONFIG_PATH);
 
-    /* Network Setup and Initialization for Zigbee and Wifi */
+    /* Initialize the buffer_list_heads */
+    init_buffer(LBeacon_receive_buffer_list_head);
+    init_buffer(LBeacon_send_buffer_list_head);
 
-    pthread_t NSI_thrad;
-    pthread_t BHM_thread;
-    pthread_t CommUnit_thread;
+    init_buffer(NSI_receive_buffer_list_head);
+    init_buffer(NSI_send_buffer_list_head);
 
+    init_buffer(BHM_receive_buffer_list_head);
+    init_buffer(BHM_send_buffer_list_head);
 
-    return_value = startThread(&NSI_thrad, Initialize_network, NULL);
+    init_buffer(Command_msg_buffer_list_head);
 
     if(return_value != WORK_SUCCESSFULLY){
 
