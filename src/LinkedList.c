@@ -13,18 +13,18 @@
 
  File Description:
 
-      This file contains the generic implementation of a double-linked-list 
-      data structure.It has functions for inserting a node to the front of the 
+      This file contains the generic implementation of a double-linked-list
+      data structure.It has functions for inserting a node to the front of the
       list and deleting a specific node. It can also check the length of the
-      list. Any datatype of data could be stored in this list. 
-     
+      list. Any datatype of data could be stored in this list.
+
 
  File Name:
 
       LinkedList.c
 
  Version:
- 
+
        1.2
 
  Abstract:
@@ -40,31 +40,26 @@
 
  Authors:
 
-      Han Wang, hollywang@iis.sinica.edu.tw 
+      Han Wang, hollywang@iis.sinica.edu.tw
       Jake Lee, jakelee@iis.sinica.edu.tw
       Johnson Su, johnsonsu@iis.sinica.edu.tw
       Shirley Huang, shirley.huang.93@gmail.com
       Han Hu, hhu14@illinois.edu
       Jeffrey Lin, lin.jeff03@gmail.com
       Howard Hsu, haohsu0823@gmail.com
-      
+
 */
 
 #include "LinkedList.h"
 
-
-
 inline void init_entry(List_Entry *entry){
-        
-        entry->next = entry;
-        entry->prev = entry;
+
+    entry->next = entry;
+    entry->prev = entry;
 
 }
 
-
-
-
-inline void insert_entry_list(List_Entry *new_node, List_Entry *prev, 
+inline void insert_entry_list(List_Entry *new_node, List_Entry *prev,
                          List_Entry *next) {
 
     next->prev = new_node;
@@ -74,27 +69,17 @@ inline void insert_entry_list(List_Entry *new_node, List_Entry *prev,
 
 }
 
-
-
-
 inline void insert_list_first(List_Entry *new_node, List_Entry *head) {
 
     insert_entry_list(new_node, head, head->next);
 
 }
 
-
-
-
-
 inline void insert_list_tail(List_Entry *new_node, List_Entry *head) {
 
     insert_entry_list(new_node, head->prev, head);
 
 }
-
-
-
 
 inline void remove_entry_list(List_Entry *prev, List_Entry *next) {
 
@@ -103,37 +88,24 @@ inline void remove_entry_list(List_Entry *prev, List_Entry *next) {
 
 }
 
-
-
-
-
 inline void remove_list_node(List_Entry *removed_node_ptrs) {
 
     remove_entry_list(removed_node_ptrs->prev, removed_node_ptrs->next);
-    
+
     removed_node_ptrs->prev = removed_node_ptrs;
     removed_node_ptrs->next = removed_node_ptrs;
 
-
-    
 }
-
-
 
 inline int get_list_length(List_Entry *entry) {
 
     struct List_Entry *listptrs;
     int list_length = 0;
 
-    for (listptrs = (entry)->next; listptrs != (entry); 
-         listptrs = listptrs->next) {
+    for (listptrs = (entry)->next; listptrs != (entry);
+        listptrs = listptrs->next) {
         list_length++;
     }
 
     return list_length;
 }
-
-
-
-
-
