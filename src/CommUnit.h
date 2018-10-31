@@ -56,6 +56,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 #include "xbee_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
@@ -64,7 +65,7 @@
 #define COMMUNIT_H
 
 /*
- * CONSTANTS
+  CONSTANTS
  */
  /* Timeout interval in seconds */
  #define A_LONG_TIME 30000
@@ -79,10 +80,10 @@
 
 #define XBEE_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/xbee_config.conf"
 
-/* Struct for storing necessary objects for zigbee connection */
-sxbee_config xbee_config;
 
-/* ErrorCode */
+/*
+  ErrorCode
+*/
 
 typedef enum ErrorCode{
 
@@ -115,6 +116,9 @@ typedef enum pkt_types {
 
 } PktType;
 
+/*
+  TYPEDEF STRUCTS
+*/
 typedef struct{
 
     char X_coordinates[COORDINATE_LENGTH];
@@ -165,21 +169,12 @@ typedef struct BufferNode{
 
 } BufferNode;
 
+/*
+  GLOBAL VARIABLES
+*/
+/* Struct for storing necessary objects for zigbee connection */
+sxbee_config xbee_config;
 
-/* Message buffer list heads */
-BufferListHead LBeacon_send_buffer_list_head;
-BufferListHead LBeacon_receive_buffer_list_head;
-
-BufferListHead NSI_receive_buffer_list_head;
-BufferListHead NSI_send_buffer_list_head;
-
-BufferListHead BHM_receive_buffer_list_head;
-BufferListHead BHM_send_buffer_list_head;
-
-BufferListHead Command_msg_buffer_list_head;
-
-/* An array of address maps */
-Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
 
 /*
   init_buffer:

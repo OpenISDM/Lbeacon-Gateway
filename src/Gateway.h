@@ -34,11 +34,15 @@
 
  Authors:
 
-     Holly Wang     , hollywang@iis.sinica.edu.tw
+     Holly Wang   , hollywang@iis.sinica.edu.tw
      Hank Kung    , hank910140@gmail.com
      Ray Chao     , raychao5566@gmail.com
      Gary Xiao    , garyh0205@hotmail.com
 
+ */
+
+ /*
+  INCLUDES
  */
 
 #include <ctype.h>
@@ -66,6 +70,10 @@
 
 #ifndef GATEWAY_H
 #define GATEWAY_H
+
+/*
+  CONSTANTS
+*/
 
 /* File path of the config file of the LBeacon */
 #define CONFIG_FILE_NAME "../config/gateway.conf"
@@ -97,8 +105,11 @@
 /* Length of coordinates in number of bits */
 #define COORDINATE_LENGTH 64
 
-/* The configuration file structure */
+/*
+  TYPEDEF STRUCTS
+*/
 
+/* The configuration file structure */
 typedef struct Config {
 
     /* The IP address for WiFi netwok connection. */
@@ -122,6 +133,23 @@ typedef struct Config {
 
 } GatewayConfig;
 
+/*
+  GLOBAL VARIABLES
+*/
+/* Message buffer list heads */
+BufferListHead LBeacon_send_buffer_list_head;
+BufferListHead LBeacon_receive_buffer_list_head;
+
+BufferListHead NSI_receive_buffer_list_head;
+BufferListHead NSI_send_buffer_list_head;
+
+BufferListHead BHM_receive_buffer_list_head;
+BufferListHead BHM_send_buffer_list_head;
+
+BufferListHead Command_msg_buffer_list_head;
+
+/* An array of address maps */
+Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
 
 /* mempool for Gateway */
 Memory_Pool Gateway_MemPool;

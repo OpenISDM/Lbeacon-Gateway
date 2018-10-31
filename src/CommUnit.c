@@ -215,16 +215,12 @@ void *wifi_receieve(){
 
 void *zigbee_send(){
 
+    time_t start_time = time(NULL);
+
     while(ready_to_work == true) {
 
-        /* There is no any received command from the sever, sleep for a
-           while. Or the timer for counting down the time to ask for the
-           data is still counting down, go to sleep */
-        while(recieveFromServer.is_empty == true || TIMEOUT){
+      if(start_time - time(NULL) >= A_SHORT_TIME || ){
 
-        sleep(A_SHORT_TIME);
-
-        }
 
         /* Dequeue the "recieveFromServer" buffer to get the command or
            request to ask for track object data or health repot */
@@ -247,6 +243,23 @@ void *zigbee_send(){
         xbee_connector(&xbee_config);
 
         usleep(XBEE_TIMEOUT);
+
+        start_time = start_time + A_SHORT_TIME;
+
+
+      }
+
+
+        /* There is no any received command from the sever, sleep for a
+           while. Or the timer for counting down the time to ask for the
+           data is still counting down, go to sleep */
+        while(recieveFromServer.is_empty == true || TIMEOUT){
+
+        sleep(A_SHORT_TIME);
+
+        }
+
+
 
     }
 }
