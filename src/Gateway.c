@@ -69,33 +69,31 @@ GatewayConfig get_config(char *file_name) {
         char *config_message[CONFIG_FILE_LENGTH];
 
          /* Keep reading each line and store into the config struct */
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message[0] = strstr((char *)config_setting, DELIMITER);
-        config_message[0] = config_message[0] + strlen(DELIMITER);
-
-        config.allowed_number_of_nodes = atoi(config_message[0]);
+         fgets(config_setting, sizeof(config_setting), file);
+         config_message[0] = strstr((char *)config_setting, DELIMITER);
+         config_message[0] = config_message[0] + strlen(DELIMITER);
+         memcpy(config.IPaddress, config_message[0],
+           strlen(config_message[0]));
+         config.address_length = strlen(config_message[0]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[1] = strstr((char *)config_setting, DELIMITER);
         config_message[1] = config_message[1] + strlen(DELIMITER);
-
+        config.allowed_number_of_nodes = atoi(config_message[1]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[2] = strstr((char *)config_setting, DELIMITER);
         config_message[2] = config_message[2] + strlen(DELIMITER);
-
         config.period_between_RFHR = atoi(config_message[2]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[3] = strstr((char *)config_setting, DELIMITER);
         config_message[3] = config_message[3] + strlen(DELIMITER);
-
         config.number_worker_thread = atoi(config_message[3]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[4] = strstr((char *)config_setting, DELIMITER);
         config_message[4] = config_message[4] + strlen(DELIMITER);
-
         config.number_priority_levels = atoi(config_message[4]);
 
         fclose(file);
@@ -103,6 +101,7 @@ GatewayConfig get_config(char *file_name) {
 
     return config;
 }
+
 
 void *Initialize_network(){
 
@@ -315,7 +314,7 @@ int main(int argc, char **argv){
 
     ready_to_work = false;
 
-    config = get_config(Gateway_CONFIG_PATH);
+    config = get_config(CONFIG_FILE_NAME);
 
     /* Initialize the buffer_list_heads */
     init_buffer(LBeacon_receive_buffer_list_head);

@@ -67,6 +67,18 @@
 #ifndef GATEWAY_H
 #define GATEWAY_H
 
+/* File path of the config file of the LBeacon */
+#define CONFIG_FILE_NAME "../config/gateway.conf"
+
+/* Parameter that marks the start of the config file */
+#define DELIMITER "="
+
+/* Maximum number of characters in each line of config file */
+#define CONFIG_BUFFER_SIZE 64
+
+/* Number of lines in the config file */
+#define CONFIG_FILE_LENGTH 11
+
 /* The timeout for waiting in number of millisconds */
 #define TIMEOUT 3000
 
@@ -89,22 +101,20 @@
 
 typedef struct Config {
 
+    /* The IP address for WiFi netwok connection. */
+    char IPaddress[CONFIG_BUFFER_SIZE];
+
+    /* String length needed to store IPaddress */
+    int address_length;
+
     /* The number of LBeacon nodes in the star network of this gateway */
     int allowed_number_nodes;
-
-    /*
-        The flag is true when health reports from LBeacon are requested by the
-        BeDIS sever.
-     */
-    bool Is_health_reporting_polled;
 
     /* The time period for gateway sending requests to LBeacon */
     int  Period_between_RFHR;
 
-    /*
-        The number of worker threads used by the communication unit for sending
-        and receiving packets to and from LBeacons and the sever.
-     */
+    /*The number of worker threads used by the communication unit for sending
+      and receiving packets to and from LBeacons and the sever.*/
     int  Number_worker_threads;
 
     /* Priority levels at which worker threads execute. */

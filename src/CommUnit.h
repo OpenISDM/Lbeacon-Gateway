@@ -65,8 +65,10 @@
 /*
  * CONSTANTS
  */
-#define A_SHORT_TIME 1000
-#define A_LONG_TIME 5000
+ /* Timeout interval in seconds */
+ #define A_LONG_TIME 30000
+ #define A_SHORT_TIME 5000
+ #define A_VERY_SHORT_TIME 300
 
 #define COORDINATE_LENGTH 64
 
@@ -75,8 +77,6 @@
 #define XBEE_DEVICE "/dev/ttyAMA0"
 
 #define XBEE_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/xbee_config.conf"
-
-#define Gateway_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/Gateway_config.conf"
 
 /* Struct for storing necessary objects for zigbee connection */
 sxbee_config xbee_config;
