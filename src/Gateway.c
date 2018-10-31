@@ -37,7 +37,7 @@
 
  Authors:
 
-     Han Wang     , hollywang@iis.sinica.edu.tw
+     Holly Wang     , hollywang@iis.sinica.edu.tw
      Jake Lee     , jakelee@iis.sinica.edu.tw
      Johnson Su   , johnsonsu@iis.sinica.edu.tw
      Hank Kung    , hank910140@gmail.com

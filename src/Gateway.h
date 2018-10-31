@@ -34,7 +34,7 @@
 
  Authors:
 
-     Han Wang     , hollywang@iis.sinica.edu.tw
+     Holly Wang     , hollywang@iis.sinica.edu.tw
      Hank Kung    , hank910140@gmail.com
      Ray Chao     , raychao5566@gmail.com
      Gary Xiao    , garyh0205@hotmail.com
@@ -102,78 +102,26 @@
 typedef struct Config {
 
     /* The IP address for WiFi netwok connection. */
-    char IPaddress[CONFIG_BUFFER_SIZE];
+    char  IPaddress[CONFIG_BUFFER_SIZE];
 
     /* String length needed to store IPaddress */
-    int address_length;
+    int   address_length;
 
     /* The number of LBeacon nodes in the star network of this gateway */
-    int allowed_number_nodes;
+    int   allowed_number_nodes;
 
     /* The time period for gateway sending requests to LBeacon */
-    int  Period_between_RFHR;
+    int   Period_between_RFHR;
 
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
-    int  Number_worker_threads;
+    int   Number_worker_threads;
 
     /* Priority levels at which worker threads execute. */
-    int  Number_priority_levels;
+    int   Number_priority_levels;
 
 } GatewayConfig;
 
-
-typedef struct{
-
-    char X_coordinates[COORDINATE_LENGTH];
-    char Y_coordinates[COORDINATE_LENGTH];
-    char Z_coordinates[COORDINATE_LENGTH];
-
-}Coordinates;
-
-/*
-    A struct linking network address assigned to a LBeacon to its UUID,
-    coordinates, and location description.
- */
-typedef struct{
-
-    char        beacon_uuid[UUID_LENGTH];
-
-    /* network address of zigbee/wifi link to the LBeacon*/
-    char        net_address[Address_length_Hex];
-
-    Coordinates beacon_coordinates;
-
-    char        location_description[MAX_LENGTH_LOC_DESCRIPTION];
-
-}Address_map;
-
-/* A Head of a list of msg buffer */
-typedef struct buffer_list_head{
-
-    struct List_Entry buffer_entry;
-
-    /* A per list lock */
-    pthread_mutex_t   list_lock;
-
-    /* Current number of msg buffers in the list */
-    int               num_in_list;
-
-} BufferListHead;
-
-/* A node of buffer to store received data and/or data to be send */
-typedef struct BufferNode{
-
-    struct List_Entry buffer_entry;
-
-    /* Zigbee network address of the source or destination */
-    char             *net_address;
-
-    /* point to where the data is stored. */
-    char             *content;
-
-
-} BufferNode;
 
 /* mempool for Gateway */
 Memory_Pool Gateway_MemPool;
@@ -203,21 +151,6 @@ bool NSI_initialization_complete;
 bool BHM_initialization_complete;
 bool CommUnit_initialization_complete;
 bool initialization_failed;
-
-/* Message buffer list heads */
-BufferListHead LBeacon_send_buffer_list_head;
-BufferListHead LBeacon_receive_buffer_list_head;
-
-BufferListHead NSI_receive_buffer_list_head;
-BufferListHead NSI_send_buffer_list_head;
-
-BufferListHead BHM_receive_buffer_list_head;
-BufferListHead BHM_send_buffer_list_head;
-
-BufferListHead Command_msg_buffer_list_head;
-
-/* An array of address maps */
-Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
 
 /* Current number of LBeacons */
 int LBeacon_count;
