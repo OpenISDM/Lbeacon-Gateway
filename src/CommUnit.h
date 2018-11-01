@@ -161,7 +161,7 @@ typedef struct BufferNode{
     struct List_Entry buffer_entry;
 
     /* Zigbee network address of the source or destination */
-    char             *net_address;
+    char             net_address[Address_length_Hex];
 
     /* point to where the data is stored. */
     char             *content;

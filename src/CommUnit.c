@@ -132,8 +132,8 @@ void *wifi_send(){
     while (ready_to_work == true) {
 
         /* If two buffers are all empty, sleep for a while */
-        while(buffer_track_list.is_empty == true &&
-              buffer_health_list.is_empty == true){
+        while(buffer_track_list.num_in_list == 0 &&
+              buffer_health_list.num_in_list == 0){
 
             sleep(A_SHORT_TIME);
 
@@ -146,7 +146,7 @@ void *wifi_send(){
 
         /* creates binary representation of server name
         /* and stores it as sin_addr*/
-        inet_pton(AF_INET, server_name, &server_address.sin_addr);
+        inet_pton(AF_INET, /* addr to send */, &server_address.sin_addr);
 
         /* port in network order format */
         server_address.sin_port = htons(server_port);
@@ -163,10 +163,8 @@ void *wifi_send(){
         }
 
         /* send data via sendto() function to send data to sever */
-        sendto(...);
-
-        /* received echoed data back for hand shacking with sever*/
-        recvfrom(...);
+        sendto(sock, /* buf */, /* size */, 0, &server_address
+             , sizeof(server_address) );
 
         /* close the socket */
         close(sock);
@@ -186,7 +184,7 @@ void *wifi_receieve(){
 
         /* creates binary representation of server name
         /* and stores it as sin_addr*/
-        inet_pton(AF_INET, server_name, &server_address.sin_addr);
+        inet_pton(AF_INET, /* addr to rcv */, &server_address.sin_addr);
 
         /* port in network order format */
         server_address.sin_port = htons(server_port);
@@ -201,7 +199,8 @@ void *wifi_receieve(){
         /* Recieving and sending have to be splited up into to threads, since
         they are call back functions. It cost too much if they had to wait for
         each other. And these two threads should not start in a while loop. */
-        if (recvfrom(...) == -1)
+        if (recvfrom(sock, /* buf */, /* size */,  0, &server_address
+          , sizeof(server_address)) == -1)
         {
             /* error in recieving the file */
         }
