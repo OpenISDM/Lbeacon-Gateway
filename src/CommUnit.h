@@ -57,6 +57,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+＃include "Mempool.h"
 #include "xbee_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
@@ -164,7 +165,7 @@ typedef struct BufferNode{
     char             net_address[Address_length_Hex];
 
     /* point to where the data is stored. */
-    char             *content;
+    char             *content[];
 
 
 } BufferNode;
@@ -222,7 +223,7 @@ void free_buffer(BufferListHead *buffer);
 
      None
  */
-void *wifi_receive();
+void *wifi_receive(BufferListHead *buffer);
 
 /*
  wifi_send:
@@ -237,7 +238,7 @@ void *wifi_receive();
 
      None
  */
-void *wifi_send();
+void *wifi_send(BufferListHead *buffer_array[]);
 
 /*
  zigbee_receive:
@@ -253,7 +254,7 @@ void *wifi_send();
 
      None
  */
-void *zigbee_receive();
+void *zigbee_receive(BufferListHead *buffer_array[]);
 
 /*
  zigbee_send:
@@ -268,7 +269,7 @@ void *zigbee_receive();
 
      None
  */
-void *zigbee_send();
+void *zigbee_send(BufferListHead *buffer);
 
 /*
  beacon_join_request:

@@ -127,7 +127,7 @@ void beacon_join_request(char *ID, char *mac,
 
 }
 
-void *wifi_send(){
+void *wifi_send(BufferListHead *buffer_array[]){
 
     while (ready_to_work == true) {
 
@@ -173,7 +173,7 @@ void *wifi_send(){
 
 }
 
-void *wifi_receieve(){
+void *wifi_receieve(BufferListHead *buffer){
 
     while (ready_to_work == true) {
 
@@ -206,7 +206,7 @@ void *wifi_receieve(){
         }
         /* Get the command from the sever, add the message or command to the
            buffer */
-        Add_to_buffer(recieveFromServer);
+        Add_to_buffer(&buffer);
 
     }
 
@@ -250,11 +250,12 @@ void *zigbee_send(BufferListHead *buffer){
     }
 }
 
-void *zigbee_receive(){
-    buffer_ptr;
-    buffer_node_ptr;
+void *zigbee_receive(BufferListHead *buffer_array[]){
 
     while(ready_to_work == true){
+
+        struct BufferNode *new_node;
+
         /* Check the connection of call back is enable */
         if(xbee_check_CallBack(&xbee_config, false)){
 
@@ -268,51 +269,65 @@ void *zigbee_receive(){
         if(temppkt != NULL){
 
             /* Allocate form zigbee packet memory pool a buffer for received
-              data and copy the data from Xbee receive queue to the buffer. */
-            buffer_ptr = mp_alloc( &zig_pkt_mempool);
-            buffer_node_ptr = mp_alloc( &buff_node_mempool);
-            if(buffer_ptr == NULL || buffer_node_ptr == NULL){
+            data and copy the data from Xbee receive queue to the buffer. */
+            new_node = mp_alloc(&node_mempool);
+
+            /* Initialize the entry of the buffer node */
+            init_entry(new_node->buffer_entry);
+
+            if(new_node == NULL){
 
                     ready_to_work = false;
                     return;
+
             }else{
+
               /* Copy the content to the buffer_node */
-              memcpy(xbee_config.Received_Queue, buffrt_ptr, num_bytes);
+              memcpy(new_node->content, temppkt->content,
+                     sizeof(temppkt->content));
 
-              /* Get the zigbee network address from the content and look up from
-                Lbeacon_address_map the  UUID of the LBeacon, and the
-                buffer_index. */
-
-              /* Insert the buffer node into the buffer list with the
-                 buffer_index */
+              /* Get the zigbee network address from the content and look up
+              from Lbeacon_address_map the UUID of the LBeacon, and the
+              buffer_index. */
+              memcpy(new_node->net_address, temppkt->address,
+                     sizeof(temppkt->address));
 
             }
+            /* According to different packet type, insert the node into
+            the corresponding buffer list with the buffer_index */
             switch(buffer_ptr -> content.pkt_header.pkt_types){
 
               case "health_report":
+
+                pthread_mutex_lock(BHM_receive_buffer_list_head.list_lock);
+
                 /* Acquire BHM_recieve_buffer_list_head.list_lock, Insert
-                  the buffer_node in BHM_receive_buffer_list, increament
-                  num_in_list by 1 and release list_lock. */
+                the buffer_node in BHM_receive_buffer_list, release
+                list_lock. */
+                insert_list_first(&new_node->buffer_entry,
+                                  &BHM_receive_buffer_list_head);
+
+                pthread_mutex_unlock(BHM_receive_buffer_list_head.list_lock);
+                /* Delete the packet and return the indicator back. */
+                delpkt(&xbee_config.Received_Queue);
+
+                break;
+                
+              case "tracked_object_data":
+
+                  pthread_mutex_lock(LBeacon_receive_buffer_list_head.list_lock);
+
+                  /* Insert the node in LBeacon_receive_buffer_list, and release
+                  list_lock. */
+                  insert_list_first(&new_node->buffer_entry,
+                                      &LBeacon_receive_buffer_list_head);
+
+                  pthread_mutex_unlock(LBeacon_receive_buffer_list_head.list_lock);
 
                   /* Delete the packet and return the indicator back. */
                   delpkt(&xbee_config.Received_Queue);
 
                   break;
-              case "tracked_object_data":
-              case "data_for_Lbeacon":
-                  /* look up from the address map the buffer_index based on
-                    the zigbee net address */
-
-                  /* Acquire
-                    per_LBeacon_buffer_list_head[buffer_index].list_lock,
-                    insert the buffer_node in per_LBeacon_buffer_list
-                    [buffer_index], increament num_in_list by 1 and release
-                    list_lock. */
-
-                    /* Delete the packet and return the indicator back. */
-                    delpkt(&xbee_config.Received_Queue);
-
-                    break;
 
               case "request_to_join":
                   /* The packet is a request for registration. Acquire

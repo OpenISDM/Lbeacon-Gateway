@@ -151,16 +151,9 @@ void *Initialize_network(){
 
 void *CommUnit_routine(){
 
+    Threadpool thpool;
     int return_error_value;
 
-    /* This thread is created to send the data to the Server via wifi. */
-    pthread_t wifi_sender_thread;
-    /* This thread is created to receive the data from the sever via wifi. */
-    pthread_t wifi_receiver_thread;
-    /* This thread is created to send the data to LBeacon via zigbee. */
-    pthread_t zigbee_sender_thread;
-    /* This thread is created to receive the data from LBeacon via zigbee. */
-    pthread_t zigbee_receiver_thread;
 
     //wait for NSI get ready
     while( NSI_initialization_complete == false ){
@@ -169,20 +162,17 @@ void *CommUnit_routine(){
 
     }
 
-    /*
-        Create threads for sending and receiving data from and to LBeacon and
-        server.
-     */
+    /* Initialize the threadpool with assigned number of worker threads
+    according to the data stored in the config file. */
+    thpool = thpool_init(config.Number_worker_threads);
 
-    return_error_value = startThread(wifi_receive_thread, wifi_receive, NULL);
+    /* Create threads for sending and receiving data from and to LBeacon and
+    server. */
 
-    if(return_error_value != WORK_SUCCESSFULLY){
-
-        return return_error_value;
-
-    }
-
-    return_error_value = startThread(zigbee_receive_thread, zigbee_receive, NULL);
+    return_error_value = thpool_add_work(thpool,
+                                         (void *)wifi_recieve,
+                                         &Command_msg_buffer_list_head,
+                                         NORMAL_PRIORITY);
 
     if(return_error_value != WORK_SUCCESSFULLY){
 
@@ -190,7 +180,10 @@ void *CommUnit_routine(){
 
     }
 
-    return_error_value = startThread(wifi_send_thread, wifi_send, NULL);
+    return_error_value = thpool_add_work(thpool,
+                                         (void *)zigbee_receive,
+                                         buffer_array,
+                                         HIGH_PRIORITY);
 
     if(return_error_value != WORK_SUCCESSFULLY){
 
@@ -198,7 +191,21 @@ void *CommUnit_routine(){
 
     }
 
-    return_error_value = startThread(zigbee_send_thread, zigbee_send, NULL);
+    return_error_value = thpool_add_work(thpool,
+                                         (void *)wifi_send,
+                                         buffer_array,
+                                         NORMAL_PRIORITY);
+
+    if(return_error_value != WORK_SUCCESSFULLY){
+
+        return return_error_value;
+
+    }
+
+    return_error_value = thpool_add_work(thpool,
+                                        (void *)zigbee_send,
+                                        &LBeacon_send_buffer_list_head,
+                                        HIGH_PRIORITY);
 
     if(return_error_value != WORK_SUCCESSFULLY){
 
@@ -207,38 +214,6 @@ void *CommUnit_routine(){
     }
 
     while(ready_to_work == True){
-
-    }
-
-    return_error_value = pthread_join(zigbee_send_thread, NULL);
-
-    if (return_error_value != WORK_SUCCESSFULLY) {
-
-        return return_error_value;
-
-    }
-
-    return_error_value = pthread_join(wifi_send_thread, NULL);
-
-    if (return_error_value != WORK_SUCCESSFULLY) {
-
-        return return_error_value;
-
-    }
-
-    return_error_value = pthread_join(zigbee_receive_thread, NULL);
-
-    if (return_error_value != WORK_SUCCESSFULLY) {
-
-        return return_error_value;
-
-    }
-
-    return_error_value = pthread_join(wifi_receive_thread, NULL);
-
-    if (return_error_value != WORK_SUCCESSFULLY) {
-
-        return return_error_value;
 
     }
 
@@ -318,15 +293,18 @@ int main(int argc, char **argv){
 
     /* Initialize the buffer_list_heads */
     init_buffer(LBeacon_receive_buffer_list_head);
+    buffer_array[0] = &LBeacon_receive_buffer_list_head;
     init_buffer(LBeacon_send_buffer_list_head);
-
-    init_buffer(NSI_receive_buffer_list_head);
-    init_buffer(NSI_send_buffer_list_head);
-
+    buffer_array[1] = &LBeacon_send_buffer_list_head;
+    init_buffer(Server_send_buffer_list_head);
+    buffer_array[2] = &Server_send_buffer_list_head;
     init_buffer(BHM_receive_buffer_list_head);
-    init_buffer(BHM_send_buffer_list_head);
-
+    buffer_array[3] = &BHM_receive_buffer_list_head;
     init_buffer(Command_msg_buffer_list_head);
+    buffer_array[4] = &Command_msg_buffer_list_head;
+    init_buffer(BHM_send_buffer_list_head);
+    buffer_array[5] = &BHM_send_buffer_list_head;
+
 
     /* Network Setup and Initialization for Zigbee and Wifi */
     return_value = startThread(&NSI_thread, Initialize_network, NULL);

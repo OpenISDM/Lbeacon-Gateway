@@ -105,6 +105,17 @@
 /* Length of coordinates in number of bits */
 #define COORDINATE_LENGTH 64
 
+/* Maximum number of worker threads */
+#define MAX_NUM_WORK_THREADS 5
+
+/* Maximum number of buffers */
+#define MAX_NUM_BUFFER 6
+
+/* Names of priority levels */
+#define NORMAL_PRIORITY 0
+#define HIGH_PRIORITY 2
+#define LOW_PRIORITY -2
+
 /*
   TYPEDEF STRUCTS
 */
@@ -140,19 +151,21 @@ typedef struct Config {
 BufferListHead LBeacon_send_buffer_list_head;
 BufferListHead LBeacon_receive_buffer_list_head;
 
-BufferListHead NSI_receive_buffer_list_head;
-BufferListHead NSI_send_buffer_list_head;
+BufferListHead Server_send_buffer_list_head;
 
 BufferListHead BHM_receive_buffer_list_head;
 BufferListHead BHM_send_buffer_list_head;
 
 BufferListHead Command_msg_buffer_list_head;
 
+/* An array of buffer_list_head. */
+BufferListHead *buffer_array[MAX_NUM_BUFFER];
+
 /* An array of address maps */
 Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
 
 /* mempool for Gateway */
-Memory_Pool Gateway_MemPool;
+Memory_Pool mempool;
 
 /* A Gateway config struct stored config from the config file */
 GatewayConfig config;
