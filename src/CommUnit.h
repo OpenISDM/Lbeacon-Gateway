@@ -59,6 +59,7 @@
 #include <time.h>
 ＃include "Mempool.h"
 #include "xbee_API.h"
+#include "UDP_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
 
@@ -89,17 +90,17 @@
 typedef enum ErrorCode{
 
     WORK_SUCCESSFULLY = 0,
+    E_MALLOC = 1,
+    E_WIFI_CONNECT_FAIL = 2,
 
-    E_WIFI_CONNECT_FAIL = 1,
+    E_ZIGBEE_INIT_FAIL = 3,
 
-    E_ZIGBEE_INIT_FAIL = 2,
+    E_XBEE_VALIDATE = 4,
 
-    E_XBEE_VALIDATE = 3,
-
-    E_START_COMMUNICAT_ROUTINE_THREAD = 4,
-    E_START_BHM_ROUTINE_THREAD = 5,
-    E_START_TRACKING_THREAD = 6,
-    E_START_THREAD = 7
+    E_START_COMMUNICAT_ROUTINE_THREAD = 5,
+    E_START_BHM_ROUTINE_THREAD = 6,
+    E_START_TRACKING_THREAD = 7,
+    E_START_THREAD = 8
 
 } ErrorCode;
 
@@ -170,11 +171,18 @@ typedef struct BufferNode{
 
 } BufferNode;
 
+
 /*
   GLOBAL VARIABLES
 */
 /* Struct for storing necessary objects for zigbee connection */
 sxbee_config xbee_config;
+
+/* Struct for storing necessary objects for Wifi connection */
+sudp_config udp_config;
+
+/* mempool of node for Gateway */
+Memory_Pool nofe_mempool;
 
 
 /*

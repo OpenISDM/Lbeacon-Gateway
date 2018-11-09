@@ -111,6 +111,9 @@
 /* Maximum number of buffers */
 #define MAX_NUM_BUFFER 6
 
+/* The number of slots in the memory pool */
+#define SLOTS_IN_MEM_POOL 512
+
 /* Names of priority levels */
 #define NORMAL_PRIORITY 0
 #define HIGH_PRIORITY 2
@@ -144,6 +147,16 @@ typedef struct Config {
 
 } GatewayConfig;
 
+typedef enum buffer_types {
+
+    Server_send_buffer = 0;
+    LBeacon_send_buffer = 1;
+    data_for_LBeacon = 2;
+    BHM_receive_buffer = 3;
+    BHM_send_buffer = 4;
+
+} BufferType;
+
 /*
   GLOBAL VARIABLES
 */
@@ -158,14 +171,12 @@ BufferListHead BHM_send_buffer_list_head;
 
 BufferListHead Command_msg_buffer_list_head;
 
-/* An array of buffer_list_head. */
-BufferListHead *buffer_array[MAX_NUM_BUFFER];
+/* An array of buffer_list_head in the priority order. */
+BufferListHead priority_list_head[MAX_NUM_BUFFER];
 
 /* An array of address maps */
 Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
 
-/* mempool for Gateway */
-Memory_Pool mempool;
 
 /* A Gateway config struct stored config from the config file */
 GatewayConfig config;

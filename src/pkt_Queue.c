@@ -37,6 +37,9 @@
 
 #include "pkt_Queue.h"
 
+
+/* Queue initialize and free */
+
 int init_Packet_Queue(pkt_ptr pkt_queue){
 
     int ret;
@@ -47,6 +50,12 @@ int init_Packet_Queue(pkt_ptr pkt_queue){
 
     pkt_queue -> rear  = -1;
 
+    for(int num = 0 ; num < MAX_QUEUE_LENGTH ; num ++){
+
+        pkt_queue -> Queue[num].type = NONE;
+
+    }
+
     return pkt_Queue_SUCCESS;
 
 }
@@ -55,29 +64,51 @@ int Free_Packet_Queue(pkt_ptr pkt_queue){
 
     int ret;
 
-    while (!(is_null(pkt_queue))){
+    while ( !(is_null(pkt_queue))){
 
         delpkt(pkt_queue);
 
     }
 
-    pthread_mutex_destroy(&pkt_queue -> mutex);
+    pthread_mutex_destroy( &pkt_queue -> mutex);
 
     return pkt_Queue_SUCCESS;
 
 }
 
-int addpkt(pkt_ptr pkt_queue, int type, char *raw_addr, char *content ) {
+/* New : add pkts */
+
+int addpkt(pkt_ptr pkt_queue, unsigned int type, unsigned char *identification
+         , unsigned int Data_fragmentation, unsigned int Data_offset
+         , char *raw_addr, char *content) {
 
     int ret;
 
     pthread_mutex_lock( &pkt_queue -> mutex);
 
-    printf("------Content------\n");
-    printf("type    : %s\n", type_to_str(type));
-    printf("address : %s\n", raw_addr);
-    printf("content : %s\n", content);
-    printf("-------------------\n");
+    printf("--------- Content ---------\n");
+    printf("type               : %s\n", type_to_str(type));
+
+    printf("identification     : ");
+
+    print_content(identification, identification_length);
+
+    printf("\n");
+    printf("Data Fragmentation : %d\n", Data_fragmentation);
+
+    printf("Data_offset        : %d\n", Data_offset);
+
+    printf("address            : ");
+
+    print_content(raw_addr, Address_length);
+
+    printf("\n");
+    printf("--------- content ---------\n");
+
+    print_content(content, MAX_DATA_LENGTH);
+
+    printf("\n");
+    printf("---------------------------\n");
 
     if(is_null(pkt_queue)){
 
@@ -99,7 +130,7 @@ int addpkt(pkt_ptr pkt_queue, int type, char *raw_addr, char *content ) {
 
         else{
 
-            if( pkt_queue -> rear == MAX_PKT_LENGTH - 1){
+            if( pkt_queue -> rear == MAX_QUEUE_LENGTH - 1){
 
                 pkt_queue -> rear = 0;
 
@@ -117,35 +148,35 @@ int addpkt(pkt_ptr pkt_queue, int type, char *raw_addr, char *content ) {
 
     pkt_queue -> Queue[pkt_queue -> rear].type = type;
 
-    Fill_Address(raw_addr, pkt_queue -> Queue[pkt_queue -> rear].address);
+    char_to_hex(identification, pkt_queue
+             -> Queue[pkt_queue -> rear].identification, identification_length);
 
-    int cont_len = strlen(content);
+    char_to_hex(raw_addr, pkt_queue -> Queue[pkt_queue -> rear].address,
+                Address_length);
 
-    pkt_queue -> Queue[pkt_queue -> rear].content =
-                                          malloc((cont_len + 1) * sizeof(char));
+    pkt_queue -> Queue[pkt_queue -> rear].Data_offset = Data_offset;
 
     memset(pkt_queue -> Queue[pkt_queue -> rear].content, 0
-         , sizeof((cont_len + 1) * sizeof(char)));
+         , MAX_DATA_LENGTH * sizeof(char));
 
-    strncpy(pkt_queue -> Queue[pkt_queue -> rear].content, content, cont_len);
+    strncpy(pkt_queue -> Queue[pkt_queue -> rear].content, content
+          , content_size);
 
-    pkt_queue -> Queue[pkt_queue -> rear].content[cont_len] = '\0';
-
-    display_pkt("Addedpkt", pkt_queue, pkt_queue -> rear);
-
-
-    char len[10];
-    memset(len, 0, 10);
-    sprintf(len, "%d\0", queue_len(pkt_queue));
+    display_pkt("addedpkt", pkt_queue, pkt_queue -> rear);
 
     printf("= pkt_queue len  =\n");
+
     printf("%d\n", queue_len(pkt_queue));
+
     printf("==================\n");
 
-    pthread_mutex_unlock(&pkt_queue -> mutex);
+    pthread_mutex_unlock( &pkt_queue -> mutex);
 
     return pkt_Queue_SUCCESS;
+
 }
+
+/* Delete : delete pkts */
 
 int delpkt(pkt_ptr pkt_queue) {
 
@@ -161,7 +192,10 @@ int delpkt(pkt_ptr pkt_queue) {
 
     display_pkt("deledpkt", pkt_queue, pkt_queue -> front);
 
-    free(pkt_queue -> Queue[pkt_queue -> front].content);
+    memset(pkt_queue -> Queue[pkt_queue -> front].content, 0
+         , MAX_DATA_LENGTH * sizeof(char));
+
+    pkt_queue -> Queue[pkt_queue -> front].type = NONE;
 
     if(pkt_queue -> front == pkt_queue -> rear){
 
@@ -172,7 +206,7 @@ int delpkt(pkt_ptr pkt_queue) {
     }
     else{
 
-        if(pkt_queue -> front == MAX_PKT_LENGTH - 1){
+        if(pkt_queue -> front == MAX_QUEUE_LENGTH - 1){
 
             pkt_queue -> front = 0;
 
@@ -186,33 +220,71 @@ int delpkt(pkt_ptr pkt_queue) {
 
     }
 
-    char len[10];
-
-    memset(len, 0, 10);
-
-    sprintf(len, "%d\0", queue_len(pkt_queue));
-
     printf("= pkt_queue len  =\n");
+
     printf("%d\n", queue_len(pkt_queue));
+
     printf("==================\n");
 
-    pthread_mutex_unlock(&pkt_queue -> mutex);
+    pthread_mutex_unlock( &pkt_queue -> mutex);
 
     return pkt_Queue_SUCCESS;
+
 }
 
-char* print_address(unsigned char *address){
+void display_pkt(char *content, pkt_ptr pkt_queue, int pkt_num){
 
-    char* char_addr = malloc(sizeof(char) * 17);
+    if(pkt_num < 0 && pkt_num >= MAX_QUEUE_LENGTH)
 
-    memset(char_addr, 0, sizeof(char) * 17);
+        return;
 
-    sprintf(char_addr, "%02x%02x%02x%02x%02x%02x%02x%02x", address[0]
-    , address[1], address[2], address[3], address[4], address[5], address[6]
-    , address[7]);
+    char *char_addr = hex_to_char(pkt_queue -> Queue[pkt_num].address
+                                , Address_length_Hex);
 
-    return char_addr;
+    char *identification =hex_to_char(pkt_queue -> Queue[pkt_num].identification
+                                   , identification_length_Hex);
+
+    printf("==================\n");
+
+    printf("%s\n", content);
+
+    printf("==================\n");
+
+    printf("====== type ======\n");
+
+    printf("%s\n", type_to_str(pkt_queue -> Queue[pkt_num].type));
+
+    printf("==Identification==\n");
+
+    char *Identification_char = hex_to_char(identification
+                                          , identification_length_Hex);
+
+    printf("%s\n", Identification_char);
+
+    printf("===== address ====\n");
+
+    char *address_char = hex_to_char(pkt_queue -> Queue[pkt_num].address
+                                   , Address_length_Hex);
+
+    printf("%s\n", address_char);
+
+    printf("==== content =====\n");
+
+    print_content(pkt_queue -> Queue[pkt_num].content, MAX_XBEE_DATA_LENGTH);
+
+    printf("\n");
+
+    printf("==================\n");
+
+    free(Identification_char);
+    free(address_char);
+    free(char_addr);
+
+    return;
+
 }
+
+/* Tools */
 
 char* type_to_str(int type){
 
@@ -259,9 +331,9 @@ int str_to_type(const char *conType){
 
 }
 
-void Fill_Address(char *raw,unsigned char *addr){
+void char_to_hex(char *raw, unsigned char *raw_hex, int size){
 
-    for(int i = 0;i < 8;i++){
+    for(int i = 0 ; i < (size/2) ; i ++){
 
         char tmp[2];
 
@@ -269,9 +341,46 @@ void Fill_Address(char *raw,unsigned char *addr){
 
         tmp[1] = raw[i * 2 + 1];
 
-        addr[i] = strtol(tmp,(void*) NULL, 16);
+        raw_hex[i] = strtol(tmp,(void *) NULL, 16);
 
     }
+
+}
+
+char *hex_to_char(unsigned char *hex, int size){
+
+    int char_size = size * 2;
+
+    char *char_addr = malloc(sizeof(char) * ((char_size * 2) + 1));
+
+    memset(char_addr, 0, sizeof(char) * (char_size + 1));
+
+    for(int len = 0;len < size;len ++){
+
+        sprintf(&char_addr[len * 2], "%02x", hex[len]);
+
+    }
+
+    return char_addr;
+}
+
+bool address_compare(unsigned char *addr1, unsigned char *addr2){
+
+    if (memcmp(addr1, addr2, Address_length_Hex) == 0){
+
+        return true;
+
+    }
+
+    return false;
+
+}
+
+void array_copy(unsigned char *src, unsigned char *dest, int size){
+
+    memcpy(dest, src, size);
+
+    return;
 
 }
 
@@ -285,38 +394,6 @@ bool address_compare(unsigned char *addr1,unsigned char *addr2){
 
     return false;
 
-}
-
-void address_copy(unsigned char *src_addr, unsigned char *dest_addr){
-
-    memcpy(dest_addr, src_addr, 8);
-
-    return;
-
-}
-
-void display_pkt(char *content, pkt_ptr pkt_queue, int pkt_num){
-
-    if(pkt_num == -1)
-
-        return;
-
-    char* char_addr = print_address(pkt_queue -> Queue[pkt_num].address);
-
-    printf("==================\n");
-    printf("%s\n", content);
-    printf("==================\n");
-    printf("== type ==\n");
-    printf("%s\n", type_to_str(pkt_queue -> Queue[pkt_num].type));
-    printf("== address ==\n");
-    printf("%s\n", char_addr);
-    printf("== content ==\n");
-    printf("%s\n", pkt_queue -> Queue[pkt_num].content);
-    printf("==================\n");
-
-    free(char_addr);
-
-    return;
 }
 
 pPkt get_pkt(pkt_ptr pkt_queue){
@@ -353,7 +430,7 @@ bool is_full(pkt_ptr pkt_Queue){
 
     }
 
-    else if(pkt_Queue -> front == 0 && pkt_Queue -> rear == MAX_PKT_LENGTH - 1){
+    else if(pkt_Queue -> front == 0 && pkt_Queue -> rear == MAX_QUEUE_LENGTH - 1){
 
         return true;
 
@@ -394,11 +471,51 @@ int queue_len(pkt_ptr pkt_queue){
 
     else if (pkt_queue -> front > pkt_queue -> rear){
 
-        return ((MAX_PKT_LENGTH - pkt_queue -> front) + pkt_queue -> rear + 1);
+        return ((MAX_QUEUE_LENGTH - pkt_queue -> front) + pkt_queue -> rear + 1);
 
     }
 
     else{
+
         return queue_len_error;
+
     }
+
+    return queue_len_error;
+
+}
+
+void print_content(char *content, int size){
+
+    for(int loc = 0; loc < size; loc ++){
+
+        printf("%c", content[loc]);
+
+    }
+
+}
+
+void generate_identification(char *identification, int size){
+
+    char str[] = "0123456789ABCDEF";
+
+    memset(identification, 0 , size * sizeof(char));
+
+    struct timeval tv;
+
+    struct timezone tz;
+
+    gettimeofday (&tv , &tz);
+
+    /* Seed number for rand() */
+    srand((unsigned int) (tv.tv_sec * 1000 + tv.tv_usec));
+
+    for(int length = 0;length < size;length ++) {
+
+        identification[length] = str[rand() % 16];
+
+        srand(rand());
+
+    }
+
 }

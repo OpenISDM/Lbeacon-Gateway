@@ -60,9 +60,6 @@ void init_buffer(BufferListHead *buffer){
 
 int zigbee_init(){
 
-    /* Struct for storing necessary objects for zigbee connection */
-    extern sxbee_config xbee_config;
-
     /* The error indicator returns from the libxbee library */
     int error_indicator;
 
@@ -99,8 +96,7 @@ int zigbee_init(){
 
 void zigbee_free(){
 
-    /* Struct for storing necessary objects for zigbee connection */
-    extern sxbee_config xbee_config;
+
 
     /* Release the xbee elements and close the connection. */
     xbee_release( &xbee_config);
@@ -127,7 +123,7 @@ void beacon_join_request(char *ID, char *mac,
 
 }
 
-void *wifi_send(BufferListHead *buffer_array[]){
+void *wifi_send(BufferListHead *buffer_array){
 
     while (ready_to_work == true) {
 
@@ -173,44 +169,7 @@ void *wifi_send(BufferListHead *buffer_array[]){
 
 }
 
-void *wifi_receieve(BufferListHead *buffer){
 
-    while (ready_to_work == true) {
-
-        /* Set up the network */
-        struct sockaddr_in server_address;
-        memset(&server_address, 0, sizeof(server_address));
-        server_address.sin_family = AF_INET;
-
-        /* creates binary representation of server name
-        /* and stores it as sin_addr*/
-        inet_pton(AF_INET, /* addr to rcv */, &server_address.sin_addr);
-
-        /* port in network order format */
-        server_address.sin_port = htons(server_port);
-
-        /* open socket */
-        int sock;
-        if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
-
-            printf("could not create socket\n");
-
-        }
-        /* Recieving and sending have to be splited up into to threads, since
-        they are call back functions. It cost too much if they had to wait for
-        each other. And these two threads should not start in a while loop. */
-        if (recvfrom(sock, /* buf */, /* size */,  0, &server_address
-          , sizeof(server_address)) == -1)
-        {
-            /* error in recieving the file */
-        }
-        /* Get the command from the sever, add the message or command to the
-           buffer */
-        Add_to_buffer(&buffer);
-
-    }
-
-}
 
 void *zigbee_send(BufferListHead *buffer){
 
@@ -250,7 +209,62 @@ void *zigbee_send(BufferListHead *buffer){
     }
 }
 
-void *zigbee_receive(BufferListHead *buffer_array[]){
+
+void *wifi_receieve(BufferListHead *buffer){
+
+    while (ready_to_work == true) {
+
+        struct BufferNode *new_node;
+
+        pkt temppkt = get_pkt(&udp_config.Received_Queue);
+
+        if(temppkt != NULL){
+
+          /* Allocate form zigbee packet memory pool a buffer for received
+          data and copy the data from Xbee receive queue to the buffer. */
+          new_node = mp_alloc(&node_mempool);
+
+          /* Initialize the entry of the buffer node */
+          init_entry(new_node->buffer_entry);
+
+          if(new_node == NULL){
+                  /* Alloc mempry failed, error handling. */
+                  perror(E_MALLOC);
+                  return;
+
+          }else{
+
+            /* Copy the content to the buffer_node */
+            memcpy(new_node->content, temppkt->content,
+                   sizeof(temppkt->content));
+
+            /* Get the zigbee network address from the content and look up
+            from Lbeacon_address_map the UUID of the LBeacon, and the
+            buffer_index. */
+            memcpy(new_node->net_address, temppkt->address,
+                   sizeof(temppkt->address));
+
+            pthread_mutex_lock(buffer->list_lock);
+            /* Insert the node to the input buffer, and release
+            list_lock. */
+            insert_list_first(&new_node->buffer_entry, buffer);
+            buffer->num_in_list = buffer->num_in_list + 1;
+
+            pthread_mutex_unlock(buffer->list_lock);
+
+          }
+        }else{
+
+          /* If there is no packet received, sleep a short time */
+          sleep(A_SHORT_TIME);
+
+        }
+
+    }
+
+}
+
+void *zigbee_receive(BufferListHead *buffer_array){
 
     while(ready_to_work == true){
 
@@ -295,7 +309,7 @@ void *zigbee_receive(BufferListHead *buffer_array[]){
             }
             /* According to different packet type, insert the node into
             the corresponding buffer list with the buffer_index */
-            switch(buffer_ptr -> content.pkt_header.pkt_types){
+            switch(temppkt.Reserved){
 
               case "health_report":
 
@@ -307,12 +321,16 @@ void *zigbee_receive(BufferListHead *buffer_array[]){
                 insert_list_first(&new_node->buffer_entry,
                                   &BHM_receive_buffer_list_head);
 
+                /* Increment the number in list */
+                BHM_receive_buffer_list_head.num_in_list =
+                                            BHM_receive_buffer_list_head + 1;
+
                 pthread_mutex_unlock(BHM_receive_buffer_list_head.list_lock);
                 /* Delete the packet and return the indicator back. */
                 delpkt(&xbee_config.Received_Queue);
 
                 break;
-                
+
               case "tracked_object_data":
 
                   pthread_mutex_lock(LBeacon_receive_buffer_list_head.list_lock);
@@ -321,6 +339,10 @@ void *zigbee_receive(BufferListHead *buffer_array[]){
                   list_lock. */
                   insert_list_first(&new_node->buffer_entry,
                                       &LBeacon_receive_buffer_list_head);
+
+                  /* Increment the number in list */
+                  LBeacon_receive_buffer_list_head.num_in_list =
+                                      LBeacon_receive_buffer_list_head + 1;
 
                   pthread_mutex_unlock(LBeacon_receive_buffer_list_head.list_lock);
 
@@ -351,6 +373,11 @@ void *zigbee_receive(BufferListHead *buffer_array[]){
                 break;
 
             }
+
+        } else {
+
+          /* If there is no packet received, sleep a short time */
+          sleep(A_SHORT_TIME);
 
         }
     }

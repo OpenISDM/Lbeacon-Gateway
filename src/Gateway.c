@@ -152,7 +152,14 @@ void *Initialize_network(){
 void *CommUnit_routine(){
 
     Threadpool thpool;
+    pthread_t Lbeacon_listener;
+    pthread_t Sever_listener;
     int return_error_value;
+
+
+    /* Sort priority order by the list with priority_list_head */
+
+
 
 
     //wait for NSI get ready
@@ -168,28 +175,33 @@ void *CommUnit_routine(){
 
     /* Create threads for sending and receiving data from and to LBeacon and
     server. */
+    /* Two static threads for listening the data from LBeacon or Sever */
+    return_value = startThread(&Lbeacon_listener, zigbee_receive, buffer_array);
 
-    return_error_value = thpool_add_work(thpool,
-                                         (void *)wifi_recieve,
-                                         &Command_msg_buffer_list_head,
-                                         NORMAL_PRIORITY);
+    if(return_value != WORK_SUCCESSFULLY){
 
-    if(return_error_value != WORK_SUCCESSFULLY){
-
-        return return_error_value;
+       return return_value;
 
     }
 
-    return_error_value = thpool_add_work(thpool,
-                                         (void *)zigbee_receive,
-                                         buffer_array,
-                                         HIGH_PRIORITY);
+    pthread_setschedprio(&Lbeacon_listener, HIGH_PRIORITY);
 
-    if(return_error_value != WORK_SUCCESSFULLY){
+    return_value = startThread(&Sever_listener, wifi_receive, buffer_array);
 
-        return return_error_value;
+
+    if(return_value != WORK_SUCCESSFULLY){
+
+       return return_value;
 
     }
+
+    pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
+
+    while(){
+
+    }
+
+
 
     return_error_value = thpool_add_work(thpool,
                                          (void *)wifi_send,
@@ -262,7 +274,7 @@ ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
 
     if ( pthread_attr_init( &attr) != 0
       || pthread_create(threads, &attr, thfunct, arg) != 0
-      || pthread_attr_destroy( &attr) != 0){
+      ){
 
           printf("Start Thread Error.\n");
           return E_START_THREAD;
@@ -304,6 +316,15 @@ int main(int argc, char **argv){
     buffer_array[4] = &Command_msg_buffer_list_head;
     init_buffer(BHM_send_buffer_list_head);
     buffer_array[5] = &BHM_send_buffer_list_head;
+
+    /* Initialize the memory pool */
+    if(mp_init(&node_mempool, sizeof(struct BufferNode), SLOTS_IN_MEM_POOL)
+        == NULL){
+          /* Error handling */
+          perror(E_MALLOC);
+          return E_MALLOC;
+
+}
 
 
     /* Network Setup and Initialization for Zigbee and Wifi */
