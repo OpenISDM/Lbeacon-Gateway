@@ -152,8 +152,20 @@ typedef struct buffer_list_head{
     /* A per list lock */
     pthread_mutex_t   list_lock;
 
+    /* The index number of the buffer */
+    int               buffer_id;
+
     /* Current number of msg buffers in the list */
     int               num_in_list;
+
+    /* Number of levels relative to normal priority */
+    int              priority_boast;
+
+    /* function pointer */
+    void             (*function)(void* arg);
+
+    /* A buffer to indicate the buffer is be occupied */
+    bool            buffer_is_busy;
 
 } BufferListHead;
 

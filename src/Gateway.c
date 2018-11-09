@@ -103,6 +103,21 @@ GatewayConfig get_config(char *file_name) {
 }
 
 
+long long get_system_time() {
+    /* A struct that stores the time */
+    struct timeb t;
+
+    /* Return value as a long long type */
+    long long system_time;
+
+    /* Convert time from Epoch to time in milliseconds of a long long type */
+    ftime(&t);
+    system_time = 1000 * t.time + t.millitm;
+
+    return system_time;
+}
+
+
 void *Initialize_network(){
 
     printf("Enter Initialize_network\n");
@@ -142,10 +157,13 @@ void *Initialize_network(){
     NSI_initialization_complete = true;
 
     while( ready_to_work == true ){
-
+          /* Nothing to do, go to sleep. */
+          sleep(A_LONG_TIME);
     }
 
     zigbee_free();
+
+    return;
 
 }
 
@@ -156,14 +174,24 @@ void *CommUnit_routine(){
     pthread_t Sever_listener;
     int return_error_value;
 
-
-    /* Sort priority order by the list with priority_list_head */
-
-
+    /* Initialize the buffer_list_heads and add to the buffer array in the
+    order of priority */
+    init_buffer(LBeacon_receive_buffer_list_head, LBeacon_receive_buffer);
+    priority_array[LBeacon_receive_buffer] = &LBeacon_receive_buffer_list_head;
+    init_buffer(Server_send_buffer_list_head, Server_send_buffer);
+    priority_array[Server_send_buffer] = &Server_send_buffer_list_head;
+    init_buffer(LBeacon_send_buffer_list_head, LBeacon_send_buffer);
+    priority_array[LBeacon_send_buffer] = &LBeacon_send_buffer_list_head;
+    init_buffer(Command_msg_buffer_list_head, Command_msg_buffer);
+    priority_array[Command_msg_buffer] = &Command_msg_buffer_list_head;
+    init_buffer(BHM_receive_buffer_list_head, BHM_receive_buffer);
+    priority_array[BHM_receive_buffer] = &BHM_receive_buffer_list_head;
+    init_buffer(BHM_send_buffer_list_head, BHM_send_buffer);
+    priority_array[BHM_send_buffer] = &BHM_send_buffer_list_head;
 
 
     //wait for NSI get ready
-    while( NSI_initialization_complete == false ){
+    while( NSI_initialization_complete == false || ready_to_work == false ){
 
         sleep(A_LONG_TIME);
 
@@ -183,88 +211,134 @@ void *CommUnit_routine(){
        return return_value;
 
     }
-
     pthread_setschedprio(&Lbeacon_listener, HIGH_PRIORITY);
 
-    return_value = startThread(&Sever_listener, wifi_receive, buffer_array);
-
+    return_value = startThread(&Sever_listener, wifi_receive,
+                               &Command_msg_buffer_list_head);
 
     if(return_value != WORK_SUCCESSFULLY){
 
        return return_value;
 
     }
-
     pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
 
-    while(){
+    /* When there is no dead thead, do the work. */
+    while(thpool.num_threads_alive != 0){
+
+      /* There is still idle worker thread is waiting for the work */
+      if(thpool.num_threads_working < thpool.num_threads_alive){
+
+        int buff_id;
+        /* Scan the priority_list_head to get the corresponding work fro the
+        worker thread */
+        for(buff_id = LBeacon_receive_buffer;
+            buff_id <= BHM_send_buffer;
+            buff_id++){
+
+              /* If there is a node in the buffer and the buffer is not be
+              occupied, do the work according to the function pointer */
+              if(priority_array[buff_id]->num_in_list != 0 &&
+                 priority_array[buff_id].buffer_is_busy == false){
+
+                /* Add the work to the worker thread with its priority */
+                return_error_value = thpool_add_work(thpool,
+                                    (void *)priority_array->function,
+                                    priority_array[buff_id],
+                                    priority_array[buff_id]->priority_boast);
+
+                if(return_error_value != WORK_SUCCESSFULLY){
+
+                    return return_error_value;
+
+                }
+
+              }
+
+        }
+
+      }
+
+    }
+    /* Waitting for the system is down, pthread_join and return. */
+    return_error_value = pthread_join(Lbeacon_listener, NULL);
+
+    if (return_value != WORK_SUCCESSFULLY) {
+
+        return return_value;
 
     }
 
+    return_error_value = pthread_join(Sever_listener, NULL);
 
+    if (return_value != WORK_SUCCESSFULLY) {
 
-    return_error_value = thpool_add_work(thpool,
-                                         (void *)wifi_send,
-                                         buffer_array,
-                                         NORMAL_PRIORITY);
-
-    if(return_error_value != WORK_SUCCESSFULLY){
-
-        return return_error_value;
+        return return_value;
 
     }
 
-    return_error_value = thpool_add_work(thpool,
-                                        (void *)zigbee_send,
-                                        &LBeacon_send_buffer_list_head,
-                                        HIGH_PRIORITY);
-
-    if(return_error_value != WORK_SUCCESSFULLY){
-
-        return return_error_value;
-
-    }
-
-    while(ready_to_work == True){
-
-    }
+    return;
 
 }
 
-void *BHM_routine(){
+void *Process_message(BufferListHead *buffer){
 
-    while( ready_to_work == true){
+  buffer->buffer_is_busy == true;
 
-        File *track_file;
-        struct List_Entry *list_pointers,
+  /* Create a temporary node and set as the head */
+  struct List_Entry *list_pointers, *save_list_pointers;
+  BufferNode *temp;
 
-        /* data that will be sent to the server, received by LBeacon */
+  pthread_mutex_lock(buffer->list_lock);
 
-        /*
-            Create a new file for integrating the tracked data from each
-            LBeacon. Each line represents each beacon's data
-         */
-        track_file = fopen("track.txt", "a+");
+  list_for_each_safe(list_pointers,
+                   save_list_pointers,
+                   &buffer->list_entry){
 
-        if(track_file == NULL){
+      temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+      /* Remove the node from the orignal buffer list. */
+      remove_list_node(list_pointers);
 
-            track_file = fopen("track.txt", "wt");
+      /* According to the different buffer, the node is inserting to different
+      buffer  */
+      switch (buffer->buff_id) {
 
-        }
+        case LBeacon_receive_buffer:
 
-        /* Go through the track_buffer to get all the received data that
-           is ready to sent to the sever */
-        list_for_each(list_pointers, &buffer_health_list.buffer_entry){
+          insert_list_first(temp->buffer_entry, &Server_send_buffer_list_head);
+          Server_send_buffer_list_head.num_in_list =
+            Server_send_buffer_list_head.num_in_list + 1;
+          break;
 
+        case Command_msg_buffer:
 
-        }
-        /* Write the data to the file which is to be sent to the sever */
-        fwrite(...);
-        /* Call the function in Communit.c to execute the steps for
-           transmitting.*/
-        send_via_wifi("track.txt");
+          insert_list_first(temp->buffer_entry, &LBeacon_send_buffer_list_head);
+          LBeacon_send_buffer_list_head.num_in_list =
+            LBeacon_send_buffer_list_head.num_in_list + 1;
 
-    }
+          break;
+
+        case BHM_receive_buffer:
+
+         insert_list_first(temp->buffer_entry, &BHM_send_buffer_list_head);
+         BHM_send_buffer_list_head.num_in_list =
+          BHM_send_buffer_list_head.num_in_list + 1;
+
+         break;
+
+         default:
+          break;
+
+      }
+
+      buffer->num_in_list = buffer->num_in_list - 1;
+
+  }
+
+  pthread_mutex_unlock(buffer->list_lock);
+
+  buffer->buffer_is_busy = false;
+
 
 }
 
@@ -292,7 +366,6 @@ int main(int argc, char **argv){
     GatewayConfig config;
 
     pthread_t NSI_thread;
-    pthread_t BHM_thread;
     pthread_t CommUnit_thread;
 
     NSI_initialization_complete      = false;
@@ -303,19 +376,7 @@ int main(int argc, char **argv){
 
     config = get_config(CONFIG_FILE_NAME);
 
-    /* Initialize the buffer_list_heads */
-    init_buffer(LBeacon_receive_buffer_list_head);
-    buffer_array[0] = &LBeacon_receive_buffer_list_head;
-    init_buffer(LBeacon_send_buffer_list_head);
-    buffer_array[1] = &LBeacon_send_buffer_list_head;
-    init_buffer(Server_send_buffer_list_head);
-    buffer_array[2] = &Server_send_buffer_list_head;
-    init_buffer(BHM_receive_buffer_list_head);
-    buffer_array[3] = &BHM_receive_buffer_list_head;
-    init_buffer(Command_msg_buffer_list_head);
-    buffer_array[4] = &Command_msg_buffer_list_head;
-    init_buffer(BHM_send_buffer_list_head);
-    buffer_array[5] = &BHM_send_buffer_list_head;
+
 
     /* Initialize the memory pool */
     if(mp_init(&node_mempool, sizeof(struct BufferNode), SLOTS_IN_MEM_POOL)
@@ -338,14 +399,6 @@ int main(int argc, char **argv){
 
     perror("NSI_SUCCESS");
 
-    /* Create threads for Beacon Health Monitor  */
-    return_value = startThread(&BHM_thread, BHM_routine, NULL);
-
-    if(return_value != WORK_SUCCESSFULLY){
-
-        return return_value;
-
-    }
 
     /* Create threads for the main thread of Communication Unit  */
     return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
@@ -388,13 +441,6 @@ int main(int argc, char **argv){
 
     }
 
-    return_value = pthread_join(BHM_thread, NULL);
-
-    if (return_value != WORK_SUCCESSFULLY) {
-
-        return return_value;
-
-    }
 
     return_value = pthread_join(NSI_thread, NULL);
 

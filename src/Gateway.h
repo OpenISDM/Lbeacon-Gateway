@@ -149,11 +149,12 @@ typedef struct Config {
 
 typedef enum buffer_types {
 
-    Server_send_buffer = 0;
-    LBeacon_send_buffer = 1;
-    data_for_LBeacon = 2;
-    BHM_receive_buffer = 3;
-    BHM_send_buffer = 4;
+    LBeacon_receive_buffer = 0;
+    Server_send_buffer = 1;
+    LBeacon_send_buffer = 2;
+    Command_msg_buffer = 3;
+    BHM_receive_buffer = 4;
+    BHM_send_buffer = 5;
 
 } BufferType;
 
@@ -172,7 +173,7 @@ BufferListHead BHM_send_buffer_list_head;
 BufferListHead Command_msg_buffer_list_head;
 
 /* An array of buffer_list_head in the priority order. */
-BufferListHead priority_list_head[MAX_NUM_BUFFER];
+BufferListHead *priority_list_head[MAX_NUM_BUFFER];
 
 /* An array of address maps */
 Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
@@ -204,6 +205,7 @@ bool BHM_initialization_complete;
 bool CommUnit_initialization_complete;
 bool initialization_failed;
 
+
 /* Current number of LBeacons */
 int LBeacon_count;
 
@@ -223,6 +225,23 @@ int LBeacon_count;
       config - GatewayConfig struct
  */
 GatewayConfig get_config(char *file_name);
+
+/*
+  get_system_time:
+
+      This helper function fetches the current time according to the system
+      clock in terms of the number of milliseconds since January 1, 1970.
+
+  Parameters:
+
+      None
+
+  Return value:
+
+      system_time - system time in milliseconds
+*/
+
+long long get_system_time();
 
 /*
   startThread:

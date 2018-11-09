@@ -49,13 +49,15 @@
 
 #include "CommUnit.h"
 
-void init_buffer(BufferListHead *buffer){
+void init_buffer(BufferListHead *buffer, int buff_id){
 
-    init_entry( &(buffer -> buffer_entry));
+    init_entry( &(buffer->buffer_entry));
 
-    pthread_mutex_init( &buffer -> list_lock, 0);
+    pthread_mutex_init( &buffer->list_lock, 0);
 
-    buffer -> num_in_list = 0;
+    buffer->num_in_list = 0;
+
+    buffer->buff_id = buff_id;
 }
 
 int zigbee_init(){
@@ -125,47 +127,7 @@ void beacon_join_request(char *ID, char *mac,
 
 void *wifi_send(BufferListHead *buffer_array){
 
-    while (ready_to_work == true) {
 
-        /* If two buffers are all empty, sleep for a while */
-        while(buffer_track_list.num_in_list == 0 &&
-              buffer_health_list.num_in_list == 0){
-
-            sleep(A_SHORT_TIME);
-
-        }
-
-        /* set the destination server IP */
-        struct sockaddr_in server_address;
-        memset(&server_address, 0, sizeof(server_address));
-        server_address.sin_family = AF_INET;
-
-        /* creates binary representation of server name
-        /* and stores it as sin_addr*/
-        inet_pton(AF_INET, /* addr to send */, &server_address.sin_addr);
-
-        /* port in network order format */
-        server_address.sin_port = htons(server_port);
-
-        /* open socket */
-        int sock;
-
-        if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
-
-                    printf("could not create socket\n");
-
-                    return;
-
-        }
-
-        /* send data via sendto() function to send data to sever */
-        sendto(sock, /* buf */, /* size */, 0, &server_address
-             , sizeof(server_address) );
-
-        /* close the socket */
-        close(sock);
-
-    }
 
 }
 
@@ -323,7 +285,7 @@ void *zigbee_receive(BufferListHead *buffer_array){
 
                 /* Increment the number in list */
                 BHM_receive_buffer_list_head.num_in_list =
-                                            BHM_receive_buffer_list_head + 1;
+                                  BHM_receive_buffer_list_head.num_in_list + 1;
 
                 pthread_mutex_unlock(BHM_receive_buffer_list_head.list_lock);
                 /* Delete the packet and return the indicator back. */
@@ -342,7 +304,7 @@ void *zigbee_receive(BufferListHead *buffer_array){
 
                   /* Increment the number in list */
                   LBeacon_receive_buffer_list_head.num_in_list =
-                                      LBeacon_receive_buffer_list_head + 1;
+                              LBeacon_receive_buffer_list_head.num_in_list + 1;
 
                   pthread_mutex_unlock(LBeacon_receive_buffer_list_head.list_lock);
 
