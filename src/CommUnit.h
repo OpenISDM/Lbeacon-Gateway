@@ -82,6 +82,8 @@
 
 #define XBEE_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/xbee_config.conf"
 
+#define MAX_CONTENT_LENGTH 1024
+
 
 /*
   ErrorCode
@@ -164,8 +166,11 @@ typedef struct buffer_list_head{
     /* function pointer */
     void             (*function)(void* arg);
 
+    /* function's argument       */
+    void             *arg;
+
     /* A buffer to indicate the buffer is be occupied */
-    bool            buffer_is_busy;
+    bool            is_busy;
 
 } BufferListHead;
 
@@ -175,10 +180,10 @@ typedef struct BufferNode{
     struct List_Entry buffer_entry;
 
     /* Zigbee network address of the source or destination */
-    char             net_address[Address_length_Hex];
+    char             net_address[ADDRESS_LENGTH];
 
     /* point to where the data is stored. */
-    char             *content[];
+    char             *content[MAX_CONTENT_LENGTH];
 
 
 } BufferNode;
@@ -196,15 +201,24 @@ sudp_config udp_config;
 /* mempool of node for Gateway */
 Memory_Pool nofe_mempool;
 
+/* An array of address maps */
+Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
+
+
 
 /*
   init_buffer:
 
       The function fills the attributes of buffer storing the packets.
+      Including assigning the function to the corresponding buffer list and its
+      arguments and its priority level
 
   Parameters:
 
-      Node
+      buffer - A pointer of the buffer to be modified.
+      buff_id - The index of the buffer for the priority array
+      function - A function pointer to be assigned to the buffer
+      priority - The priority level of the buffer
 
   Return value:
 
@@ -213,21 +227,6 @@ Memory_Pool nofe_mempool;
  */
 void init_buffer(BufferListHead *buffer);
 
-/*
- free_buffer:
-
-     The function to release the buffer.
-
- Parameters:
-
-     Node
-
- Return value:
-
-     None
-
- */
-void free_buffer(BufferListHead *buffer);
 
 /*
  wifi_recieve:
@@ -237,7 +236,7 @@ void free_buffer(BufferListHead *buffer);
 
  Parameters:
 
-     None
+     buffer - A pointer of the buffer to be modified.
 
  Return value:
 
@@ -252,7 +251,7 @@ void *wifi_receive(BufferListHead *buffer);
 
  Parameters:
 
-     None
+     buffer_array - An array of buffer to be sent.
 
  Return value:
 
@@ -268,7 +267,7 @@ void *wifi_send(BufferListHead *buffer_array[]);
 
  Parameters:
 
-     None
+     buffer_array - An array of buffer to be sent.
 
  Return value:
 
@@ -283,7 +282,7 @@ void *zigbee_receive(BufferListHead *buffer_array[]);
 
  Parameters:
 
-     None
+     buffer - A pointer of the buffer to be modified.
 
  Return value:
 

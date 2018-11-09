@@ -49,7 +49,8 @@
 
 #include "CommUnit.h"
 
-void init_buffer(BufferListHead *buffer, int buff_id){
+void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
+					void* arg_p, int priority_boast){
 
     init_entry( &(buffer->buffer_entry));
 
@@ -58,6 +59,14 @@ void init_buffer(BufferListHead *buffer, int buff_id){
     buffer->num_in_list = 0;
 
     buffer->buff_id = buff_id;
+
+    buffer->function = function_p;
+
+    buffer->arg = (void *) buffer;
+
+    buffer->is_busy = false;
+
+    buffer->priority_boast = priority_boast;
 }
 
 int zigbee_init(){
@@ -125,9 +134,35 @@ void beacon_join_request(char *ID, char *mac,
 
 }
 
-void *wifi_send(BufferListHead *buffer_array){
+void *wifi_send(BufferListHead *buffer_array, int buff_id){
 
+  struct List_Entry *list_pointers, *save_list_pointers;
+  BufferNode *temp;
 
+  buffer_array[buff_id]->is_busy == true;
+
+  pthread_mutex_lock(buffer_array[buff_id]->list_lock);
+
+  list_for_each_safe(list_pointers,
+                   save_list_pointers,
+                   &buffer_array[buff_id]->list_entry){
+
+      temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+
+      /* Remove the node from the orignal buffer list. */
+      remove_list_node(list_pointers);
+
+      /* Add the content that to be sent to the server */
+      addpkt( &udp_config.pkt_Queue, Data,
+              temp->net_address, temp->content);
+
+      mp_free(&node_mempool, temp);
+
+  }
+
+  pthread_mutex_unlock(buffer_array[buff_id]->list_lock);
+
+  buffer_array[buff_id]->is_busy == false;
 
 }
 
@@ -135,40 +170,52 @@ void *wifi_send(BufferListHead *buffer_array){
 
 void *zigbee_send(BufferListHead *buffer){
 
-    time_t start_time = time(NULL);
+    BufferNode *temp;
 
-    while(ready_to_work == true) {
+    buffer_array[buff_id]->is_busy == true;
 
-      /* There is a routine time for a period to send the request for tracking
-      data from LBeacon. The request also be sent when there is a request from
-      the server which means the input buffer is no longer empty. */
-      if(start_time - time(NULL) >= A_SHORT_TIME || buffer->num_in_list != 0){
 
-        /* Send the command or message to the LBeacons via zigbee */
-        for(int beacon_number = 0; beacon_number < MAX_NUMBER_NODES;
-            beacon_number++){
 
-            /* Add the content that to be sent to the gateway to the packet
-               queue */
-            addpkt( &xbee_config.pkt_Queue, Data,
-                   beacon_address[beacon_number], zig_message);
+      /* Send the command or message to the LBeacons via zigbee */
+      for(int beacon_number = 0; beacon_number < MAX_NUMBER_NODES;
+          beacon_number++){
 
-            /* If there are remain some packet need to send in the Queue,
-               send the packet */
+          pthread_mutex_lock(buffer_array[buff_id]->list_lock);
+
+          /* Add the content that to be sent to the LBeacon to the packet
+            queue */
+          addpkt( &xbee_config.pkt_Queue, Data,
+                  beacon_address[beacon_number], "Poll for data");
+
+          /* If there are remain some packet need to send in the Queue,
+           send the packet */
             xbee_send_pkt(&xbee_config);
 
-        }
+            /* If there is a command from the server, remove the node in
+            Command_msg_buffer */
+            if(buffer->num_in_list != 0){
+
+              /* Get the first buffer node from the buffer */
+              temp = (buffer->list_entry)->next;
+
+              temp = ListEntry(temp->buffer_entry, BufferNode, buffer_entry);
+
+              /* Remove the node from the list and free the memory */
+              remove_list_node(&temp->buffer_entry);
+              mp_free(&node_mempool, temp);
+
+            }
+
+        pthread_mutex_unlock(buffer_array[buff_id]->list_lock);
+        buffer_array[buff_id]->is_busy == false;
 
         xbee_connector(&xbee_config);
 
         usleep(XBEE_TIMEOUT);
 
-        start_time = start_time + A_SHORT_TIME;
-
-
       }
 
-    }
+
 }
 
 

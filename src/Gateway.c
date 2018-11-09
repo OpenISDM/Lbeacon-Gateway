@@ -176,20 +176,32 @@ void *CommUnit_routine(){
 
     /* Initialize the buffer_list_heads and add to the buffer array in the
     order of priority */
-    init_buffer(LBeacon_receive_buffer_list_head, LBeacon_receive_buffer);
+    init_buffer(LBeacon_receive_buffer_list_head, LBeacon_receive_buffer,
+        (void *) Process_message, HIGH_PRIORITY);
     priority_array[LBeacon_receive_buffer] = &LBeacon_receive_buffer_list_head;
-    init_buffer(Server_send_buffer_list_head, Server_send_buffer);
+
+    init_buffer(Server_send_buffer_list_head, Server_send_buffer,
+      (void *) wifi_send, HIGH_PRIORITY);
     priority_array[Server_send_buffer] = &Server_send_buffer_list_head;
-    init_buffer(LBeacon_send_buffer_list_head, LBeacon_send_buffer);
+
+    init_buffer(LBeacon_send_buffer_list_head, LBeacon_send_buffer,
+      (void *) zigbee_send, HIGH_PRIORITY);
     priority_array[LBeacon_send_buffer] = &LBeacon_send_buffer_list_head;
-    init_buffer(Command_msg_buffer_list_head, Command_msg_buffer);
+
+    init_buffer(Command_msg_buffer_list_head, Command_msg_buffer,
+      (void *) Process_message, NORMAL_PRIORITY);
     priority_array[Command_msg_buffer] = &Command_msg_buffer_list_head;
-    init_buffer(BHM_receive_buffer_list_head, BHM_receive_buffer);
+
+    init_buffer(BHM_receive_buffer_list_head, BHM_receive_buffer,
+      (void *) Process_message, LOW_PRIORITY);
     priority_array[BHM_receive_buffer] = &BHM_receive_buffer_list_head;
-    init_buffer(BHM_send_buffer_list_head, BHM_send_buffer);
+
+    init_buffer(BHM_send_buffer_list_head, BHM_send_buffer,
+      (void *) wifi_send, LOW_PRIORITY);
     priority_array[BHM_send_buffer] = &BHM_send_buffer_list_head;
 
 
+    CommUnit_initialization_complete = true;
     //wait for NSI get ready
     while( NSI_initialization_complete == false || ready_to_work == false ){
 
@@ -223,11 +235,14 @@ void *CommUnit_routine(){
     }
     pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
 
+    long long init_time = get_system_time();
+
     /* When there is no dead thead, do the work. */
     while(thpool.num_threads_alive != 0){
 
       /* There is still idle worker thread is waiting for the work */
-      if(thpool.num_threads_working < thpool.num_threads_alive){
+      if(thpool.num_threads_working < thpool.num_threads_alive &&
+         get_system_time()-){
 
         int buff_id;
         /* Scan the priority_list_head to get the corresponding work fro the
@@ -239,7 +254,7 @@ void *CommUnit_routine(){
               /* If there is a node in the buffer and the buffer is not be
               occupied, do the work according to the function pointer */
               if(priority_array[buff_id]->num_in_list != 0 &&
-                 priority_array[buff_id].buffer_is_busy == false){
+                 priority_array[buff_id].is_busy == false){
 
                 /* Add the work to the worker thread with its priority */
                 return_error_value = thpool_add_work(thpool,
@@ -283,7 +298,7 @@ void *CommUnit_routine(){
 
 void *Process_message(BufferListHead *buffer){
 
-  buffer->buffer_is_busy == true;
+  buffer->is_busy == true;
 
   /* Create a temporary node and set as the head */
   struct List_Entry *list_pointers, *save_list_pointers;
@@ -337,7 +352,7 @@ void *Process_message(BufferListHead *buffer){
 
   pthread_mutex_unlock(buffer->list_lock);
 
-  buffer->buffer_is_busy = false;
+  buffer->is_busy = false;
 
 
 }
@@ -411,7 +426,6 @@ int main(int argc, char **argv){
 
 
     while(NSI_initialization_complete == false ||
-          BHM_initialization_complete == false ||
           CommUnit_initialization_complete == false){
 
         sleep(A_SHORT_TIME);

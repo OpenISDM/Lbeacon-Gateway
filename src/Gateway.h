@@ -175,9 +175,6 @@ BufferListHead Command_msg_buffer_list_head;
 /* An array of buffer_list_head in the priority order. */
 BufferListHead *priority_list_head[MAX_NUM_BUFFER];
 
-/* An array of address maps */
-Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
-
 
 /* A Gateway config struct stored config from the config file */
 GatewayConfig config;
@@ -201,8 +198,6 @@ bool ready_to_work;
     its initialization completes.
  */
 bool NSI_initialization_complete;
-bool BHM_initialization_complete;
-bool CommUnit_initialization_complete;
 bool initialization_failed;
 
 
