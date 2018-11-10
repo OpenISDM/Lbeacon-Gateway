@@ -200,7 +200,7 @@ void *CommUnit_routine(){
       (void *) wifi_send, LOW_PRIORITY);
     priority_array[BHM_send_buffer] = &BHM_send_buffer_list_head;
 
-    /* Set the inital time. */
+    /* Set the initial time. */
     init_time = get_system_time();
 
     CommUnit_initialization_complete = true;
@@ -241,16 +241,31 @@ void *CommUnit_routine(){
     /* When there is no dead thead, do the work. */
     while(thpool.num_threads_alive != 0){
 
+      /* Start counting down the time for polling the tracking data */
+      poll_LBeacon_time = get_system_time();
+
       /* There is still idle worker thread is waiting for the work */
       if(thpool.num_threads_working < thpool.num_threads_alive){
 
         /* Three indicator to scan the array */
         int buff_id, scan_head, scan_tail;
 
+        /* If it is the time to poll the tracking data from LBeacon, Make a
+        thread to do this work */
+        if(get_system_time() - poll_LBeacon_time > MAX_POLLING_TIME){
+
+          /* Set both head and tail to the position of LBeacon_send_buffer */
+          scan_head = LBeacon_send_buffer;
+          scan_tail = LBeacon_send_buffer;
+
+          /* Reset the poll_LBeacon_time */
+          poll_LBeacon_time = get_system_time();
+
+
         /* In the normal situation, the scanning starts from the high priority
         to lower priority. If the timer expired for MAX_STARVATION_TIME,
         reverse the scanning process. */
-        if(get_system_time() - init_time < MAX_STARVATION_TIME){
+        } else if(get_system_time() - init_time < MAX_STARVATION_TIME){
 
            scan_head = LBeacon_receive_buffer;
            scan_tail = BHM_send_buffer;
@@ -316,7 +331,7 @@ void *CommUnit_routine(){
 
 void *Process_message(BufferListHead *buffer){
 
-  buffer->is_busy == true;
+  buffer->is_busy = true;
 
   /* Create a temporary node and set as the head */
   struct List_Entry *list_pointers, *save_list_pointers;

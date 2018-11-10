@@ -50,7 +50,7 @@
 #include "CommUnit.h"
 
 void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
-					void* arg_p, int priority_boast){
+								int priority_boast){
 
     init_entry( &(buffer->buffer_entry));
 

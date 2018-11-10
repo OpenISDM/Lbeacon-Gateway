@@ -199,7 +199,7 @@ sxbee_config xbee_config;
 sudp_config udp_config;
 
 /* mempool of node for Gateway */
-Memory_Pool nofe_mempool;
+Memory_Pool node_mempool;
 
 /* An array of address maps */
 Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
@@ -225,7 +225,8 @@ Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
       None
 
  */
-void init_buffer(BufferListHead *buffer);
+void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
+								int priority_boast);
 
 
 /*
@@ -257,7 +258,7 @@ void *wifi_receive(BufferListHead *buffer);
 
      None
  */
-void *wifi_send(BufferListHead *buffer_array[]);
+void *wifi_send(BufferListHead *buffer_array);
 
 /*
  zigbee_receive:
@@ -273,7 +274,7 @@ void *wifi_send(BufferListHead *buffer_array[]);
 
      None
  */
-void *zigbee_receive(BufferListHead *buffer_array[]);
+void *zigbee_receive(BufferListHead *buffer_array);
 
 /*
  zigbee_send:

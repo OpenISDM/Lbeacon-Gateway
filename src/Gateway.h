@@ -111,7 +111,11 @@
 /* Maximum number of buffers */
 #define MAX_NUM_BUFFER 6
 
+/* The time period of avoiding starvation */
 #define MAX_STARVATION_TIME 50000
+
+/* The time period of polling data from Lbeacon */
+#define MAX_POLLING_TIME 100
 
 /* The number of slots in the memory pool */
 #define SLOTS_IN_MEM_POOL 512
@@ -199,6 +203,7 @@ bool initialization_failed;
 
 
 long long init_time;
+long long poll_LBeacon_time;
 
 /*
   get_config:
