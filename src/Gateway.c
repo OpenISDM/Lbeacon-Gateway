@@ -124,11 +124,8 @@ void *Initialize_network(){
 
     int return_value;
 
-    //ErrorCode status;
-
     /* set up WIFI connection */
     /* open temporary wpa_supplicant.conf file to setup wifi environment*/
-
     FILE *cfgfile = fopen("/etc/wpa_supplicant/wpa_supplicant.conf ","w");
     fwrite(*cfgfile,"ctrl_interface=DIR=/var/run/wpa_supplicant\nGROUP=netdev\n\
     update_config=1\ncountry=CN\nnetwork={\nssid=\"Wifi_ssid\"\npsk=\"\
@@ -138,12 +135,21 @@ void *Initialize_network(){
 
     fclose(*cfgfile);
 
-    /* check if WiFi is connected .... */
-    //TODO need to find another way to check connection status.
+    /* Initialize the Wifi connection */
+    if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
+
+        /* Error handling and return */
+
+        printf("Initialize Wifi Fail.\n");
+
+        pthread_exit(0);
+
+    }
 
     printf("Start Init Zigbee\n");
 
     if(return_value = zigbee_init() != WORK_SUCCESSFULLY){
+
         /* Error handling and return */
 
         printf("Initialize Zigbee Fail.\n");
@@ -157,10 +163,15 @@ void *Initialize_network(){
     NSI_initialization_complete = true;
 
     while( ready_to_work == true ){
+
           /* Nothing to do, go to sleep. */
           sleep(A_LONG_TIME);
+
     }
 
+    /* The thread is going to be ended. Free the connection of Wifi and
+    Zigbee */
+    Wifi_free();
     zigbee_free();
 
     return;
@@ -175,7 +186,7 @@ void *CommUnit_routine(){
     int return_error_value;
 
     /* Initialize the buffer_list_heads and add to the buffer array in the
-    order of priority */
+    order of priority. Each buffer has the corresponding function pointer. */
     init_buffer(LBeacon_receive_buffer_list_head, LBeacon_receive_buffer,
         (void *) Process_message, HIGH_PRIORITY);
     priority_array[LBeacon_receive_buffer] = &LBeacon_receive_buffer_list_head;
@@ -203,7 +214,7 @@ void *CommUnit_routine(){
     /* Set the initial time. */
     init_time = get_system_time();
 
-    CommUnit_initialization_complete = true;
+
     //wait for NSI get ready
     while( NSI_initialization_complete == false || ready_to_work == false ){
 
@@ -237,6 +248,9 @@ void *CommUnit_routine(){
     }
     pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
 
+    /* After all the buffer are initialized and the static threads are created,
+    set the flag to true. */
+    CommUnit_initialization_complete = true;
 
     /* When there is no dead thead, do the work. */
     while(thpool.num_threads_alive != 0){
@@ -387,6 +401,7 @@ void *Process_message(BufferListHead *buffer){
 
   buffer->is_busy = false;
 
+  return;
 
 }
 
@@ -418,11 +433,9 @@ int main(int argc, char **argv){
 
     NSI_initialization_complete      = false;
     CommUnit_initialization_complete = false;
-
-    ready_to_work = false;
+    ready_to_work = true;
 
     config = get_config(CONFIG_FILE_NAME);
-
 
 
     /* Initialize the memory pool */
@@ -434,7 +447,6 @@ int main(int argc, char **argv){
 
 }
 
-
     /* Network Setup and Initialization for Zigbee and Wifi */
     return_value = startThread(&NSI_thread, Initialize_network, NULL);
 
@@ -443,9 +455,6 @@ int main(int argc, char **argv){
        return return_value;
 
     }
-
-    perror("NSI_SUCCESS");
-
 
     /* Create threads for the main thread of Communication Unit  */
     return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
@@ -471,9 +480,6 @@ int main(int argc, char **argv){
         }
 
     }
-
-    // initalization completed
-    ready_to_work = true;
 
     while(ready_to_work == true){
         // Do bookkeeping work

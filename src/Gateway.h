@@ -132,7 +132,7 @@
 /* The configuration file structure */
 typedef struct Config {
 
-    /* The IP address for WiFi netwok connection. */
+    /* The IP address of server for WiFi netwok connection. */
     char  IPaddress[CONFIG_BUFFER_SIZE];
 
     /* String length needed to store IPaddress */
@@ -291,23 +291,5 @@ void *Initialize_network();
 
  */
 void *CommUnit_routine();
-
-/*
-  BHM_routine:
-
-      This function integrates the health report collected from all the LBeacons
-      and writes them to a file and then have the file send to the sever by
-      comminication unit.
-
-  Parameters:
-
-      None
-
-  Return value:
-
-      None
-
- */
-void *BHM_routine();
 
 #endif

@@ -69,6 +69,32 @@ void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
     buffer->priority_boast = priority_boast;
 }
 
+int Wifi_init(char IPaddress){
+
+		/* Set the address of server */
+		udp_config.Local_Address = IPaddress;
+
+		/* Initialize the Wifi cinfig file */
+		if(udp_initial(&udp_config) != WORK_SUCCESSFULLY){
+
+			/* Error handling TODO */
+			return E_WIFI_INIT_FAIL;
+
+		}
+
+		return WORK_SUCCESSFULLY;
+
+}
+
+void Wifi_free(){
+
+    /* Release the Wifi elements and close the connection. */
+    udp_release(&udp_config);
+
+    return;
+
+}
+
 int zigbee_init(){
 
     /* The error indicator returns from the libxbee library */
@@ -85,10 +111,10 @@ int zigbee_init(){
 
     xbee_Serial_Power_Reset(xbee_Serial_Power_Pin);
 
-    xbee_Serial_init( &xbee_config.xbee_datastream,
+    xbee_Serial_init(&xbee_config.xbee_datastream,
                      xbee_config.xbee_device);
 
-    xbee_LoadConfig( &xbee_config);
+    xbee_LoadConfig(&xbee_config);
 
     close(xbee_config.xbee_datastream);
 
@@ -106,8 +132,6 @@ int zigbee_init(){
 }
 
 void zigbee_free(){
-
-
 
     /* Release the xbee elements and close the connection. */
     xbee_release( &xbee_config);
@@ -132,6 +156,8 @@ void beacon_join_request(char *ID, char *mac,
     strcpy(beacon_address[index].beacon_coordinates.Z_coordinates,
                                 Beacon_Coordinates.Z_coordinates);
 
+		return;
+
 }
 
 void *wifi_send(BufferListHead *buffer_array, int buff_id){
@@ -149,72 +175,74 @@ void *wifi_send(BufferListHead *buffer_array, int buff_id){
 
       temp = ListEntry(list_pointers, BufferNode, buffer_entry);
 
-      /* Remove the node from the orignal buffer list. */
-      remove_list_node(list_pointers);
-
       /* Add the content that to be sent to the server */
       addpkt( &udp_config.pkt_Queue, Data,
               temp->net_address, temp->content);
 
+			/* Remove the node from the orignal buffer list and free the memory. */
+		  remove_list_node(list_pointers);
       mp_free(&node_mempool, temp);
 
+			buffer_array[buff_id]->num_in_list =
+						buffer_array[buff_id]->num_in_list - 1;
   }
 
   pthread_mutex_unlock(buffer_array[buff_id]->list_lock);
 
   buffer_array[buff_id]->is_busy == false;
 
-}
+	return;
 
+}
 
 
 void *zigbee_send(BufferListHead *buffer){
 
     BufferNode *temp;
 
-    buffer_array[buff_id]->is_busy == true;
-
-
-
-      /* Send the command or message to the LBeacons via zigbee */
-      for(int beacon_number = 0; beacon_number < MAX_NUMBER_NODES;
+    /* Send the command or message to the LBeacons via zigbee */
+    for(int beacon_number = 0; beacon_number < MAX_NUMBER_NODES;
           beacon_number++){
-
-          pthread_mutex_lock(buffer_array[buff_id]->list_lock);
 
           /* Add the content that to be sent to the LBeacon to the packet
             queue */
           addpkt( &xbee_config.pkt_Queue, Data,
-                  beacon_address[beacon_number], "Poll for data");
+                  beacon_address[beacon_number], "Poll for data code");
 
           /* If there are remain some packet need to send in the Queue,
            send the packet */
             xbee_send_pkt(&xbee_config);
 
-            /* If there is a command from the server, remove the node in
-            Command_msg_buffer */
-            if(buffer->num_in_list != 0){
+    }
 
-              /* Get the first buffer node from the buffer */
-              temp = (buffer->buffer_entry)->next;
+		/* If there is a command from the server, remove the node in
+		Command_msg_buffer */
+		if(buffer->num_in_list != 0){
 
-              temp = ListEntry(temp->buffer_entry, BufferNode, buffer_entry);
+					buffer_array[buff_id]->is_busy == true;
+					pthread_mutex_lock(buffer_array[buff_id]->list_lock);
 
-              /* Remove the node from the list and free the memory */
-              remove_list_node(&temp->buffer_entry);
-              mp_free(&node_mempool, temp);
+					/* Get the first buffer node from the buffer */
+					temp = (buffer->buffer_entry)->next;
 
-            }
+					temp = ListEntry(temp->buffer_entry, BufferNode, buffer_entry);
 
-        pthread_mutex_unlock(buffer_array[buff_id]->list_lock);
-        buffer_array[buff_id]->is_busy == false;
+					/* Remove the node from the list and free the memory */
+					remove_list_node(&temp->buffer_entry);
+					mp_free(&node_mempool, temp);
 
-        xbee_connector(&xbee_config);
+					buffer->num_in_list = buffer->num_in_list - 1;
 
-        usleep(XBEE_TIMEOUT);
+					pthread_mutex_unlock(buffer_array[buff_id]->list_lock);
+					buffer_array[buff_id]->is_busy == false;
 
-      }
+			}
 
+      xbee_connector(&xbee_config);
+
+      usleep(XBEE_TIMEOUT);
+
+			return;
 
 }
 
@@ -270,6 +298,8 @@ void *wifi_receieve(BufferListHead *buffer){
         }
 
     }
+
+		return;
 
 }
 
@@ -390,4 +420,6 @@ void *zigbee_receive(BufferListHead *buffer_array){
 
         }
     }
+
+		return; 
 }
