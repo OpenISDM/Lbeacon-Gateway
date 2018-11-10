@@ -145,7 +145,7 @@ void *wifi_send(BufferListHead *buffer_array, int buff_id){
 
   list_for_each_safe(list_pointers,
                    save_list_pointers,
-                   &buffer_array[buff_id]->list_entry){
+                   &buffer_array[buff_id]->buffer_entry){
 
       temp = ListEntry(list_pointers, BufferNode, buffer_entry);
 
@@ -196,7 +196,7 @@ void *zigbee_send(BufferListHead *buffer){
             if(buffer->num_in_list != 0){
 
               /* Get the first buffer node from the buffer */
-              temp = (buffer->list_entry)->next;
+              temp = (buffer->buffer_entry)->next;
 
               temp = ListEntry(temp->buffer_entry, BufferNode, buffer_entry);
 

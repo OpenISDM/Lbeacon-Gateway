@@ -200,6 +200,8 @@ void *CommUnit_routine(){
       (void *) wifi_send, LOW_PRIORITY);
     priority_array[BHM_send_buffer] = &BHM_send_buffer_list_head;
 
+    /* Set the inital time. */
+    init_time = get_system_time();
 
     CommUnit_initialization_complete = true;
     //wait for NSI get ready
@@ -235,21 +237,37 @@ void *CommUnit_routine(){
     }
     pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
 
-    long long init_time = get_system_time();
 
     /* When there is no dead thead, do the work. */
     while(thpool.num_threads_alive != 0){
 
       /* There is still idle worker thread is waiting for the work */
-      if(thpool.num_threads_working < thpool.num_threads_alive &&
-         get_system_time()-){
+      if(thpool.num_threads_working < thpool.num_threads_alive){
 
-        int buff_id;
+        /* Three indicator to scan the array */
+        int buff_id, scan_head, scan_tail;
+
+        /* In the normal situation, the scanning starts from the high priority
+        to lower priority. If the timer expired for MAX_STARVATION_TIME,
+        reverse the scanning process. */
+        if(get_system_time() - init_time < MAX_STARVATION_TIME){
+
+           scan_head = LBeacon_receive_buffer;
+           scan_tail = BHM_send_buffer;
+
+        }else{
+
+           /* Reverse the scanning order */
+           scan_head = BHM_send_buffer;
+           scan_tail = LBeacon_receive_buffer;
+
+           /* Reset the inital time */
+           init_time = get_system_time();
+        }
+
         /* Scan the priority_list_head to get the corresponding work fro the
         worker thread */
-        for(buff_id = LBeacon_receive_buffer;
-            buff_id <= BHM_send_buffer;
-            buff_id++){
+        for(buff_id = scan_head; buff_id <= scan_tail; buff_id++){
 
               /* If there is a node in the buffer and the buffer is not be
               occupied, do the work according to the function pointer */
@@ -267,11 +285,8 @@ void *CommUnit_routine(){
                     return return_error_value;
 
                 }
-
               }
-
         }
-
       }
 
     }
@@ -292,6 +307,9 @@ void *CommUnit_routine(){
 
     }
 
+    /* Destroy the thread pool */
+    thpool_destroy(thpool);
+
     return;
 
 }
@@ -308,7 +326,7 @@ void *Process_message(BufferListHead *buffer){
 
   list_for_each_safe(list_pointers,
                    save_list_pointers,
-                   &buffer->list_entry){
+                   &buffer->buffer_entry){
 
       temp = ListEntry(list_pointers, BufferNode, buffer_entry);
       /* Remove the node from the orignal buffer list. */
@@ -384,7 +402,6 @@ int main(int argc, char **argv){
     pthread_t CommUnit_thread;
 
     NSI_initialization_complete      = false;
-    BHM_initialization_complete      = false;
     CommUnit_initialization_complete = false;
 
     ready_to_work = false;

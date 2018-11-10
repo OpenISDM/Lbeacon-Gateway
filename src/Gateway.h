@@ -111,6 +111,8 @@
 /* Maximum number of buffers */
 #define MAX_NUM_BUFFER 6
 
+#define MAX_STARVATION_TIME 50000
+
 /* The number of slots in the memory pool */
 #define SLOTS_IN_MEM_POOL 512
 
@@ -180,12 +182,6 @@ BufferListHead *priority_list_head[MAX_NUM_BUFFER];
 GatewayConfig config;
 
 /*
-    A global flag which is initially false and is set by main thread to true
-    to tell other threads to shutdown, i.e. clean up and return
- */
-bool system_is_shutting_down;
-
-/*
     A global flag that is initially false and is set by main thread to true
     when initialization completes Afterward, the flag is used by other threads
     to inform the main thread the need to shutdown.
@@ -198,11 +194,11 @@ bool ready_to_work;
     its initialization completes.
  */
 bool NSI_initialization_complete;
+bool CommUnit_initialization_complete;
 bool initialization_failed;
 
 
-/* Current number of LBeacons */
-int LBeacon_count;
+long long init_time;
 
 /*
   get_config:
