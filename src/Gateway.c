@@ -319,7 +319,7 @@ void *CommUnit_routine(){
 
             /* Add the work to the worker thread with its priority */
             return_error_value = thpool_add_work(thpool,
-                                (void *)priority_array->function,
+                                (void *)priority_array[scan_head]->function,
                                 priority_array[scan_head],
                                 priority_array[scan_head]->priority_boast);
 

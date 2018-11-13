@@ -179,7 +179,7 @@ BufferListHead BHM_send_buffer_list_head;
 BufferListHead Command_msg_buffer_list_head;
 
 /* An array of buffer_list_head in the priority order. */
-BufferListHead *priority_list_head[MAX_NUM_BUFFER];
+BufferListHead *priority_array[MAX_NUM_BUFFER];
 
 
 /* A Gateway config struct stored config from the config file */
