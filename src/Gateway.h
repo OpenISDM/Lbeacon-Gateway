@@ -292,4 +292,23 @@ void *Initialize_network();
  */
 void *CommUnit_routine();
 
+/*
+  Process_message:
+
+      This is the function would be executed by worker threads which proceesed
+      the data node in LBeacon_receive_buffer, Command_msg_buffer and
+      BHM_receive_buffer. This function remanages the node to be added to the
+      new buffer or removed from the orignal buffer.
+
+  Parameters:
+
+      buffer - A pointer of the buffer to be modified.
+
+  Return value:
+
+      None
+
+ */
+void *Process_message(BufferListHead *buffer);
+
 #endif

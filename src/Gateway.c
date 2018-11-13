@@ -184,6 +184,7 @@ void *CommUnit_routine(){
     pthread_t Lbeacon_listener;
     pthread_t Sever_listener;
     int return_error_value;
+    bool is_reverse = false;
 
     /* Initialize the buffer_list_heads and add to the buffer array in the
     order of priority. Each buffer has the corresponding function pointer. */
@@ -248,77 +249,102 @@ void *CommUnit_routine(){
     }
     pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
 
+    /* Start counting down the time for polling the tracking data */
+    poll_LBeacon_time = get_system_time();
+
+
     /* After all the buffer are initialized and the static threads are created,
     set the flag to true. */
     CommUnit_initialization_complete = true;
 
-    /* When there is no dead thead, do the work. */
-    while(thpool.num_threads_alive != 0){
 
-      /* Start counting down the time for polling the tracking data */
-      poll_LBeacon_time = get_system_time();
+    /* When there is no dead thead, do the work. */
+    while(thpool.num_threads_alive > 0){
 
       /* There is still idle worker thread is waiting for the work */
       if(thpool.num_threads_working < thpool.num_threads_alive){
 
-        /* Three indicator to scan the array */
-        int buff_id, scan_head, scan_tail;
+        /* Two indicators for scanning the priority_array */
+        int scan_head, scan_tail;
 
-        /* If it is the time to poll the tracking data from LBeacon, Make a
-        thread to do this work */
-        if(get_system_time() - poll_LBeacon_time > MAX_POLLING_TIME){
+          /* If it is the time to poll the tracking data from LBeacon, Make a
+          thread to do this work */
+          if(get_system_time() - poll_LBeacon_time > MAX_POLLING_TIME){
 
-          /* Set both head and tail to the position of LBeacon_send_buffer */
-          scan_head = LBeacon_send_buffer;
-          scan_tail = LBeacon_send_buffer;
+            /* Set both head and tail to the position of LBeacon_send_buffer */
+            scan_head = LBeacon_send_buffer;
+            scan_tail = LBeacon_send_buffer;
 
-          /* Reset the poll_LBeacon_time */
-          poll_LBeacon_time = get_system_time();
+            /* Reset the poll_LBeacon_time */
+            poll_LBeacon_time = get_system_time();
 
 
-        /* In the normal situation, the scanning starts from the high priority
-        to lower priority. If the timer expired for MAX_STARVATION_TIME,
-        reverse the scanning process. */
-        } else if(get_system_time() - init_time < MAX_STARVATION_TIME){
+          /* In the normal situation, the scanning starts from the high
+          priority to lower priority. If the timer expired for
+          MAX_STARVATION_TIME, reverse the scanning process. */
+          } else if(get_system_time() - init_time < MAX_STARVATION_TIME){
 
+           /* Start scanning from the first position of the priority array */
            scan_head = LBeacon_receive_buffer;
-           scan_tail = BHM_send_buffer;
+           /* The tail indicator is set as same as the number of the element
+           in the priority array. */
+           scan_tail = MAX_NUM_BUFFER;
+
+           is_reverse = false;
 
         }else{
 
-           /* Reverse the scanning order */
+           /* Reverse the scanning order. Start scanning from the last position
+           of the priority array */
            scan_head = BHM_send_buffer;
-           scan_tail = LBeacon_receive_buffer;
+           /* The tail indicator is set to the number that is prior than the
+           first element in the priority array in order to make the program to
+           scan all the position backward.  */
+           scan_tail = -1;
+
+           is_reverse = true;
 
            /* Reset the inital time */
            init_time = get_system_time();
         }
 
-        /* Scan the priority_list_head to get the corresponding work fro the
+        /* Scan the priority_array to get the corresponding work fro the
         worker thread */
-        for(buff_id = scan_head; buff_id <= scan_tail; buff_id++){
+        do{
 
-              /* If there is a node in the buffer and the buffer is not be
-              occupied, do the work according to the function pointer */
-              if(priority_array[buff_id]->num_in_list != 0 &&
-                 priority_array[buff_id].is_busy == false){
+          /* If there is a node in the buffer and the buffer is not be
+          occupied, do the work according to the function pointer */
+          if(priority_array[scan_head]->num_in_list > 0 &&
+             priority_array[scan_head].is_busy == false){
 
-                /* Add the work to the worker thread with its priority */
-                return_error_value = thpool_add_work(thpool,
-                                    (void *)priority_array->function,
-                                    priority_array[buff_id],
-                                    priority_array[buff_id]->priority_boast);
+            /* Add the work to the worker thread with its priority */
+            return_error_value = thpool_add_work(thpool,
+                                (void *)priority_array->function,
+                                priority_array[scan_head],
+                                priority_array[scan_head]->priority_boast);
 
-                if(return_error_value != WORK_SUCCESSFULLY){
+            if(return_error_value != WORK_SUCCESSFULLY){
 
-                    return return_error_value;
+                return return_error_value;
 
-                }
-              }
-        }
-      }
+            }
+          }
 
-    }
+          /* Check the scanning order to determine the indicator */
+          if(is_reverse == true){
+              scan_head = scan_head - 1;
+          }else{
+              scan_head = scan_head + 1;
+          }
+
+        }while(scan_head != scan_tail);
+
+
+      } // End if
+
+    } // End while
+
+
     /* Waitting for the system is down, pthread_join and return. */
     return_error_value = pthread_join(Lbeacon_listener, NULL);
 
@@ -367,25 +393,37 @@ void *Process_message(BufferListHead *buffer){
 
         case LBeacon_receive_buffer:
 
+          pthread_mutex_lock(Server_send_buffer_list_head.list_lock);
+
           insert_list_first(temp->buffer_entry, &Server_send_buffer_list_head);
           Server_send_buffer_list_head.num_in_list =
-            Server_send_buffer_list_head.num_in_list + 1;
+                                Server_send_buffer_list_head.num_in_list + 1;
+
+          pthread_mutex_unlock(Server_send_buffer_list_head.list_lock);
+
           break;
 
         case Command_msg_buffer:
 
+          pthread_mutex_lock(LBeacon_send_buffer_list_head.list_lock);
+
           insert_list_first(temp->buffer_entry, &LBeacon_send_buffer_list_head);
           LBeacon_send_buffer_list_head.num_in_list =
-            LBeacon_send_buffer_list_head.num_in_list + 1;
+                                LBeacon_send_buffer_list_head.num_in_list + 1;
+
+          pthread_mutex_unlock(LBeacon_send_buffer_list_head.list_lock);
 
           break;
 
         case BHM_receive_buffer:
 
-         insert_list_first(temp->buffer_entry, &BHM_send_buffer_list_head);
-         BHM_send_buffer_list_head.num_in_list =
-          BHM_send_buffer_list_head.num_in_list + 1;
+          pthread_mutex_lock(BHM_send_buffer_list_head.list_lock);
 
+          insert_list_first(temp->buffer_entry, &BHM_send_buffer_list_head);
+          BHM_send_buffer_list_head.num_in_list =
+                                  BHM_send_buffer_list_head.num_in_list + 1;
+
+          pthread_mutex_unlock(BHM_send_buffer_list_head.list_lock);
          break;
 
          default:
