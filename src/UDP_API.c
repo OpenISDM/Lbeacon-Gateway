@@ -78,7 +78,7 @@ int udp_initial(pudp_config udp_config){
 
     usleep(10);
 
-    pthread_create(&udp_config -> udp_receive, NULL, udp_receive_pkt, (void*) udp_config);
+    pthread_create(&udp_config -> udp_receive, NULL, udp_recv_pkt, (void*) udp_config);
 
     return 0;
 
@@ -284,7 +284,9 @@ void *udp_receive_pkt(void *udpconfig){
 
 
 
+
     }
+
     printf("Exit Receive.\n");
 }
 

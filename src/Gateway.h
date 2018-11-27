@@ -105,6 +105,26 @@
 /* Length of coordinates in number of bits */
 #define COORDINATE_LENGTH 64
 
+/* Maximum number of worker threads */
+#define MAX_NUM_WORK_THREADS 5
+
+/* Maximum number of buffers */
+#define MAX_NUM_BUFFER 6
+
+/* The time period of avoiding starvation */
+#define MAX_STARVATION_TIME 50000
+
+/* The time period of polling data from Lbeacon */
+#define MAX_POLLING_TIME 100
+
+/* The number of slots in the memory pool */
+#define SLOTS_IN_MEM_POOL 512
+
+/* Names of priority levels */
+#define NORMAL_PRIORITY 0
+#define HIGH_PRIORITY 2
+#define LOW_PRIORITY -2
+
 /*
   TYPEDEF STRUCTS
 */
@@ -112,7 +132,7 @@
 /* The configuration file structure */
 typedef struct Config {
 
-    /* The IP address for WiFi netwok connection. */
+    /* The IP address of server for WiFi netwok connection. */
     char  IPaddress[CONFIG_BUFFER_SIZE];
 
     /* String length needed to store IPaddress */
@@ -133,6 +153,17 @@ typedef struct Config {
 
 } GatewayConfig;
 
+typedef enum buffer_types {
+
+    LBeacon_receive_buffer = 0;
+    Server_send_buffer = 1;
+    LBeacon_send_buffer = 2;
+    Command_msg_buffer = 3;
+    BHM_receive_buffer = 4;
+    BHM_send_buffer = 5;
+
+} BufferType;
+
 /*
   GLOBAL VARIABLES
 */
@@ -140,28 +171,19 @@ typedef struct Config {
 BufferListHead LBeacon_send_buffer_list_head;
 BufferListHead LBeacon_receive_buffer_list_head;
 
-BufferListHead NSI_receive_buffer_list_head;
-BufferListHead NSI_send_buffer_list_head;
+BufferListHead Server_send_buffer_list_head;
 
 BufferListHead BHM_receive_buffer_list_head;
 BufferListHead BHM_send_buffer_list_head;
 
 BufferListHead Command_msg_buffer_list_head;
 
-/* An array of address maps */
-Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
+/* An array of buffer_list_head in the priority order. */
+BufferListHead *priority_array[MAX_NUM_BUFFER];
 
-/* mempool for Gateway */
-Memory_Pool Gateway_MemPool;
 
 /* A Gateway config struct stored config from the config file */
 GatewayConfig config;
-
-/*
-    A global flag which is initially false and is set by main thread to true
-    to tell other threads to shutdown, i.e. clean up and return
- */
-bool system_is_shutting_down;
 
 /*
     A global flag that is initially false and is set by main thread to true
@@ -176,12 +198,12 @@ bool ready_to_work;
     its initialization completes.
  */
 bool NSI_initialization_complete;
-bool BHM_initialization_complete;
 bool CommUnit_initialization_complete;
 bool initialization_failed;
 
-/* Current number of LBeacons */
-int LBeacon_count;
+
+long long init_time;
+long long poll_LBeacon_time;
 
 /*
   get_config:
@@ -199,6 +221,23 @@ int LBeacon_count;
       config - GatewayConfig struct
  */
 GatewayConfig get_config(char *file_name);
+
+/*
+  get_system_time:
+
+      This helper function fetches the current time according to the system
+      clock in terms of the number of milliseconds since January 1, 1970.
+
+  Parameters:
+
+      None
+
+  Return value:
+
+      system_time - system time in milliseconds
+*/
+
+long long get_system_time();
 
 /*
   startThread:
@@ -254,21 +293,22 @@ void *Initialize_network();
 void *CommUnit_routine();
 
 /*
-  BHM_routine:
+  Process_message:
 
-      This function integrates the health report collected from all the LBeacons
-      and writes them to a file and then have the file send to the sever by
-      comminication unit.
+      This is the function would be executed by worker threads which proceesed
+      the data node in LBeacon_receive_buffer, Command_msg_buffer and
+      BHM_receive_buffer. This function remanages the node to be added to the
+      new buffer or removed from the orignal buffer.
 
   Parameters:
 
-      None
+      buffer - A pointer of the buffer to be modified.
 
   Return value:
 
       None
 
  */
-void *BHM_routine();
+void *Process_message(BufferListHead *buffer);
 
 #endif

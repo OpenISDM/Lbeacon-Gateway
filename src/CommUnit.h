@@ -57,7 +57,9 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+＃include "Mempool.h"
 #include "xbee_API.h"
+#include "UDP_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
 
@@ -80,6 +82,8 @@
 
 #define XBEE_CONFIG_PATH "/home/pi/Lbeacon-Gateway/config/xbee_config.conf"
 
+#define MAX_CONTENT_LENGTH 1024
+
 
 /*
   ErrorCode
@@ -88,17 +92,14 @@
 typedef enum ErrorCode{
 
     WORK_SUCCESSFULLY = 0,
-
-    E_WIFI_CONNECT_FAIL = 1,
-
-    E_ZIGBEE_INIT_FAIL = 2,
-
-    E_XBEE_VALIDATE = 3,
-
-    E_START_COMMUNICAT_ROUTINE_THREAD = 4,
-    E_START_BHM_ROUTINE_THREAD = 5,
-    E_START_TRACKING_THREAD = 6,
-    E_START_THREAD = 7
+    E_MALLOC = 1,
+    E_WIFI_INIT_FAIL = 2,
+    E_ZIGBEE_INIT_FAIL = 3,
+    E_XBEE_VALIDATE = 4,
+    E_START_COMMUNICAT_ROUTINE_THREAD = 5,
+    E_START_BHM_ROUTINE_THREAD = 6,
+    E_START_TRACKING_THREAD = 7,
+    E_START_THREAD = 8
 
 } ErrorCode;
 
@@ -150,8 +151,23 @@ typedef struct buffer_list_head{
     /* A per list lock */
     pthread_mutex_t   list_lock;
 
+    /* The index number of the buffer */
+    int               buffer_id;
+
     /* Current number of msg buffers in the list */
     int               num_in_list;
+
+    /* Number of levels relative to normal priority */
+    int              priority_boast;
+
+    /* function pointer */
+    void             (*function)(void* arg);
+
+    /* function's argument       */
+    void             *arg;
+
+    /* A buffer to indicate the buffer is be occupied */
+    bool            is_busy;
 
 } BufferListHead;
 
@@ -161,13 +177,14 @@ typedef struct BufferNode{
     struct List_Entry buffer_entry;
 
     /* Zigbee network address of the source or destination */
-    char             net_address[Address_length_Hex];
+    char             net_address[ADDRESS_LENGTH];
 
     /* point to where the data is stored. */
-    char             *content;
+    char             *content[MAX_CONTENT_LENGTH];
 
 
 } BufferNode;
+
 
 /*
   GLOBAL VARIABLES
@@ -175,38 +192,39 @@ typedef struct BufferNode{
 /* Struct for storing necessary objects for zigbee connection */
 sxbee_config xbee_config;
 
+/* Struct for storing necessary objects for Wifi connection */
+sudp_config udp_config;
+
+/* mempool of node for Gateway */
+Memory_Pool node_mempool;
+
+/* An array of address maps */
+Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
+
+
 
 /*
   init_buffer:
 
       The function fills the attributes of buffer storing the packets.
+      Including assigning the function to the corresponding buffer list and its
+      arguments and its priority level
 
   Parameters:
 
-      Node
+      buffer - A pointer of the buffer to be modified.
+      buff_id - The index of the buffer for the priority array
+      function - A function pointer to be assigned to the buffer
+      priority - The priority level of the buffer
 
   Return value:
 
       None
 
  */
-void init_buffer(BufferListHead *buffer);
+void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
+								int priority_boast);
 
-/*
- free_buffer:
-
-     The function to release the buffer.
-
- Parameters:
-
-     Node
-
- Return value:
-
-     None
-
- */
-void free_buffer(BufferListHead *buffer);
 
 /*
  wifi_recieve:
@@ -216,13 +234,13 @@ void free_buffer(BufferListHead *buffer);
 
  Parameters:
 
-     None
+     buffer - A pointer of the buffer to be modified.
 
  Return value:
 
      None
  */
-void *wifi_receive();
+void *wifi_receieve(BufferListHead *buffer);
 
 /*
  wifi_send:
@@ -231,13 +249,13 @@ void *wifi_receive();
 
  Parameters:
 
-     None
+     buffer_array - An array of buffer to be sent.
 
  Return value:
 
      None
  */
-void *wifi_send();
+void *wifi_send(BufferListHead *buffer_array, int buff_id);
 
 /*
  zigbee_receive:
@@ -247,13 +265,13 @@ void *wifi_send();
 
  Parameters:
 
-     None
+     buffer_array - An array of buffer to be sent.
 
  Return value:
 
      None
  */
-void *zigbee_receive();
+void *zigbee_receive(BufferListHead *buffer_array);
 
 /*
  zigbee_send:
@@ -262,13 +280,13 @@ void *zigbee_receive();
 
  Parameters:
 
-     None
+     buffer - A pointer of the buffer to be modified.
 
  Return value:
 
      None
  */
-void *zigbee_send();
+void *zigbee_send(BufferListHead *buffer);
 
 /*
  beacon_join_request:
@@ -292,6 +310,40 @@ void *zigbee_send();
 void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
                          char *Loc_Description);
 
+
+/*
+ Wifi_init:
+
+     This function initilizes the Wifi's necessory object.
+
+ Parameters:
+
+     IPaddress - The address of the local server
+
+ Return value:
+
+     int - The error code for the corresponding error or successful
+
+ */
+int Wifi_init(char IPaddress);
+
+/*
+ Wifi_free:
+
+     When called, this function frees the necessory element.
+
+ Parameters:
+
+     None
+
+ Return value:
+
+     None
+
+ */
+void Wifi_free();
+
+
 /*
  zigbee_init:
 
@@ -299,11 +351,11 @@ void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
 
  Parameters:
 
-     zigbee - the struct of necessary parameter and data
+     None
 
  Return value:
 
-     int: The error code for the corresponding error or successful
+     int - The error code for the corresponding error or successful
 
  */
 int zigbee_init();
