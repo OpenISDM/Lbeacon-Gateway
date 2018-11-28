@@ -16,8 +16,11 @@
      This file contains the program to transmit and receive data to and from
      LBeacon and the sever through Zigbee and Wi-Fi networks, and programs
      executed by network setup and initialization, Beacon health monitor and
-     comminication unit. Gateway takes the role of the coordinator in the
-     local zigbee network.
+     comminication unit. Each gateway is the root of a star network of LBeacons.
+
+ Version:
+
+     1.0, 20181130
 
  File Name:
 
@@ -25,28 +28,27 @@
 
  Abstract:
 
-     BeDIPS uses LBeacons to deliver 3D coordinates and textual
-     descriptions of their locations to users' devices. Basically, a
-     LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
-     coordinates and location description of every LBeacon are retrieved
-     from BeDIS (Building/environment Data and Information System) and
-     stored locally during deployment and maintenance times. Once
-     initialized, each LBeacon broadcasts its coordinates and location
-     description to Bluetooth enabled user devices within its coverage
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
      area.
 
  Authors:
 
      Holly Wang     , hollywang@iis.sinica.edu.tw
-     Jake Lee     , jakelee@iis.sinica.edu.tw
-     Johnson Su   , johnsonsu@iis.sinica.edu.tw
-     Hank Kung    , hank910140@gmail.com
-     Ray Chao     , raychao5566@gmail.com
-     Gary Xiao    , garyh0205@hotmail.com
+     Jake Lee       , jakelee@iis.sinica.edu.tw
+     Ray Chao       , raychao5566@gmail.com
+     Gary Xiao      , garyh0205@hotmail.com
 
  */
 
+
 #include "Gateway.h"
+
 
 GatewayConfig get_config(char *file_name) {
 
@@ -58,7 +60,6 @@ GatewayConfig get_config(char *file_name) {
 
         /* Error handling */
         zlog_info(category_health_report, errordesc[E_OPEN_FILE].message);
-
         return NULL;
 
     }
@@ -542,4 +543,156 @@ int main(int argc, char **argv){
 
     return 0;
 
+}
+
+void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
+								int priority_boast){
+
+    init_entry( &(buffer->buffer_entry));
+
+    pthread_mutex_init( &buffer->list_lock, 0);
+
+    buffer->num_in_list = 0;
+
+    buffer->buff_id = buff_id;
+
+    buffer->function = function_p;
+
+    buffer->arg = (void *) buffer;
+
+    buffer->is_busy = false;
+
+    buffer->priority_boast = priority_boast;
+}
+
+int Wifi_init(char IPaddress){
+
+    /* Set the address of server */
+    udp_config.Local_Address = IPaddress;
+
+    /* Initialize the Wifi cinfig file */
+    if(udp_initial(&udp_config) != WORK_SUCCESSFULLY){
+
+        /* Error handling TODO */
+        return E_WIFI_INIT_FAIL;
+
+    }
+
+    return WORK_SUCCESSFULLY;
+}
+
+void Wifi_free(){
+
+    /* Release the Wifi elements and close the connection. */
+    udp_release(&udp_config);
+
+    return;
+
+}
+
+void beacon_join_request(char *ID, char *mac,
+                         Coordinates Beacon_Coordinates,
+                         char *Loc_Description){
+
+    /* Copy all the necessary information received from the LBeacon to the
+       address map. */
+    strcpy(beacon_address[index].beacon_uuid, ID);
+    strcpy(beacon_address[index].mac_addr, mac);
+    strcpy(beacon_address[index].loc_description, Loc_Description);
+    strcpy(beacon_address[index].beacon_coordinates.X_coordinates,
+                                 Beacon_Coordinates.X_coordinates);
+    strcpy(beacon_address[index].beacon_coordinates.Y_coordinates,
+                                 Beacon_Coordinates.Y_coordinates);
+    strcpy(beacon_address[index].beacon_coordinates.Z_coordinates,
+                                 Beacon_Coordinates.Z_coordinates);
+
+    return;
+}
+
+void *wifi_send(BufferListHead *buffer_array, int buff_id){
+
+    struct List_Entry *list_pointers, *save_list_pointers;
+    BufferNode *temp;
+
+    buffer_array[buff_id]->is_busy == true;
+
+    pthread_mutex_lock(buffer_array[buff_id]->list_lock);
+
+    list_for_each_safe(list_pointers,
+                       save_list_pointers,
+                       &buffer_array[buff_id]->buffer_entry){
+
+    temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+
+    /* Add the content that to be sent to the server */
+    addpkt( &udp_config.pkt_Queue, Data,
+            temp->net_address, temp->content);
+
+    /* Remove the node from the orignal buffer list and free the memory. */
+	remove_list_node(list_pointers);
+    mp_free(&node_mempool, temp);
+
+    buffer_array[buff_id]->num_in_list = buffer_array[buff_id]->num_in_list - 1;
+    }
+
+    pthread_mutex_unlock(buffer_array[buff_id]->list_lock);
+
+    buffer_array[buff_id]->is_busy == false;
+
+    return;
+}
+
+void *wifi_receieve(BufferListHead *buffer){
+
+    while (ready_to_work == true) {
+
+        struct BufferNode *new_node;
+
+        pkt temppkt = get_pkt(&udp_config.Received_Queue);
+
+        if(temppkt != NULL){
+
+            /* Allocate form zigbee packet memory pool a buffer for received
+               data and copy the data from Xbee receive queue to the buffer. */
+            new_node = mp_alloc(&node_mempool);
+
+            /* Initialize the entry of the buffer node */
+            init_entry(new_node->buffer_entry);
+
+            if(new_node == NULL){
+                /* Alloc mempry failed, error handling. */
+                perror(E_MALLOC);
+                return;
+
+            }
+            else{
+
+                /* Copy the content to the buffer_node */
+                memcpy(new_node->content, temppkt->content,
+                       sizeof(temppkt->content));
+
+                /* Get the zigbee network address from the content and look up
+                   from Lbeacon_address_map the UUID of the LBeacon, and the
+                   buffer_index. */
+                memcpy(new_node->net_address, temppkt->address,
+                       sizeof(temppkt->address));
+
+                pthread_mutex_lock(buffer->list_lock);
+                /* Insert the node to the input buffer, and release
+                   list_lock. */
+                insert_list_first(&new_node->buffer_entry, buffer);
+                buffer->num_in_list = buffer->num_in_list + 1;
+
+                pthread_mutex_unlock(buffer->list_lock);
+
+            }
+        }
+        else{
+
+            /* If there is no packet received, sleep a short time */
+            sleep(A_SHORT_TIME);
+        }
+    }
+
+    return;
 }
