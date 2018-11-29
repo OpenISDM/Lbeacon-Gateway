@@ -37,25 +37,25 @@
  */
 
 
- #include <stdio.h>
- #include <stdlib.h>
- #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 
- #ifdef BEDIS_H
- #defin BEDIS_H
+#ifdef BEDIS_H
+#defin BEDIS_H
 
- /* Length of address of the network in number of bits */
- #define NETWORK_ADDR_LENGTH 16
+/* Length of address of the network in number of bits */
+#define NETWORK_ADDR_LENGTH 16
 
- /* Maximum number of characters in location description */
- #define MAX_LENGTH_LOC_DESCRIPTION  64
+/* Maximum number of characters in location description */
+#define MAX_LENGTH_LOC_DESCRIPTION  64
 
- /* Length of the beacon's UUID in a number of charaters */
- #define UUID_LENGTH 32
+/* Length of the beacon's UUID in a number of charaters */
+#define UUID_LENGTH 32
 
 // Length of coordinates in number of bits
- #define COORDINATE_LENGTH 64
+#define COORDINATE_LENGTH 64
 
 //The port on which to listen for incoming data
 #define UDP_LISTEN_PORT 8888
@@ -94,4 +94,4 @@ typedef struct{
 /* A flag that is used to check if CTRL-C is pressed */
 bool g_done = false;
 
- #endif
+#endif

@@ -69,7 +69,7 @@ int main(int argc, char **argv){
         /* Error handling */
         perror(E_MALLOC);
         return E_MALLOC;
-}
+    }
 
     /* Network Setup and Initialization for Wi-Fi */
     return_value = startThread(&NSI_thread, Initialize_network, NULL);
