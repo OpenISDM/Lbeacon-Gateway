@@ -1,30 +1,29 @@
 /*
- Copyright (c) 2016 Academia Sinica, Institute of Information Science
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
 
- License:
+  License:
 
-     GPL 3.0 : The content of this file is subject to the terms and
-     conditions defined in file 'COPYING.txt', which is part of this source
-     code package.
+     GPL 3.0 : The content of this file is subject to the terms and conditions
+     defined in file 'COPYING.txt', which is part of this source code package.
 
- Project Name:
+  Project Name:
 
      BeDIPS
 
- File Description:
+  File Description:
 
      This is the header file containing the declarations of functions and
      variables used in the Gateway.c file.
 
- Version:
+  Version:
 
      1.0, 20181130
 
- File Name:
+  File Name:
 
      Gateway.h
 
- Abstract:
+  Abstract:
 
      BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
      their locations to users' devices. Basically, a LBeacon is an inexpensive,
@@ -71,23 +70,12 @@
 #include "UDP_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
-#include "bedis.h"
+#include "BeDIS.h"
 
 
 #ifndef GATEWAY_H
 #define GATEWAY_H
 
-
-// Common define
-
-/* Length of address of the network in number of bits */
-#define NETWORK_ADDR_LENGTH 16
-
-/* Maximum number of characters in location description */
-#define MAX_LENGTH_LOC_DESCRIPTION  64
-
-/* Length of the beacon's UUID in a number of charaters */
-#define UUID_LENGTH 32
 
 // Gateway Config File Location and define about config file.
 
@@ -105,14 +93,6 @@
 
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 32
-
-/* The timeout for waiting in number of millisconds */
-#define TIMEOUT 3000
-
-/* Timeout interval in seconds */
-#define A_LONG_TIME 30000
-#define A_SHORT_TIME 5000
-#define A_VERY_SHORT_TIME 300
 
 /*
   Maximum length of time in millisecond low priority message lists are starved
@@ -198,15 +178,15 @@ typedef enum pkt_types {
     coordinates, and location description. */
 typedef struct{
 
-    char        beacon_uuid[UUID_LENGTH];
+    char beacon_uuid[UUID_LENGTH];
 
     /* network address of zigbee/wifi link to the LBeacon*/
-    char        net_address[Address_length_Hex];
+    char net_address[Address_length_Hex];
 
     Coordinates beacon_coordinates;
 
     /* network address of Wi-Fi link to the Lbeacon */
-    char        location_description[MAX_LENGTH_LOC_DESCRIPTION];
+    char location_description[MAX_LENGTH_LOC_DESCRIPTION];
 
 }Address_map;
 
@@ -219,22 +199,22 @@ typedef struct buffer_list_head{
     pthread_mutex_t   list_lock;
 
     /* The index number of the buffer */
-    int               buffer_id;
+    int buffer_id;
 
     /* Current number of msg buffers in the list */
-    int               num_in_list;
+    int num_in_list;
 
     /* Number of levels relative to normal priority */
-    int              priority_boast;
+    int priority_boast;
 
     /* function pointer */
-    void             (*function)(void* arg);
+    void (*function)(void* arg);
 
     /* function's argument       */
-    void             *arg;
+    void *arg;
 
     /* A buffer to indicate the buffer is be occupied */
-    bool            is_busy;
+    bool is_busy;
 
 } BufferListHead;
 
@@ -244,29 +224,13 @@ typedef struct BufferNode{
     struct List_Entry buffer_entry;
 
     /* Zigbee network address of the source or destination */
-    char             net_address[ADDRESS_LENGTH];
+    char net_address[ADDRESS_LENGTH];
 
     /* point to where the data is stored. */
-    char             *content[MAX_CONTENT_LENGTH];
+    char content[MAX_CONTENT_LENGTH];
 
 
 } BufferNode;
-
-/* ErrorCode */
-
-typedef enum ErrorCode{
-
-    WORK_SUCCESSFULLY = 0,
-    E_MALLOC = 1,
-    E_WIFI_INIT_FAIL = 2,
-    E_ZIGBEE_INIT_FAIL = 3,
-    E_XBEE_VALIDATE = 4,
-    E_START_COMMUNICAT_ROUTINE_THREAD = 5,
-    E_START_BHM_ROUTINE_THREAD = 6,
-    E_START_TRACKING_THREAD = 7,
-    E_START_THREAD = 8
-
-} ErrorCode;
 
 
 // Global variables
@@ -322,6 +286,7 @@ bool BHM_initialization_complete;
 long long init_time;
 long long poll_LBeacon_for_HR_time;
 
+
 /*
   get_config:
 
@@ -339,40 +304,28 @@ long long poll_LBeacon_for_HR_time;
  */
 GatewayConfig get_config(char *file_name);
 
-/*
-  get_system_time:
 
-     This helper function fetches the current time according to the system
-     clock in terms of the number of milliseconds since January 1, 1970.
+/*
+  init_buffer:
+
+     The function fills the attributes of buffer storing the packets.
+     Including assigning the function to the corresponding buffer list and its
+     arguments and its priority level
 
   Parameters:
+
+     buffer - A pointer of the buffer to be modified.
+     buff_id - The index of the buffer for the priority array
+     function - A function pointer to be assigned to the buffer
+     priority - The priority level of the buffer
+
+  Return value:
 
      None
-
-  Return value:
-
-     system_time - system time in milliseconds
-*/
-
-long long get_system_time();
-
-/*
-  startThread:
-
-     This function initializes the specified threads.
-
-  Parameters:
-
-     threads - name of the thread
-     thfunct - the function for thread to execute.
-     arg - the argument for thread's function
-
-  Return value:
-
-     Error_code: The error code for the corresponding error
-
  */
-ErrorCode startThread(pthread_t *threads, void *( *thfunct)(void *), void *arg);
+void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
+								int priority_boast);
+
 
 /*
   Initialize_network:
@@ -389,6 +342,7 @@ ErrorCode startThread(pthread_t *threads, void *( *thfunct)(void *), void *arg);
      None
  */
 void *Initialize_network();
+
 
 /*
   CommUnit_routine:
@@ -409,6 +363,7 @@ void *Initialize_network();
  */
 void *CommUnit_routine();
 
+
 /*
   Process_message:
 
@@ -428,75 +383,22 @@ void *CommUnit_routine();
  */
 void *Process_message(BufferListHead *buffer);
 
-/*
-  init_buffer:
-
-      The function fills the attributes of buffer storing the packets.
-      Including assigning the function to the corresponding buffer list and its
-      arguments and its priority level
-
-  Parameters:
-
-      buffer - A pointer of the buffer to be modified.
-      buff_id - The index of the buffer for the priority array
-      function - A function pointer to be assigned to the buffer
-      priority - The priority level of the buffer
-
-  Return value:
-
-      None
-
- */
-void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
-								int priority_boast);
-
 
 /*
- wifi_recieve:
-
-     This function listens the request or command received from the server.
-     After getting the message, push the data in to the buffer.
-
- Parameters:
-
-     buffer - A pointer of the buffer to be modified.
-
- Return value:
-
-     None
- */
-void *wifi_receieve(BufferListHead *buffer);
-
-/*
- wifi_send:
-
-     This function sends the file to the sever via Wi-Fi.
-
- Parameters:
-
-     buffer_array - An array of buffer to be sent.
-
- Return value:
-
-     None
- */
-void *wifi_send(BufferListHead *buffer_array, int buff_id);
-
-/*
- beacon_join_request:
+  beacon_join_request:
 
      This function is executed when a beacon sends command to join the gateway
      and fills the table with the inputs. Set the network_address according
      the current number of beacons.
 
- Parameters:
+  Parameters:
 
      ID - The UUIzd of the LBeacon
      mac - The mac address of the xbee
      Coordinates - Pointerto the beacon coordinates
      Loc_Description - Pointer to the beacon literal location description
 
- Return value:
+  Return value:
 
      None
 
@@ -506,35 +408,70 @@ void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
 
 
 /*
- Wifi_init:
+  Wifi_init:
 
      This function initilizes the Wifi's necessory object.
 
- Parameters:
+  Parameters:
 
      IPaddress - The address of the local server
 
- Return value:
+  Return value:
 
-     int - The error code for the corresponding error or successful
+      int - The error code for the corresponding error or successful
 
  */
 int Wifi_init(char IPaddress);
 
+
 /*
- Wifi_free:
+  Wifi_free:
 
      When called, this function frees the necessory element.
 
- Parameters:
+  Parameters:
 
      None
 
- Return value:
+  Return value:
 
      None
 
  */
 void Wifi_free();
+
+
+/*
+  wifi_send:
+
+     This function sends the file to the sever via Wi-Fi.
+
+  Parameters:
+
+     buffer_array - An array of buffer to be sent.
+
+  Return value:
+
+     None
+ */
+void *wifi_send(BufferListHead *buffer_array, int buff_id);
+
+
+/*
+  wifi_recieve:
+
+     This function listens the request or command received from the server.
+     After getting the message, push the data in to the buffer.
+
+  Parameters:
+
+     buffer - A pointer of the buffer to be modified.
+
+  Return value:
+
+     None
+ */
+void *wifi_receieve(BufferListHead *buffer);
+
 
 #endif

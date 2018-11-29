@@ -3,37 +3,35 @@
 
   License:
 
-       GPL 3.0 : The content of this file is subject to the terms and
-       cnditions defined in file 'COPYING.txt', which is part of this
-       source code package.
+     GPL 3.0 : The content of this file is subject to the terms and conditions
+     defined in file 'COPYING.txt', which is part of this source code package.
 
   Project Name:
 
-       BeDIPS
+     BeDIPS
 
   File Description:
 
-       This file contains the program to connect to Wi-Fi and in
-       the project, we use it for data transmission most.
+     This file contains the program to connect to Wi-Fi and in the project, we
+     use it for data transmission most.
 
   File Name:
 
-       UDP_API.c
+     UDP_API.c
 
   Abstract:
 
-       BeDIPS uses LBeacons to deliver 3D coordinates and textual
-       descriptions of their locations to users' devices. Basically, a
-       LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
-       coordinates and location description of every LBeacon are retrieved
-       from BeDIS (Building/environment Data and Information System) and
-       stored locally during deployment and maintenance times. Once
-       initialized, each LBeacon broadcasts its coordinates and location
-       description to Bluetooth enabled user devices within its coverage
-       area.
+     BeDIPS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
+     area.
 
   Authors:
-       Gary Xiao		, garyh0205@hotmail.com
+     Gary Xiao		, garyh0205@hotmail.com
  */
 #include "UDP_API.h"
 
@@ -43,42 +41,51 @@ int udp_initial(pudp_config udp_config){
     int ret;
 
     // zero out the structure
-    memset((char *) &udp_config -> si_server, 0, sizeof(udp_config -> si_server));
+    memset((char *) &udp_config -> si_server, 0, sizeof(udp_config
+            -> si_server));
 
     if(ret = init_Packet_Queue( &udp_config -> pkt_Queue) != pkt_Queue_SUCCESS)
 
         return ret;
 
-    if(ret = init_Packet_Queue( &udp_config -> Received_Queue) != pkt_Queue_SUCCESS)
+    if(ret = init_Packet_Queue( &udp_config -> Received_Queue)
+       != pkt_Queue_SUCCESS)
 
         return ret;
 
     //create a send UDP socket
-    if ((udp_config -> send_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
+    if ((udp_config -> send_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))
+         == -1)
         perror("socket errror.\n");
-    }
 
     //create a recv UDP socket
-    if ((udp_config -> recv_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
+    if ((udp_config -> recv_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))
+         == -1)
         perror("socket errror.\n");
-    }
+
+    struct timeval timeout;
+    timeout.tv_sec = UDP_SELECT_TIMEOUT; //秒
+
+    if (setsockopt(udp_config -> recv_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout
+                 , sizeof(timeout)) == -1)
+        perror("setsockopt failed:");
 
     udp_config -> si_server.sin_family = AF_INET;
     udp_config -> si_server.sin_port = htons(UDP_LISTEN_PORT);
     udp_config -> si_server.sin_addr.s_addr = htonl(INADDR_ANY);
 
+    udp_config -> shutdown = false;
+
     //bind recv socket to port
-    if( bind(udp_config -> recv_socket , (struct sockaddr *)&udp_config -> si_server, sizeof(udp_config -> si_server) ) == -1)
-    {
+    if( bind(udp_config -> recv_socket , (struct sockaddr *)&udp_config ->
+             si_server, sizeof(udp_config -> si_server) ) == -1)
         perror("bind error.\n");
-    }
 
+    pthread_create(&udp_config -> udp_receive, NULL, udp_recv_pkt, (void*)
+                   udp_config);
 
-    pthread_create(&udp_config -> udp_send, NULL, udp_send_pkt, (void*) udp_config);
-
-    usleep(10);
-
-    pthread_create(&udp_config -> udp_receive, NULL, udp_recv_pkt, (void*) udp_config);
+    pthread_create(&udp_config -> udp_send, NULL, udp_send_pkt, (void*)
+                   udp_config);
 
     return 0;
 
@@ -86,45 +93,33 @@ int udp_initial(pudp_config udp_config){
 
 int udp_addpkt(pkt_ptr pkt_queue, char *raw_addr, char *content, int size){
 
-    printf("udp_addpkt\n");
+    if(size > MAX_DATA_LENGTH)
+        return E_ADDPKT_OVERSIZE;
 
-    int UDP = 3;
-
-    char identification[identification_length];
-
-    memset(&identification, 0, sizeof(char) * identification_length);
-
-    generate_identification(identification, identification_length);
-
-    unsigned int offset = 0;
-
-    unsigned int  Data_fragmentation = 0;
-
-    char tmp_content[MAX_DATA_LENGTH];
+    const int UDP = 3;
 
     char address[Address_length];
 
-    memset(address, 0, Address_length);
+    memset(&address, 0, Address_length);
 
+    //Record current filled Address Location.
     int address_loc = 0;
 
-    printf(" adj address\n");
-
+    // Four part in a address.(devided by '.')
     for(int n = 0; n < 4; n++){
 
-        printf("n = %d\n", n);
-
+        //in each part, at most 3 number.
         int count = 0;
         unsigned char tmp[3];
+
         memset(&tmp, 0, sizeof(char) * 3);
 
         while(count != 3){
 
-
+            //When read '.' from address_loc means the end of this part.
             if (raw_addr[address_loc] == '.'){
 
                 address_loc ++;
-
                 break;
 
             }
@@ -132,47 +127,27 @@ int udp_addpkt(pkt_ptr pkt_queue, char *raw_addr, char *content, int size){
                 tmp[count] = raw_addr[address_loc];
 
                 count ++;
-
                 address_loc ++;
 
                 if(address_loc >= strlen(raw_addr))
                     break;
+
             }
 
         }
 
-        for(int lo = 0; lo < 3;lo ++){
+        for(int lo = 0; lo < 3;lo ++)
 
             if ((3 - count) > lo )
                 address[n * 3 + lo] = '0';
-            else{
+            else
                 address[n * 3 + lo] = tmp[lo - (3 - count)];
-            }
 
-        }
         if (count == 3)
             address_loc ++;
     }
 
-    printf("Address :");
-
-    print_content(address, Address_length);
-
-
-    memset(&tmp_content, 0, sizeof(char) * MAX_DATA_LENGTH);
-
-    for(int loc = 0;loc < MAX_DATA_LENGTH;loc ++){
-
-        tmp_content[loc] = content[loc];
-
-        if((loc  + 1) == size)
-
-            break;
-
-    }
-
-    addpkt(pkt_queue, UDP, identification
-         , Data_fragmentation, offset, address, tmp_content, MAX_DATA_LENGTH);
+    addpkt(pkt_queue, UDP, address, content, size);
 
     return 0;
 }
@@ -183,34 +158,50 @@ void *udp_send_pkt(void *udpconfig){
 
     struct sockaddr_in si_send;
 
-    int socketaddr_len = sizeof(si_send);
+    const int socketaddr_len = sizeof(si_send);
 
+    // Stored a recovered address.
     char dest_address[17];
 
-    printf("send pkt.\n");
+    while(udp_config -> shutdown == false){
 
-    while(!(udp_config -> shutdown)){
+        if(is_null( &udp_config -> pkt_Queue) == false){
 
-        if(!(is_null( &udp_config -> pkt_Queue))){
+            pthread_mutex_lock( &udp_config -> pkt_Queue.mutex);
 
             memset(&dest_address, 0, sizeof(char) * 17);
 
-            char *tmp_address = hex_to_char(udp_config -> pkt_Queue.Queue[udp_config
-                  -> pkt_Queue.front].address, 12);
+            char *tmp_address = hex_to_char(udp_config -> pkt_Queue.Queue[
+                                udp_config -> pkt_Queue.front].address, 12);
 
-            array_copy(tmp_address, dest_address, 3);
+            int address_loc = 0;
 
-            dest_address[3] = '.';
+            for(int n=0;n < 4;n ++){
 
-            array_copy(&tmp_address[3], &dest_address[4], 3);
+                bool no_zero = false;
 
-            dest_address[7] = '.';
+                for(int loc=0;loc < 3;loc ++){
 
-            array_copy(&tmp_address[6], &dest_address[8], 3);
+                    if(tmp_address[n * 3 + loc]== '0' && no_zero == false &&
+                       loc != 2)
+                        continue;
 
-            dest_address[11] = '.';
+                    no_zero = true;
 
-            array_copy(&tmp_address[9], &dest_address[12], 3);
+                    dest_address[address_loc] = tmp_address[n * 3 + loc];
+
+                    address_loc ++;
+
+                }
+
+                if(n < 3){
+
+                    dest_address[address_loc] = '.';
+
+                    address_loc ++;
+                }
+
+            }
 
             printf("Dest Address : %s\n", dest_address );
 
@@ -218,18 +209,16 @@ void *udp_send_pkt(void *udpconfig){
             si_send.sin_family = AF_INET;
             si_send.sin_port   = htons(UDP_LISTEN_PORT);
 
-            if (inet_aton(dest_address, &si_send.sin_addr) == 0){
+            if (inet_aton(dest_address, &si_send.sin_addr) == 0)
 
                 perror("inet_aton error.\n");
 
-            }
-
-            if (sendto(udp_config -> send_socket, udp_config -> pkt_Queue.Queue[udp_config
-                  -> pkt_Queue.front].content, MAX_DATA_LENGTH,0 , (struct sockaddr *) &si_send, socketaddr_len) == -1){
-
+            if (sendto(udp_config -> send_socket, udp_config -> pkt_Queue.Queue[
+                       udp_config -> pkt_Queue.front].content, MAX_DATA_LENGTH,0
+                       , (struct sockaddr *) &si_send, socketaddr_len) == -1)
                 perror("recvfrom error.\n");
 
-            }
+            pthread_mutex_unlock( &udp_config -> pkt_Queue.mutex);
 
             delpkt( &udp_config -> pkt_Queue);
 
@@ -241,9 +230,11 @@ void *udp_send_pkt(void *udpconfig){
 
 }
 
-void *udp_receive_pkt(void *udpconfig){
+void *udp_recv_pkt(void *udpconfig){
 
     pudp_config udp_config = (pudp_config) udpconfig;
+
+    int ret;
 
     int recv_len;
 
@@ -254,39 +245,38 @@ void *udp_receive_pkt(void *udpconfig){
     int socketaddr_len = sizeof(si_recv);
 
     //keep listening for data
-    while(!(udp_config -> shutdown)){
+    while(udp_config -> shutdown == false){
 
         memset(&si_recv, 0, sizeof(si_recv));
 
+        memset(&recv_buf, 0, sizeof(char) * MAX_DATA_LENGTH);
+
+        recv_len = 0;
+
         printf("recv pkt.\n");
 
-        printf("Waiting for data...");
-        fflush(stdout);
+        //try to receive some data, this is a non-blocking call
+        if ((recv_len = recvfrom(udp_config -> recv_socket, recv_buf,
+             MAX_DATA_LENGTH, 0, (struct sockaddr *) &si_recv, &socketaddr_len))
+                                                                         == -1){
 
-        printf("MAX_DATA_LENGH : %d\n", MAX_DATA_LENGTH);
-
-        //try to receive some data, this is a blocking call
-        if ((recv_len = recvfrom(udp_config -> recv_socket, recv_buf, MAX_DATA_LENGTH, 0, (struct sockaddr *) &si_recv, &socketaddr_len)) == -1){
+            printf("error recv_len %d\n", recv_len);
 
             perror("recvfrom error.\n");
 
         }
+        else if(recv_len > 0){
 
-        if(udp_addpkt(&udp_config -> Received_Queue, inet_ntoa(si_recv.sin_addr), recv_buf, recv_len) == -1){
-
-            perror("udp_addpkt error.\n");
+            //print details of the client/peer and the data received
+            printf("Received packet from %s:%d\n", inet_ntoa(si_recv.sin_addr),
+                                                   ntohs(si_recv.sin_port));
+            printf("Data: %s\n" , recv_buf);
 
         }
-
-        //print details of the client/peer and the data received
-        printf("Received packet from %s:%d\n", inet_ntoa(si_recv.sin_addr), ntohs(si_recv.sin_port));
-        printf("Data: %s\n" , recv_buf);
-
-
-
+        else
+            perror("else recvfrom error.\n");
 
     }
-
     printf("Exit Receive.\n");
 }
 

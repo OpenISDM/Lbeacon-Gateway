@@ -1,56 +1,56 @@
 /*
- Copyright (c) 2016 Academia Sinica, Institute of Information Science
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
 
- License:
+  License:
 
-      GPL 3.0 : The content of this file is subject to the terms and
-      conditions defined in file 'COPYING.txt', which is part of this source
-      code package.
+     GPL 3.0 : The content of this file is subject to the terms and conditions
+     defined in file 'COPYING.txt', which is part of this source code package.
 
- Project Name:
+  Project Name:
 
-      BeDIPS
+     BeDIPS
 
- File Description:
+  File Description:
 
-      This file contains the generic implementation of a double-linked-list
-      data structure.It has functions for inserting a node to the front of the
-      list and deleting a specific node. It can also check the length of the
-      list. Any datatype of data could be stored in this list.
+     This file contains the generic implementation of a double-linked-list
+     data structure.It has functions for inserting a node to the front of the
+     list and deleting a specific node. It can also check the length of the
+     list. Any datatype of data could be stored in this list.
 
 
- File Name:
+  File Name:
 
-      LinkedList.c
+     LinkedList.c
 
- Version:
+  Version:
 
-       1.2
+     1.2
 
- Abstract:
+  Abstract:
 
-      BeDIPS uses LBeacons to deliver 3D coordinates and textual
-      descriptions of their locations to users' devices. Basically, a LBeacon
-      is an inexpensive, Bluetooth Smart Ready device. The 3D coordinates and
-      location description of every LBeacon are retrieved from BeDIS
-      (Building/environment Data and Information System) and stored locally
-      during deployment and maintenance times. Once initialized, each LBeacon
-      broadcasts its coordinates and location description to Bluetooth
-      enabled user devices within its coverage area.
+     BeDIPS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
+     area.
 
- Authors:
+  Authors:
 
-      Han Wang, hollywang@iis.sinica.edu.tw
-      Jake Lee, jakelee@iis.sinica.edu.tw
-      Johnson Su, johnsonsu@iis.sinica.edu.tw
-      Shirley Huang, shirley.huang.93@gmail.com
-      Han Hu, hhu14@illinois.edu
-      Jeffrey Lin, lin.jeff03@gmail.com
-      Howard Hsu, haohsu0823@gmail.com
-
+     Han Wang, hollywang@iis.sinica.edu.tw
+     Jake Lee, jakelee@iis.sinica.edu.tw
+     Johnson Su, johnsonsu@iis.sinica.edu.tw
+     Shirley Huang, shirley.huang.93@gmail.com
+     Han Hu, hhu14@illinois.edu
+     Jeffrey Lin, lin.jeff03@gmail.com
+     Howard Hsu, haohsu0823@gmail.com
 */
 
+
 #include "LinkedList.h"
+
 
 inline void init_entry(List_Entry *entry){
 
@@ -58,6 +58,7 @@ inline void init_entry(List_Entry *entry){
     entry->prev = entry;
 
 }
+
 
 inline void insert_entry_list(List_Entry *new_node, List_Entry *prev,
                          List_Entry *next) {
@@ -69,17 +70,19 @@ inline void insert_entry_list(List_Entry *new_node, List_Entry *prev,
 
 }
 
+
 inline void insert_list_first(List_Entry *new_node, List_Entry *head) {
 
     insert_entry_list(new_node, head, head->next);
 
 }
 
+
 inline void insert_list_tail(List_Entry *new_node, List_Entry *head) {
 
     insert_entry_list(new_node, head->prev, head);
-
 }
+
 
 inline void remove_entry_list(List_Entry *prev, List_Entry *next) {
 
@@ -87,6 +90,7 @@ inline void remove_entry_list(List_Entry *prev, List_Entry *next) {
     prev->next = next;
 
 }
+
 
 inline void remove_list_node(List_Entry *removed_node_ptrs) {
 
@@ -96,6 +100,7 @@ inline void remove_list_node(List_Entry *removed_node_ptrs) {
     removed_node_ptrs->next = removed_node_ptrs;
 
 }
+
 
 inline int get_list_length(List_Entry *entry) {
 
