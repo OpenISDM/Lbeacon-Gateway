@@ -118,26 +118,28 @@
 #define LOW_PRIORITY -2
 
 
-// Struct for Gateway
-
 /* The configuration file structure */
 typedef struct Config {
 
     /* The IP address of server for WiFi netwok connection. */
-    char  IPaddress[CONFIG_BUFFER_SIZE];
+    char IPaddress[NETWORK_ADDR_LENGTH];
 
     /* The number of LBeacon nodes in the star network of this gateway */
-    int   allowed_number_nodes;
+    int allowed_number_nodes;
 
     /* The time period for gateway sending health report requests to LBeacon */
-    int   Period_between_RFHR;
+    int Period_between_RFHR;
 
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
-    int   Number_worker_threads;
+    int Number_worker_threads;
 
     /* Priority levels at which worker threads execute. */
-    int   Number_priority_levels;
+    int Number_priority_levels;
+
+    char WiFi_SSID[WIFI_SSID_LENGTH];
+
+    char WiFi_PASS[WIFI_PASS_LENGTH];
 
 } GatewayConfig;
 
@@ -193,10 +195,12 @@ typedef struct{
 /* A Head of a list of msg buffer */
 typedef struct buffer_list_head{
 
-    struct List_Entry buffer_entry;
-
     /* A per list lock */
-    pthread_mutex_t   list_lock;
+    pthread_mutex_t list_lock;
+
+    struct List_Entry priority_entry;
+
+    struct List_Entry buffer_entry;
 
     /* The index number of the buffer */
     int buffer_id;
@@ -228,6 +232,8 @@ typedef struct BufferNode{
 
     /* point to where the data is stored. */
     char content[MAX_CONTENT_LENGTH];
+
+    int content_size;
 
 
 } BufferNode;
@@ -261,8 +267,9 @@ BufferListHead BHM_receive_buffer_list_head;
 BufferListHead BHM_send_buffer_list_head;
 /* For polling tracked object data from Lbeacons and msgs define by BHM */
 BufferListHead Command_msg_buffer_list_head;
+
 /* An array of buffer_list_head in the priority order. */
-BufferListHead *priority_array[MAX_NUM_BUFFER];
+ListEntry Priority_buffer_list_head;
 
 // Flags
 
@@ -282,6 +289,7 @@ bool NSI_initialization_complete;
 bool CommUnit_initialization_complete;
 bool BHM_initialization_complete;
 
+bool initialization_failed;
 
 long long init_time;
 long long poll_LBeacon_for_HR_time;
@@ -330,8 +338,9 @@ void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
 /*
   Initialize_network:
 
-     This function initializes and sets up all the necessary component for the
-     zigbee and wifi networks.
+     This function initializes and the star network with the gateway at the root
+     connecting LBeacons in the network. This the function executed by the
+     network_setup_initialize module of the gateway.
 
   Parameters:
 
@@ -349,8 +358,8 @@ void *Initialize_network();
 
      The function is executed by the main thread of the communication unit that
      is responsible for sending and receiving packets to and from the sever and
-     LBeacons after the NSI module has initialized WiFi and Zigbee networks. It
-     creates threads to carry out the communication process.
+     LBeacons after the NSI module has initialized WiFi network. It creates
+     threads to carry out the communication process.
 
   Parameters:
 
@@ -458,7 +467,7 @@ void *wifi_send(BufferListHead *buffer_array, int buff_id);
 
 
 /*
-  wifi_recieve:
+  wifi_recive:
 
      This function listens the request or command received from the server.
      After getting the message, push the data in to the buffer.
@@ -471,7 +480,7 @@ void *wifi_send(BufferListHead *buffer_array, int buff_id);
 
      None
  */
-void *wifi_receieve(BufferListHead *buffer);
+void *wifi_receive(BufferListHead *buffer);
 
 
 #endif

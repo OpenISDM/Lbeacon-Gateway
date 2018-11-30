@@ -48,6 +48,10 @@
 /* Length of address of the network in number of bits */
 #define NETWORK_ADDR_LENGTH 16
 
+#define WIFI_SSID_LENGTH 10
+
+#define WIFI_PASS_LENGTH 10
+
 /* Maximum number of characters in location description */
 #define MAX_LENGTH_LOC_DESCRIPTION  64
 

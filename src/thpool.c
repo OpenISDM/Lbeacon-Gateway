@@ -32,10 +32,10 @@ struct thpool_* thpool_init(int num_threads){
     /* Initialize the memory pool */
     if(mp_init(&mempool, SIZE_FOR_MEM_POOL, SLOTS_FOR_MEM_POOL)
        == NULL){
-        
+
         return NULL;
     }
-    
+
 	/* Make new thread pool */
 	thpool_* thpool_p;
 	thpool_p = (struct thpool_*)mp_alloc(&mempool);
@@ -80,7 +80,7 @@ struct thpool_* thpool_init(int num_threads){
 
 
 /* Add work to the thread pool */
-int thpool_add_work(thpool_* thpool_p, void (*function_p)(void*), 
+int thpool_add_work(thpool_* thpool_p, void (*function_p)(void*),
 					void* arg_p, int priority){
 	job* newjob;
 
@@ -293,9 +293,6 @@ static void thread_destroy (thread* thread_p){
 }
 
 
-
-
-
 /* ============================ JOB QUEUE =========================== */
 
 
@@ -358,12 +355,10 @@ static void jobqueue_push(jobqueue* jobqueue_p, struct job* newjob){
 }
 
 
-/* Get first job from queue(removes it from queue)
-<<<<<<< HEAD
+/*
+ * Get first job from queue(removes it from queue)
  *
  * Notice: Caller MUST hold a mutex
-=======
->>>>>>> da2c0fe45e43ce0937f272c8cd2704bdc0afb490
  */
 static struct job* jobqueue_pull(jobqueue* jobqueue_p){
 
@@ -399,9 +394,6 @@ static void jobqueue_destroy(jobqueue* jobqueue_p){
 	jobqueue_clear(jobqueue_p);
 	mp_free(&mempool, jobqueue_p->has_jobs);
 }
-
-
-
 
 
 /* ======================== SYNCHRONISATION ========================= */
