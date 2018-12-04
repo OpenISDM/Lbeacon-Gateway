@@ -42,18 +42,17 @@
 #include <stdbool.h>
 
 
-#ifdef BEDIS_H
-#defin BEDIS_H
+#ifndef BEDIS_H
+#define BEDIS_H
 
 /* Length of address of the network in number of bits */
 #define NETWORK_ADDR_LENGTH 16
 
+#define MAX_CONTENT_LENGTH 1024
+
 #define WIFI_SSID_LENGTH 10
 
 #define WIFI_PASS_LENGTH 10
-
-/* Maximum number of characters in location description */
-#define MAX_LENGTH_LOC_DESCRIPTION  64
 
 /* Length of the beacon's UUID in a number of charaters */
 #define UUID_LENGTH 32
@@ -77,13 +76,14 @@ typedef enum ErrorCode{
 
     WORK_SUCCESSFULLY = 0,
     E_MALLOC = 1,
-    E_WIFI_INIT_FAIL = 2,
-    E_ZIGBEE_INIT_FAIL = 3,
-    E_XBEE_VALIDATE = 4,
-    E_START_COMMUNICAT_ROUTINE_THREAD = 5,
-    E_START_BHM_ROUTINE_THREAD = 6,
-    E_START_TRACKING_THREAD = 7,
-    E_START_THREAD = 8
+    E_INITIALIZATION_FAIL = 2,
+    E_WIFI_INIT_FAIL = 3,
+    E_ZIGBEE_INIT_FAIL = 4,
+    E_XBEE_VALIDATE = 5,
+    E_START_COMMUNICAT_ROUTINE_THREAD = 6,
+    E_START_BHM_ROUTINE_THREAD = 7,
+    E_START_TRACKING_THREAD = 8,
+    E_START_THREAD = 9
 
 } ErrorCode;
 
