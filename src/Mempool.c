@@ -68,7 +68,7 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots){
         void *temp = mp->head;
 
         //link the new node
-        mp->head = ite;
+        mp->head = (void *)ite;
 
         //link to the list from new node
         *mp->head = temp;
@@ -79,11 +79,28 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots){
 }
 
 
-void mp_destroy(Memory_Pool *mp){
+int mp_expand(Memory_Pool *mp, size_t slots){
+    void *new_mem;
 
-    mp->memory = NULL;
-    free(mp->memory);
+    new_mem = malloc(mp->size * slots);
+    if(new_mem == NULL ){
 
+        return MEMORY_POOL_ERROR;
+
+    }
+
+    //add every slot to the free list
+    char *end = (char *)new_mem + mp->size * slots;
+
+    for(char *ite = new_mem; ite < end; ite += mp->size){
+        //store first address
+        void *temp = mp->head;
+        //link the new node
+        mp->head = (void *)ite;
+        //link to the list from new node
+        *mp->head = temp;
+    }
+    return MEMORY_POOL_SUCCESS;
 }
 
 
@@ -102,16 +119,19 @@ void *mp_alloc(Memory_Pool *mp){
 }
 
 
-int mp_free(Memory_Pool *mp, void *mem)
-{
+void mp_destroy(Memory_Pool *mp){
+    mp->memory = NULL;
+    free(mp->memory);
+}
+
+
+int mp_free(Memory_Pool *mp, void *mem){
     //check if mem is correct, i.e. is pointing to the struct of a slot
     //calculate the offset from mem to mp->memory
     int diffrenceinbyte = (mem - mp->memory) * sizeof(mem);
 
-    if((diffrenceinbyte % mp->size) != 0){
-
+    if((diffrenceinbyte % mp->size) != 0)
         return MEMORY_POOL_ERROR;
-    }
 
     //store first address
     void *temp = mp->head;

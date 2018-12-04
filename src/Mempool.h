@@ -42,21 +42,21 @@
   Authors:
 
      Han Wang, hollywang@iis.sinica.edu.tw
+     Han Wang, hollywang@iis.sinica.edu.tw
      Gary Xiao, garyh0205@hotmail.com
 */
 
 
 #include <stdlib.h>
 
-
-#define MEMORY_POOL_SUCCESS 1
-#define MEMORY_POOL_ERROR 0
-#define MEMORY_POOL_MINIMUM_SIZE sizeof(void *)
-
-
 #ifndef MEMPOOL_H
 #define MEMPOOL_H
 
+#define MEMORY_POOL_SUCCESS 1
+#define MEMORY_POOL_ERROR 0
+/* The specified number of slots to be expanded in the memory pool */
+#define EXPAND_SLOT 1024
+#define MEMORY_POOL_MINIMUM_SIZE sizeof(void *)
 
 /* The structure of the memory pool */
 typedef struct {
@@ -86,24 +86,26 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots);
 
 
 /*
-  mp_destroy:
+  mp_expand
 
-     This function frees the memory occupied by the specified memory pool.
+     This function expands the slots and allocates more memory to the memory
+     pool.
 
   Parameters:
 
-     mp: pointer to the specific memory pool to be destroyed
+     mp - pointer to a specific memory pool
+     slots - the number of slots in the memory pool
 
   Return value:
 
-     None
-
+     Status - the error code or the successful message
 */
-void mp_destroy(Memory_Pool *mp);
+
+int mp_expand(Memory_Pool *mp, size_t slots);
 
 
 /*
-  mp_alloc:
+  mp_alloc
 
      This function gets a free slot from the memory pool and returns a pointer
      to a slot when a free slot is available and return NULL when no free slot
@@ -121,7 +123,24 @@ void *mp_alloc(Memory_Pool *mp);
 
 
 /*
-  mp_free:
+  mp_destroy
+
+     This function frees the memory occupied by the specified memory pool.
+
+  Parameters:
+
+     mp: pointer to the specific memory pool to be destroyed
+
+  Return value:
+
+     None
+
+*/
+void mp_destroy(Memory_Pool *mp);
+
+
+/*
+  mp_free
 
      This function releases an unused slot back to the memory pool and places
      it in the head of the free list.
@@ -136,6 +155,5 @@ void *mp_alloc(Memory_Pool *mp);
      Errorcode: error code or sucessful message
 */
 int mp_free(Memory_Pool *mp, void *mem);
-
 
 #endif
