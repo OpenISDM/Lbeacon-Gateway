@@ -44,10 +44,14 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <sys/timeb.h>
+#include <time.h>
 #include "BeDIS.h"
 
 
