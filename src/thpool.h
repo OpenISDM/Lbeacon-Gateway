@@ -4,7 +4,9 @@
  *
  **********************************/
 
-#define _POSIX_C_SOURCE 200809L
+
+#define _GNU_SOURCE
+
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
@@ -15,12 +17,21 @@
 #include "Mempool.h"
 
 
+#ifndef THPOOL_H
+#define THPOOL_H
+
+
+/* The number of slots for the memory pool */
+#define SLOTS_FOR_MEM_POOL 100
+
+/* The number of slots for the memory pool */
+#define SIZE_FOR_MEM_POOL 256
+
 #define err(str) fprintf(stderr, str)
 
 
 static volatile int threads_keepalive;
 static volatile int threads_on_hold;
-
 
 
 /* ========================== STRUCTURES ============================ */
@@ -70,11 +81,6 @@ typedef struct thpool_{
 	pthread_cond_t  threads_all_idle;    /* signal to thpool_wait     */
 	jobqueue  jobqueue;                  /* job queue                 */
 } thpool_;
-
-
-
-
-
 
 
 /* ========================== PROTOTYPES ============================ */
@@ -151,7 +157,7 @@ Threadpool thpool_init(int num_threads);
  * @param  priority      priority of this work
  * @return 0 on successs, -1 otherwise.
  */
-int thpool_add_work(Threadpool threadpool, void (*function_p)(void*), 
+int thpool_add_work(Threadpool threadpool, void (*function_p)(void*),
 					void* arg_p, int priority);
 
 
@@ -267,8 +273,4 @@ void thpool_destroy(Threadpool);
  */
 int thpool_num_threads_working(Threadpool);
 
-/* The number of slots for the memory pool */
-#define SLOTS_FOR_MEM_POOL 100
-
-/* The number of slots for the memory pool */
-#define SIZE_FOR_MEM_POOL 256
+#endif

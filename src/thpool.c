@@ -22,6 +22,8 @@ Memory_Pool mempool;
 /* Initialise thread pool */
 struct thpool_* thpool_init(int num_threads){
 
+	int return_value;
+
 	threads_on_hold   = 0;
 	threads_keepalive = 1;
 
@@ -31,10 +33,8 @@ struct thpool_* thpool_init(int num_threads){
 
     /* Initialize the memory pool */
     if(mp_init(&mempool, SIZE_FOR_MEM_POOL, SLOTS_FOR_MEM_POOL)
-       == NULL){
-
+       != MEMORY_POOL_SUCCESS)
         return NULL;
-    }
 
 	/* Make new thread pool */
 	thpool_* thpool_p;
@@ -229,7 +229,7 @@ static void* thread_do(struct thread* thread_p){
 	sprintf(thread_name, "thread-pool-%d", thread_p->id);
 
 
-	pthread_setname_np(thread_name);
+	pthread_setname_np(thread_p->pthread, thread_name);
 
 	/* Assure all threads have been created before starting serving */
 	thpool_* thpool_p = thread_p->thpool_p;
