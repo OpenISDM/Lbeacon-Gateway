@@ -69,39 +69,39 @@ int main(int argc, char **argv){
 
     /* Initialize the memory pool */
     if(mp_init(&node_mempool, sizeof(struct BufferNode), SLOTS_IN_MEM_POOL)
-                                                                   == NULL){
+       != MEMORY_POOL_SUCCESS){
         /* Error handling */
-        perror(E_MALLOC);
+        perror("E_MALLOC");
         return E_MALLOC;
     }
 
     /* Initialize the buffer_list_heads and add to the buffer array in the
     order of priority. Each buffer has the corresponding function pointer. */
-    init_buffer(Server_send_buffer_list_head, Server_send_buffer,
+    init_buffer(&Server_send_buffer_list_head, Server_send_buffer,
                 (void *) wifi_send, HIGH_PRIORITY);
     priority_array[Server_send_buffer] = &Server_send_buffer_list_head;
 
-    init_buffer(LBeacon_receive_buffer_list_head, LBeacon_receive_buffer,
+    init_buffer(&LBeacon_receive_buffer_list_head, LBeacon_receive_buffer,
                 (void *) Process_message, HIGH_PRIORITY);
     priority_array[LBeacon_receive_buffer] = &LBeacon_receive_buffer_list_head;
 
-    init_buffer(LBeacon_send_buffer_list_head, LBeacon_send_buffer,
+    init_buffer(&LBeacon_send_buffer_list_head, LBeacon_send_buffer,
                 (void *) wifi_send, HIGH_PRIORITY);
     priority_array[LBeacon_send_buffer] = &LBeacon_send_buffer_list_head;
 
-    init_buffer(Command_msg_buffer_list_head, Command_msg_buffer,
+    init_buffer(&Command_msg_buffer_list_head, Command_msg_buffer,
                 (void *) Process_message, NORMAL_PRIORITY);
     priority_array[Command_msg_buffer] = &Command_msg_buffer_list_head;
 
-    init_buffer(BHM_receive_buffer_list_head, BHM_receive_buffer,
+    init_buffer(&BHM_receive_buffer_list_head, BHM_receive_buffer,
                 (void *) Process_message, LOW_PRIORITY);
     priority_array[BHM_receive_buffer] = &BHM_receive_buffer_list_head;
 
-    init_buffer(BHM_send_buffer_list_head, BHM_send_buffer,
+    init_buffer(&BHM_send_buffer_list_head, BHM_send_buffer,
                 (void *) wifi_send, LOW_PRIORITY);
     priority_array[BHM_send_buffer] = &BHM_send_buffer_list_head;
 
-    init_entry(Priority_buffer_list_head);
+    init_entry(&Priority_buffer_list_head);
 
     /* Network Setup and Initialization for Wi-Fi */
     return_value = startThread(&NSI_thread, Initialize_network, NULL);
@@ -123,7 +123,7 @@ int main(int argc, char **argv){
         if(initialization_failed == true){
 
             ready_to_work = false;
-            return;
+            return E_INITIALIZATION_FAIL;
         }
     }
 
@@ -152,7 +152,7 @@ GatewayConfig get_config(char *file_name) {
     if (file == NULL) {
 
         /* Error handling */
-        zlog_info(category_health_report, errordesc[E_OPEN_FILE].message);
+        //zlog_info(category_health_report, errordesc[E_OPEN_FILE].message);
         return NULL;
 
     }
@@ -167,7 +167,6 @@ GatewayConfig get_config(char *file_name) {
         config_message[0] = strstr((char *)config_setting, DELIMITER);
         config_message[0] = config_message[0] + strlen(DELIMITER);
         memcpy(config.IPaddress, config_message[0], strlen(config_message[0]));
-        config.address_length = strlen(config_message[0]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[1] = strstr((char *)config_setting, DELIMITER);
@@ -247,6 +246,7 @@ void *Initialize_network(){
 
         /* Error handling and return */
 
+        initialization_failed = true;
         printf("Initialize Wifi Fail.\n");
 
         pthread_exit(0);
@@ -259,14 +259,23 @@ void *Initialize_network(){
     return_value = startThread(&Lbeacon_listener, wifi_receive,
                                &Priority_buffer_list_head);
 
-    if(return_value != WORK_SUCCESSFULLY) return return_value;
+    if(return_value != WORK_SUCCESSFULLY){
+
+        initialization_failed = true;
+        //return return_value;
+
+    }
 
     pthread_setschedprio(&Lbeacon_listener, HIGH_PRIORITY);
 
     return_value = startThread(&Sever_listener, wifi_receive,
                                &Command_msg_buffer_list_head);
 
-    if(return_value != WORK_SUCCESSFULLY) return return_value;
+    if(return_value != WORK_SUCCESSFULLY){
+
+        initialization_failed = true;
+        //return return_value;
+    }
 
     pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
 
@@ -281,15 +290,23 @@ void *Initialize_network(){
     /* Waitting for the system is down, pthread_join and return. */
     return_value = pthread_join(Lbeacon_listener, NULL);
 
-    if (return_value != WORK_SUCCESSFULLY) return return_value;
+    if (return_value != WORK_SUCCESSFULLY){
+
+        initialization_failed = true;
+        //return return_value;
+    }
 
     return_value = pthread_join(Sever_listener, NULL);
 
-    if (return_value != WORK_SUCCESSFULLY) return return_value;
+    if (return_value != WORK_SUCCESSFULLY){
+
+        initialization_failed = true;
+        //return return_value;
+    }
     /* The thread is going to be ended. Free the connection of Wifi */
 
     Wifi_free();
-    return;
+    //return;
 }
 
 
@@ -402,7 +419,7 @@ void *CommUnit_routine(){
     /* Destroy the thread pool */
     thpool_destroy(thpool);
 
-    return;
+    //return;
 }
 
 
@@ -467,7 +484,7 @@ void *Process_message(BufferListHead *buffer){
 
     buffer->is_busy = false;
 
-    return;
+    //return;
 }
 
 
@@ -486,7 +503,7 @@ void beacon_join_request(char *ID, char *mac,
                                  Beacon_Coordinates.Y_coordinates);
     strcpy(beacon_address[index].beacon_coordinates.Z_coordinates,
                                  Beacon_Coordinates.Z_coordinates);
-    return;
+    //return;
 }
 
 
@@ -540,7 +557,7 @@ void *wifi_send(BufferListHead *buffer_array, int buff_id){
 
     pthread_mutex_unlock(buffer_array[buff_id] -> list_lock);
 
-    return;
+    //return;
 }
 
 
@@ -595,5 +612,5 @@ void *wifi_receive(BufferListHead *buffer){
         }
     }
 
-    return;
+    //return;
 }

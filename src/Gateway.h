@@ -43,6 +43,8 @@
  */
 
 
+#define _GNU_SOURCE
+
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -65,7 +67,6 @@
 #include <sys/timeb.h>
 #include <time.h>
 #include <unistd.h>
-#include "CommUnit.h"
 #include "Mempool.h"
 #include "UDP_API.h"
 #include "LinkedList.h"
@@ -77,7 +78,7 @@
 #define GATEWAY_H
 
 
-// Gateway Config File Location and define about config file.
+/* Gateway Config File Location and define about config file. */
 
 /* File path of the config file of the LBeacon */
 #define CONFIG_FILE_NAME "../config/gateway.conf"
@@ -146,33 +147,33 @@ typedef struct Config {
 typedef enum buffer_types {
 
     /* For tracked data from LBeacon at Geofence */
-    Time_critical_LBeacon_receive_buffer = 0
+    Time_critical_LBeacon_receive_buffer = 0,
     /* For data from server tobe send to LBeacon */
-    LBeacon_receive_buffer = 1;
+    LBeacon_receive_buffer = 1,
     /* For data from server to be send to LBeacons */
-    LBeacon_send_buffer = 2;
+    LBeacon_send_buffer = 2,
     /* For data collected from LBeacons to be send to Server. */
-    Server_send_buffer = 3;
+    Server_send_buffer = 3,
     /* For polling tracked object data from Lbeacons and msgs define by BHM */
-    Command_msg_buffer = 4;
+    Command_msg_buffer = 4,
     /* For health report from LBeacons */
-    BHM_receive_buffer = 5;
+    BHM_receive_buffer = 5,
     /* For processing health report to be send to LBeacons */
-    BHM_send_buffer = 6;
+    BHM_send_buffer= 6
 
 } BufferType;
 
 typedef enum pkt_types {
 
-    tracked_object_data = 1;
-    health_report = 2;
-    data_for_LBeacon = 3;
-    poll_for_tracked_object_data = 9;
-    RFHR_to_Lbeacons = 10;
-    poll_for_RFHR_from_sever = 11;
-    request_to_join = 12;
-    zigbee_network_control = 13;
-    maximum_type = 15;
+    tracked_object_data = 1,
+    health_report = 2,
+    data_for_LBeacon = 3,
+    poll_for_tracked_object_data = 9,
+    RFHR_to_Lbeacons = 10,
+    poll_for_RFHR_from_sever = 11,
+    request_to_join = 12,
+    zigbee_network_control = 13,
+    maximum_type = 15
 
 } PktType;
 
@@ -183,12 +184,12 @@ typedef struct{
     char beacon_uuid[UUID_LENGTH];
 
     /* network address of zigbee/wifi link to the LBeacon*/
-    char net_address[Address_length_Hex];
+    char net_address[NETWORK_ADDR_LENGTH];
 
     Coordinates beacon_coordinates;
 
     /* network address of Wi-Fi link to the Lbeacon */
-    char location_description[MAX_LENGTH_LOC_DESCRIPTION];
+    char location_description[CONFIG_BUFFER_SIZE];
 
 }Address_map;
 
@@ -228,7 +229,7 @@ typedef struct BufferNode{
     struct List_Entry buffer_entry;
 
     /* Zigbee network address of the source or destination */
-    char net_address[ADDRESS_LENGTH];
+    char net_address[NETWORK_ADDR_LENGTH];
 
     /* point to where the data is stored. */
     char content[MAX_CONTENT_LENGTH];
@@ -269,7 +270,9 @@ BufferListHead BHM_send_buffer_list_head;
 BufferListHead Command_msg_buffer_list_head;
 
 /* An array of buffer_list_head in the priority order. */
-ListEntry Priority_buffer_list_head;
+List_Entry Priority_buffer_list_head;
+
+#TODO Fix Prority List
 
 // Flags
 
