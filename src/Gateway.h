@@ -67,6 +67,7 @@
 #include <sys/timeb.h>
 #include <time.h>
 #include <unistd.h>
+#include "Utilities.h"
 #include "Mempool.h"
 #include "UDP_API.h"
 #include "LinkedList.h"
@@ -144,7 +145,7 @@ typedef struct Config {
 
 } GatewayConfig;
 
-typedef enum buffer_types {
+typedef enum buffer_default_order {
 
     /* For tracked data from LBeacon at Geofence */
     Time_critical_LBeacon_receive_buffer = 0,
@@ -161,7 +162,7 @@ typedef enum buffer_types {
     /* For processing health report to be send to LBeacons */
     BHM_send_buffer= 6
 
-} BufferType;
+} BufferDefaultOrder;
 
 typedef enum pkt_types {
 
@@ -188,40 +189,20 @@ typedef struct{
 
     Coordinates beacon_coordinates;
 
-    /* network address of Wi-Fi link to the Lbeacon */
-    char location_description[CONFIG_BUFFER_SIZE];
-
 }Address_map;
 
-/* A Head of a list of msg buffer */
-typedef struct buffer_list_head{
+typedef struct{
 
     /* A per list lock */
     pthread_mutex_t list_lock;
 
-    struct List_Entry priority_entry;
-
-    struct List_Entry buffer_entry;
-
-    /* The index number of the buffer */
-    int buffer_id;
-
     /* Current number of msg buffers in the list */
     int num_in_list;
 
-    /* Number of levels relative to normal priority */
-    int priority_boast;
+    Address_map Address_map_list[MAX_NUMBER_NODES];
 
-    /* function pointer */
-    void (*function)(void* arg);
+}Address_map_head;
 
-    /* function's argument       */
-    void *arg;
-
-    /* A buffer to indicate the buffer is be occupied */
-    bool is_busy;
-
-} BufferListHead;
 
 /* A node of buffer to store received data and/or data to be send */
 typedef struct BufferNode{
@@ -240,6 +221,31 @@ typedef struct BufferNode{
 } BufferNode;
 
 
+/* A Head of a list of msg buffer */
+typedef struct buffer_list_head{
+
+    /* A per list lock */
+    pthread_mutex_t list_lock;
+
+    struct List_Entry priority_entry;
+
+    struct List_Entry buffer_entry;
+
+    /* Current number of msg buffers in the list */
+    int num_in_list;
+
+    /* Number of levels relative to normal priority */
+    int priority_boast;
+
+    /* function pointer */
+    void (*function)(void* arg);
+
+    /* function's argument */
+    void *arg;
+
+} BufferListHead;
+
+
 // Global variables
 
 /* A Gateway config struct stored config from the config file */
@@ -252,7 +258,7 @@ sudp_config udp_config;
 Memory_Pool node_mempool;
 
 /* An array of address maps */
-Address_map Lbeacon_addresses[MAX_NUMBER_NODES];
+Address_map_head Lbeacon_addresses;
 
 /* Message buffer list heads */
 BufferListHead Time_critical_LBeacon_receive_buffer_list_head;
@@ -272,7 +278,7 @@ BufferListHead Command_msg_buffer_list_head;
 /* An array of buffer_list_head in the priority order. */
 List_Entry Priority_buffer_list_head;
 
-#TODO Fix Prority List
+//TODO Fix Prority List
 
 // Flags
 
@@ -334,10 +340,10 @@ GatewayConfig get_config(char *file_name);
 
      None
  */
-void init_buffer(BufferListHead *buffer, int buff_id, void (*function_p)(void*),
+void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
 								int priority_boast);
 
-
+void init_Address_map(Address_map_head *LBeacon_map);
 /*
   Initialize_network:
 
@@ -393,7 +399,7 @@ void *CommUnit_routine();
      None
 
  */
-void *Process_message(BufferListHead *buffer);
+void *Process_message(void *buffer_head);
 
 
 /*
@@ -415,8 +421,8 @@ void *Process_message(BufferListHead *buffer);
      None
 
  */
-void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
-                         char *Loc_Description);
+void beacon_join_request(char *ID, char *address
+                       , Coordinates Beacon_Coordinates);
 
 
 /*
@@ -433,7 +439,7 @@ void beacon_join_request(char *ID, char *mac, Coordinates Beacon_Coordinates,
       int - The error code for the corresponding error or successful
 
  */
-int Wifi_init(char IPaddress);
+int Wifi_init(char *IPaddress);
 
 
 /*
@@ -460,13 +466,13 @@ void Wifi_free();
 
   Parameters:
 
-     buffer_array - An array of buffer to be sent.
+     buffer - A pointer of the buffer to be modified.
 
   Return value:
 
      None
  */
-void *wifi_send(BufferListHead *buffer_array, int buff_id);
+void *wifi_send(void *buffer_head);
 
 
 /*
@@ -483,7 +489,7 @@ void *wifi_send(BufferListHead *buffer_array, int buff_id);
 
      None
  */
-void *wifi_receive(BufferListHead *buffer);
+void *wifi_receive(void *buffer_head);
 
 
 #endif

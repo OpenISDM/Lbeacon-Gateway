@@ -96,6 +96,6 @@ typedef struct{
 } Coordinates;
 
 /* A flag that is used to check if CTRL-C is pressed */
-bool g_done = false;
+bool g_done;
 
 #endif

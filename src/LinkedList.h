@@ -71,7 +71,7 @@
         pos = n, n = pos->next)
 
 #define list_for_each_reverse(pos, head) \
-    for (pos = (head)->pre; pos != (head); pos = pos->prev)
+    for (pos = (head)->prev; pos != (head); pos = pos->prev)
 
 /*Struct for the head of a list or doubly linked list entry used in link a
   node in to a list */

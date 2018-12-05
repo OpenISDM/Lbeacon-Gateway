@@ -300,7 +300,8 @@ int udp_release(pudp_config udp_config){
 char *udp_hex_to_address(unsigned char *hex_addr){
 
     // Stored a recovered address.
-    char dest_address[17];
+    char *dest_address;
+    dest_address = malloc(sizeof(char) * 17);
     memset(&dest_address, 0, sizeof(char) * 17);
     char *tmp_address = hex_to_char(hex_addr, 12);
     int address_loc = 0;
