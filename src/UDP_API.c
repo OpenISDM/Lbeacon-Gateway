@@ -296,3 +296,34 @@ int udp_release(pudp_config udp_config){
 
     return 0;
 }
+
+char *udp_hex_to_address(unsigned char *hex_addr){
+
+    // Stored a recovered address.
+    char dest_address[17];
+    memset(&dest_address, 0, sizeof(char) * 17);
+    char *tmp_address = hex_to_char(hex_addr, 12);
+    int address_loc = 0;
+    for(int n=0;n < 4;n ++){
+
+        bool no_zero = false;
+        for(int loc=0;loc < 3;loc ++){
+
+            if(tmp_address[n * 3 + loc]== '0' && no_zero == false &&
+               loc != 2)
+                continue;
+            no_zero = true;
+            dest_address[address_loc] = tmp_address[n * 3 + loc];
+            address_loc ++;
+
+        }
+
+        if(n < 3){
+
+            dest_address[address_loc] = '.';
+            address_loc ++;
+
+        }
+    }
+    return dest_address;
+}

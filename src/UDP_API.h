@@ -151,4 +151,19 @@ void *udp_recv_pkt(void *udpconfig);
  */
 int udp_release(pudp_config udp_config);
 
+/*
+  udp_hex_to_address
+
+     Convert address from hex format to char.
+
+  Parameter:
+
+     hex_addr: A array pointer point to the address we want to convert.
+
+  Return Value:
+
+     char : return char array of the converted address.
+ */
+char *udp_hex_to_address(unsigned char *hex_addr);
+
 #endif
