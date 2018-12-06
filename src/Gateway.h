@@ -145,7 +145,7 @@ typedef struct Config {
 
 } GatewayConfig;
 
-typedef enum buffer_default_order {
+typedef enum buffer_default_prority {
 
     /* For tracked data from LBeacon at Geofence */
     Time_critical_LBeacon_receive_buffer = 0,
@@ -162,7 +162,7 @@ typedef enum buffer_default_order {
     /* For processing health report to be send to LBeacons */
     BHM_send_buffer= 6
 
-} BufferDefaultOrder;
+} BufferDefaultPrority;
 
 typedef enum pkt_types {
 
@@ -319,7 +319,7 @@ long long poll_LBeacon_for_HR_time;
 
      config - GatewayConfig struct
  */
-GatewayConfig get_config(char *file_name);
+ErrorCode get_config(GatewayConfig *config, char *file_name);
 
 
 /*
@@ -340,7 +340,7 @@ GatewayConfig get_config(char *file_name);
 
      None
  */
-void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
+void init_buffer(BufferListHead *buffer, int priority, void (*function_p)(void*),
 								int priority_boast);
 
 void init_Address_map(Address_map_head *LBeacon_map);

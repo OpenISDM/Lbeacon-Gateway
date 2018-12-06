@@ -52,7 +52,6 @@
 int main(int argc, char **argv){
 
     int return_value;
-    GatewayConfig config;
 
     pthread_t NSI_thread;
     pthread_t CommUnit_thread;
@@ -65,7 +64,11 @@ int main(int argc, char **argv){
 
     ready_to_work = true;
 
-    config = get_config(CONFIG_FILE_NAME);
+    return_value = get_config(&config, CONFIG_FILE_NAME);
+
+    if(return_value != WORK_SUCCESSFULLY){
+        return E_CONFIG_LOAD_FAIL;
+    }
 
     /* Initialize the memory pool */
     if(mp_init(&node_mempool, sizeof(struct BufferNode), SLOTS_IN_MEM_POOL)
@@ -121,15 +124,15 @@ int main(int argc, char **argv){
     if(return_value != WORK_SUCCESSFULLY) return return_value;
 
     /* Create threads for the main thread of Communication Unit  */
-    return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
+    //return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
 
-    if(return_value != WORK_SUCCESSFULLY) return return_value;
+    //if(return_value != WORK_SUCCESSFULLY) return return_value;
 
 
     while(NSI_initialization_complete == false ||
           CommUnit_initialization_complete == false ||
           BHM_initialization_complete == false){
-
+        printf("In While\n");
         sleep(A_SHORT_TIME);
 
         if(initialization_failed == true){
@@ -155,17 +158,14 @@ int main(int argc, char **argv){
 }
 
 
-GatewayConfig get_config(char *file_name) {
-
-    /* Return value is a struct containing all config information */
-    GatewayConfig config;
+ErrorCode get_config(GatewayConfig *config, char *file_name) {
 
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
 
         /* Error handling */
         //zlog_info(category_health_report, errordesc[E_OPEN_FILE].message);
-        //return NULL;
+        return E_CONFIG_LOAD_FAIL;
 
     }
     else {
@@ -173,46 +173,60 @@ GatewayConfig get_config(char *file_name) {
         /* Create spaces for storing the string in the current line being read*/
         char  config_setting[CONFIG_BUFFER_SIZE];
         char *config_message[CONFIG_FILE_LENGTH];
+        int config_message_size = 0;
 
         /* Keep reading each line and store into the config struct */
         fgets(config_setting, sizeof(config_setting), file);
         config_message[0] = strstr((char *)config_setting, DELIMITER);
         config_message[0] = config_message[0] + strlen(DELIMITER);
-        memcpy(config.IPaddress, config_message[0], strlen(config_message[0]));
+        if(config_message[0][strlen(config_message[0])-1] == '\n')
+            config_message_size = strlen(config_message[0])-1;
+        else
+            config_message_size = strlen(config_message[0]);
+        memcpy(config->IPaddress, config_message[0], config_message_size);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[1] = strstr((char *)config_setting, DELIMITER);
         config_message[1] = config_message[1] + strlen(DELIMITER);
-        config.allowed_number_nodes = atoi(config_message[1]);
+        config->allowed_number_nodes = atoi(config_message[1]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[2] = strstr((char *)config_setting, DELIMITER);
         config_message[2] = config_message[2] + strlen(DELIMITER);
-        config.Period_between_RFHR = atoi(config_message[2]);
+        config->Period_between_RFHR = atoi(config_message[2]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[3] = strstr((char *)config_setting, DELIMITER);
         config_message[3] = config_message[3] + strlen(DELIMITER);
-        config.Number_worker_threads = atoi(config_message[3]);
+        config->Number_worker_threads = atoi(config_message[3]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[4] = strstr((char *)config_setting, DELIMITER);
         config_message[4] = config_message[4] + strlen(DELIMITER);
-        config.Number_priority_levels = atoi(config_message[4]);
+        config->Number_priority_levels = atoi(config_message[4]);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[5] = strstr((char *)config_setting, DELIMITER);
         config_message[5] = config_message[5] + strlen(DELIMITER);
-        memcpy(config.WiFi_SSID, config_message[5], strlen(config_message[5]));
+        if(config_message[5][strlen(config_message[5])-1] == '\n')
+            config_message_size = strlen(config_message[5])-1;
+        else
+            config_message_size = strlen(config_message[5]);
+        memcpy(config->WiFi_SSID, config_message[5], config_message_size);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message[6] = strstr((char *)config_setting, DELIMITER);
         config_message[6] = config_message[6] + strlen(DELIMITER);
-        memcpy(config.WiFi_PASS, config_message[6], strlen(config_message[6]));
+        if(config_message[6][strlen(config_message[6])-1] == '\n')
+            config_message_size = strlen(config_message[6])-1;
+        else
+            config_message_size = strlen(config_message[6]);
+        memcpy(config->WiFi_PASS, config_message[6], config_message_size);
 
         fclose(file);
+
     }
-    return config;
+    return WORK_SUCCESSFULLY;
 }
 
 
@@ -252,12 +266,15 @@ void *Initialize_network(){
     pthread_t Lbeacon_listener;
     pthread_t Sever_listener;
 
+    printf("%c", config.WiFi_SSID[4]);
+    printf("%d", strlen(config.WiFi_SSID));
+    printf("%s", config.WiFi_PASS);
     /* set up WIFI connection */
     /* open temporary wpa_supplicant.conf file to setup wifi environment*/
     FILE *cfgfile = fopen("/etc/wpa_supplicant/wpa_supplicant.conf","w");
-    fprintf(cfgfile,"ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\
+    fprintf(cfgfile, "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\
 \nupdate_config=1\ncountry=TW\n\nnetwork={\n    ssid=\"%s\"\n    psk=\"%s\"\n}"
-, config.WiFi_SSID, config.WiFi_PASS);
+    , config.WiFi_SSID, config.WiFi_PASS);
 
     fclose(cfgfile);
 
@@ -300,7 +317,6 @@ void *Initialize_network(){
     //pthread_setschedprio(&Sever_listener, NORMAL_PRIORITY);
 
     NSI_initialization_complete = true;
-
     while( ready_to_work == true ){
 
         /* Nothing to do, go to sleep. */
@@ -324,7 +340,6 @@ void *Initialize_network(){
         //return return_value;
     }
     /* The thread is going to be ended. Free the connection of Wifi */
-
     Wifi_free();
     //return;
 }
