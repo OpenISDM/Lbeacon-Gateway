@@ -265,7 +265,7 @@ static void* thread_do(struct thread* thread_p){
 			if (job_p) {
 				func_buff = job_p->function;
 				arg_buff  = job_p->arg;
-				pthread_setschedprio(thread_p->pthread, job_p->priority);
+				setpriority(PRIO_PROCESS, thread_p->pthread, job_p->priority);
 				func_buff(arg_buff);
 				mp_free(&mempool ,job_p);
 			}
