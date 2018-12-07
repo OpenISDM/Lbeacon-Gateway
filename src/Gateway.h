@@ -72,8 +72,10 @@
 #include "UDP_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
-#include "BeDIS.h"
 
+#ifndef BEDIS_H
+#include "BeDIS.h"
+#endif
 
 #ifndef GATEWAY_H
 #define GATEWAY_H
@@ -83,15 +85,6 @@
 
 /* File path of the config file of the LBeacon */
 #define CONFIG_FILE_NAME "../config/gateway.conf"
-
-/* Parameter that marks the start of the config file */
-#define DELIMITER "="
-
-/* Maximum number of characters in each line of config file */
-#define CONFIG_BUFFER_SIZE 64
-
-/* Number of lines in the config file */
-#define CONFIG_FILE_LENGTH 11
 
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 32
@@ -105,9 +98,6 @@
 /* The length of period in number of second for polling data from LBeacon. */
 #define MAX_POLLING_TIME 100
 
-/* The number of slots in the memory pool */
-#define SLOTS_IN_MEM_POOL 512
-
 /* Maximum number of worker threads */
 #define MAX_NUM_WORK_THREADS 5
 
@@ -115,9 +105,9 @@
 #define MAX_NUM_BUFFER_LIST 6
 
 /* Names of priority levels */
-#define HIGH_PRIORITY 2
+#define HIGH_PRIORITY -2
 #define NORMAL_PRIORITY 0
-#define LOW_PRIORITY -2
+#define LOW_PRIORITY 2
 
 
 /* The configuration file structure */
@@ -213,7 +203,7 @@ typedef struct BufferNode{
     char net_address[NETWORK_ADDR_LENGTH];
 
     /* point to where the data is stored. */
-    char content[MAX_CONTENT_LENGTH];
+    char content[WIFI_MESSAGE_LENGTH];
 
     int content_size;
 
@@ -257,8 +247,8 @@ sudp_config udp_config;
 /* mempool of node for Gateway */
 Memory_Pool node_mempool;
 
-/* An array of address maps */
-Address_map_head Lbeacon_addresses;
+/* A list of address maps */
+Address_map_head LBeacon_Address_Map;
 
 /* Message buffer list heads */
 BufferListHead Time_critical_LBeacon_receive_buffer_list_head;
@@ -281,13 +271,6 @@ List_Entry Priority_buffer_list_head;
 //TODO Fix Prority List
 
 // Flags
-
-/*
-  A global flag that is initially false and is set by main thread to true when
-  initialization completes Afterward, the flag is used by other threads to
-  inform the main thread the need to shutdown.
- */
-bool ready_to_work;
 
 /*
   Initialization of gateway components invole network activates that may take

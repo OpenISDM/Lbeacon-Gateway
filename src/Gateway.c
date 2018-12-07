@@ -67,7 +67,7 @@ int main(int argc, char **argv){
     return_value = get_config(&config, CONFIG_FILE_NAME);
 
     if(return_value != WORK_SUCCESSFULLY){
-        return E_CONFIG_LOAD_FAIL;
+        return E_OPEN_FILE;
     }
 
     /* Initialize the memory pool */
@@ -79,7 +79,7 @@ int main(int argc, char **argv){
     }
 
     init_entry(&Priority_buffer_list_head);
-    init_Address_map(&Lbeacon_addresses);
+    init_Address_map(&LBeacon_Address_Map);
 
     /* Initialize the buffer_list_heads and add to the buffer array in the
     order of priority. Each buffer has the corresponding function pointer. */
@@ -165,7 +165,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 
         /* Error handling */
         //zlog_info(category_health_report, errordesc[E_OPEN_FILE].message);
-        return E_CONFIG_LOAD_FAIL;
+        return E_OPEN_FILE;
 
     }
     else {
@@ -519,12 +519,12 @@ void *Process_message(void *buffer_head){
 
 void beacon_join_request(char *ID, char *address,
                          Coordinates Beacon_Coordinates){
-    pthread_mutex_lock(&Lbeacon_addresses.list_lock);
+    pthread_mutex_lock(&LBeacon_Address_Map.list_lock);
     /* Copy all the necessary information received from the LBeacon to the
        address map. */
-    Lbeacon_addresses.num_in_list += 1;
-    Address_map *tmp = &Lbeacon_addresses
-                       .Address_map_list[Lbeacon_addresses.num_in_list];
+    LBeacon_Address_Map.num_in_list += 1;
+    Address_map *tmp = &LBeacon_Address_Map
+                       .Address_map_list[LBeacon_Address_Map.num_in_list];
     strcpy(tmp -> beacon_uuid, ID);
     strcpy(tmp -> net_address, address);
     strcpy(tmp -> beacon_coordinates.X_coordinates
@@ -534,7 +534,7 @@ void beacon_join_request(char *ID, char *address,
     strcpy(tmp -> beacon_coordinates.Z_coordinates
          , Beacon_Coordinates.Z_coordinates);
 
-    pthread_mutex_unlock(&Lbeacon_addresses.list_lock);
+    pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
 
     //return;
 }

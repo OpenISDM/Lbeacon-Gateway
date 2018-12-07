@@ -52,7 +52,10 @@
 #include <sys/time.h>
 #include <sys/timeb.h>
 #include <time.h>
+
+#ifndef BEDIS_H
 #include "BeDIS.h"
+#endif
 
 
 #ifndef UTILITIES_H

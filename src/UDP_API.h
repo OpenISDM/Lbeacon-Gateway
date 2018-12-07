@@ -56,7 +56,7 @@ typedef struct udp_config{
 
     int  send_socket, recv_socket;
 
-    char Local_Address[Address_length];
+    char Local_Address[NETWORK_ADDR_LENGTH];
 
     spkt_ptr pkt_Queue, Received_Queue;
 

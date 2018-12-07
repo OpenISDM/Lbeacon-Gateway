@@ -41,6 +41,10 @@
 #include <pthread.h>
 #include <sys/time.h>
 
+#ifndef BEDIS_H
+#include "BeDIS.h"
+#endif
+
 
 #ifndef pkt_Queue_H
 #define pkt_Queue_H
@@ -49,17 +53,9 @@
 #define Gateway   "0000000000000000"
 #define Broadcast "000000000000FFFF"
 
-#define MAX_DATA_LENGTH 1024
-
-//define the maximum pkt length per pkt.
-#define MAX_XBEE_PKT_LENGTH 104
 
 //define the maximum length of pkt Queue.
 #define MAX_QUEUE_LENGTH 1024
-
-#define Address_length 16
-
-#define Address_length_Hex 8
 
 enum {UNKNOWN, Data, Local_AT, UDP, NONE};
 
@@ -71,13 +67,13 @@ typedef struct pkt {
 
     // Brocast:     000000000000FFFF;
     // Coordinator: 0000000000000000
-    unsigned char address[Address_length_Hex];
+    unsigned char address[NETWORK_ADDR_LENGTH_HEX];
 
     //"Data" type
     unsigned int type;
 
     // Data
-    char content[MAX_DATA_LENGTH];
+    char content[WIFI_MESSAGE_LENGTH];
 
     int  content_size;
 
@@ -96,7 +92,7 @@ typedef struct pkt_header {
 
     sPkt Queue[MAX_QUEUE_LENGTH];
 
-    unsigned char address[Address_length_Hex];
+    unsigned char address[NETWORK_ADDR_LENGTH_HEX];
 
     pthread_mutex_t mutex;
 

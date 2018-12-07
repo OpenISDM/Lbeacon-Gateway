@@ -78,7 +78,7 @@ int addpkt(pkt_ptr pkt_queue, unsigned int type, char *raw_addr, char *content, 
     printf("type               : %s\n", type_to_str(type));
 
     printf("address            : ");
-    print_content(raw_addr, Address_length);
+    print_content(raw_addr, NETWORK_ADDR_LENGTH);
 
     printf("\n");
     printf("--------- content ---------\n");
@@ -113,9 +113,9 @@ int addpkt(pkt_ptr pkt_queue, unsigned int type, char *raw_addr, char *content, 
 
     tmp -> type = type;
 
-    char_to_hex(raw_addr, tmp -> address, Address_length);
+    char_to_hex(raw_addr, tmp -> address, NETWORK_ADDR_LENGTH);
 
-    memset( &tmp -> content, 0, MAX_DATA_LENGTH * sizeof(char));
+    memset( &tmp -> content, 0, WIFI_MESSAGE_LENGTH * sizeof(char));
 
     strncpy(tmp -> content, content, content_size);
 
@@ -149,7 +149,7 @@ int delpkt(pkt_ptr pkt_queue) {
 
     pPkt tmp = &pkt_queue -> Queue[pkt_queue -> front];
 
-    memset( &tmp -> content, 0, MAX_DATA_LENGTH * sizeof(char));
+    memset( &tmp -> content, 0, WIFI_MESSAGE_LENGTH * sizeof(char));
 
     tmp -> type = NONE;
 
@@ -187,7 +187,7 @@ void display_pkt(char *content, pkt_ptr pkt_queue, int pkt_num){
     }
 
     char *char_addr = hex_to_char(pkt_queue -> Queue[pkt_num].address
-                                , Address_length_Hex);
+                                , NETWORK_ADDR_LENGTH_HEX);
 
     printf("==================\n");
 
@@ -202,9 +202,9 @@ void display_pkt(char *content, pkt_ptr pkt_queue, int pkt_num){
     printf("===== address ====\n");
 
     char *address_char = hex_to_char(pkt_queue -> Queue[pkt_num].address
-                                   , Address_length_Hex);
+                                   , NETWORK_ADDR_LENGTH_HEX);
 
-    print_content(address_char, Address_length);
+    print_content(address_char, NETWORK_ADDR_LENGTH);
 
     printf("\n");
 
