@@ -266,9 +266,6 @@ void *Initialize_network(){
     pthread_t Lbeacon_listener;
     pthread_t Sever_listener;
 
-    printf("%c", config.WiFi_SSID[4]);
-    printf("%d", strlen(config.WiFi_SSID));
-    printf("%s", config.WiFi_PASS);
     /* set up WIFI connection */
     /* open temporary wpa_supplicant.conf file to setup wifi environment*/
     FILE *cfgfile = fopen("/etc/wpa_supplicant/wpa_supplicant.conf","w");
@@ -381,8 +378,7 @@ void *CommUnit_routine(){
 
             /* If it is the time to poll the tracking data from LBeacon, Make a
             thread to do this work */
-            if(get_system_time() -
-           poll_LBeacon_for_HR_time > MAX_POLLING_TIME * SECOND_TO_MILLISECOND){
+            if(get_system_time() - poll_LBeacon_for_HR_time > MAX_POLLING_TIME){
 
                 /* Reset the poll_LBeacon_time */
                 poll_LBeacon_for_HR_time = get_system_time();
@@ -392,8 +388,7 @@ void *CommUnit_routine(){
             /* In the normal situation, the scanning starts from the high
             priority to lower priority. If the timer expired for
             MAX_STARVATION_TIME, reverse the scanning process. */
-            if(get_system_time() - init_time <
-                                   MAX_STARVATION_TIME * SECOND_TO_MILLISECOND){
+            if(get_system_time() - init_time < MAX_STARVATION_TIME){
                 /* Scan the priority_array to get the corresponding work fro the
                    worker thread */
                 List_Entry *tmp;

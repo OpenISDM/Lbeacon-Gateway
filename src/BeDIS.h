@@ -34,7 +34,12 @@
 
      Gary Xiao     , garyh0205@hotmail.com
      Joey Zhou     , joeyzhou5566@gmail.com
-
+     Jake Lee      , jakelee@iis.sinica.edu.tw
+     Johnson Su    , johnsonsu@iis.sinica.edu.tw
+     Shirley Huang , shirley.huang.93@gmail.com
+     Han Hu        , hhu14@illinois.edu
+     Jeffrey Lin   , lin.jeff03@gmail.com
+     Howard Hsu    , haohsu0823@gmail.com
  */
 
 #ifndef BEDIS_H
@@ -43,16 +48,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <pthread.h>
-#include <stdint.h>
 #include <signal.h>
-#include <string.h>
-#include <semaphore.h>
+#include <time.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
@@ -60,11 +66,16 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/timeb.h>
-#include <time.h>
+#include <ctype.h>
+#include <stdbool.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <obexftp/client.h>
-#include "Utilities.h"
+#include <sys/time.h>
+#include <sys/timeb.h>
+#include <time.h>
 #include "Mempool.h"
 #include "UDP_API.h"
 #include "LinkedList.h"
@@ -164,58 +175,10 @@ typedef enum _ErrorCode{
 
 } ErrorCode;
 
-typedef enum ErrorCode error_t;
-
-/*
 typedef struct _errordesc {
-    int code;
+    ErrorCode code;
     char *message;
-} s_er_d;
-
-s_er_d errordesc[]; = {
-
-    {WORK_SUCCESSFULLY, "The code works successfullly"},
-    {E_MALLOC, "Error allocating memory"},
-    {E_OPEN_FILE, "Error opening file"},
-    {E_OPEN_DEVICE, "Error opening the dvice"},
-    {E_OPEN_SOCKET, "Error opening socket"},
-    {E_SEND_OBEXFTP_CLIENT, "Error opening obexftp client"},
-    {E_SEND_CONNECT_DEVICE, "Error connecting to obexftp device"},
-    {E_SEND_PUSH_FILE, "Error pushing file to device"},
-    {E_SEND_DISCONNECT_CLIENT, "Disconnecting the client"},
-    {E_SCAN_SET_HCI_FILTER, "Error setting HCI filter"},
-    {E_SCAN_SET_INQUIRY_MODE, "Error settnig inquiry mode"},
-    {E_SCAN_START_INQUIRY, "Error starting inquiry"},
-    {E_SEND_REQUEST_TIMEOUT, "Sending request timeout"},
-    {E_ADVERTISE_STATUS, "LE set advertise returned status"},
-    {E_ADVERTISE_MODE, "Error setting advertise mode"},
-    {E_SET_BLE_PARAMETER, "Error setting parameters of BLE scanning "},
-    {E_BLE_ENABLE, "Error enabling BLE scanning"},
-    {E_GET_BLE_SOCKET, "Error getting BLE socket options"},
-    {E_START_THREAD, "Error creating thread"},
-    {E_INIT_THREAD_POOL, "Error initializing thread pool"},
-    {E_INIT_ZIGBEE, "Error initializing the zigbee"},
-    {E_ZIGBEE_CONNECT, "Error zigbee connection"},
-    {E_LOG_INIT, "Error initializing log file"},
-    {E_LOG_GET_CATEGORY, "Error getting log category"},
-    {E_EMPTY_FILE, "Empty file"},
-    {E_INPUT_PARAMETER , "Error of invalid input parameter"},
-    {E_ADD_WORK_THREAD, "Error adding work to the work thread"},
-    {MAX_ERROR_CODE, "The element is invalid"},
-    {E_INITIALIZATION_FAIL, "The Network or Buffer initialization Fail."},
-    {E_WIFI_INIT_FAIL, "Wi-Fi initialization Fail."},
-    {E_ZIGBEE_INIT_FAIL, "Zigbee initialization Fail."},
-    {E_XBEE_VALIDATE, "Zigbee Connection Fail."},
-    {E_START_COMMUNICAT_ROUTINE_THREAD, "Start Communocation Thread Fail."},
-    {E_START_BHM_ROUTINE_THREAD, "Start BHM THread Fail."},
-    {E_START_TRACKING_THREAD, "Start Tracking Thread Fail."},
-    {E_ZIGBEE_CALL_BACK, "Error enabling call back function for xbee"},
-    {E_ZIGBEE_SHUT_DOWN,  "Error shutting down xbee."},
-    {E_REG_SIG_HANDLER, "Error registering signal handler"},
-    {E_JOIN_THREAD, "Error joining thread"}
-
-};
-*/
+} errordesc;
 
 typedef struct coordinates{
 
@@ -272,6 +235,93 @@ typedef enum DeviceType {
 
 } DeviceType;
 
+// FUNCTIONS
+
+/*
+  uuid_str_to_data:
+
+     @todo
+
+  Parameters:
+
+     uuid - @todo
+
+  Return value:
+
+     data - @todo
+ */
+unsigned int *uuid_str_to_data(char *uuid);
+
+
+/*
+  twoc:
+
+  @todo
+
+  Parameters:
+
+     in - @todo
+     t -  @todo
+
+  Return value:
+
+     data - @todo
+ */
+unsigned int twoc(int in, int t);
+
+
+/*
+ ctrlc_handler:
+
+     If the user presses CTRL-C, the global variable g_done will be set to true,
+     and a signal will be thrown to stop running the LBeacon program.
+
+ Parameters:
+
+     s - @todo
+
+ Return value:
+
+     None
+
+ */
+void ctrlc_handler(int stop);
+
+
+/*
+  startThread:
+
+     This function initializes the specified threads.
+
+  Parameters:
+
+     threads - name of the thread
+     thfunct - the function for thread to execute.
+     arg - the argument for thread's function
+
+  Return value:
+
+     Error_code: The error code for the corresponding error
+ */
+ErrorCode startThread(pthread_t *threads, void *( *thfunct)(void *), void *arg);
+
+
+/*
+  get_system_time:
+
+     This helper function fetches the current time according to the system
+     clock in terms of the number of seconds since January 1, 1970.
+
+  Parameters:
+
+     None
+
+  Return value:
+
+     system_time - system time in seconds
+*/
+
+long long get_system_time();
 
 /*
   memset:

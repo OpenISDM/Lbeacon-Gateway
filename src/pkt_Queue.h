@@ -33,6 +33,9 @@
      Gary Xiao		, garyh0205@hotmail.com
  */
 
+#ifndef pkt_Queue_H
+#define pkt_Queue_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -41,18 +44,18 @@
 #include <pthread.h>
 #include <sys/time.h>
 
-#ifndef BEDIS_H
-#include "BeDIS.h"
-#endif
-
-
-#ifndef pkt_Queue_H
-#define pkt_Queue_H
-
 
 #define Gateway   "0000000000000000"
 #define Broadcast "000000000000FFFF"
 
+/* Length of address of the network */
+#define NETWORK_ADDR_LENGTH 16
+
+/* Length of address of the network in Hex */
+#define NETWORK_ADDR_LENGTH_HEX 8
+
+/* Maximum length of message to be sent over WiFi in bytes */
+#define WIFI_MESSAGE_LENGTH 4096
 
 //define the maximum length of pkt Queue.
 #define MAX_QUEUE_LENGTH 1024

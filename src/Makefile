@@ -1,18 +1,15 @@
 # Gateway
 #---------------------------------------------------------------------------
 CC = gcc
-OBJS =  BeDIS.o Utilities.o LinkedList.o Mempool.o thpool.o pkt_Queue.o UDP_API.o 
+OBJS =  BeDIS.o LinkedList.o Mempool.o thpool.o pkt_Queue.o UDP_API.o
 CFLAGS = -std=gnu99 -lrt -lpthread
 
 #---------------------------------------------------------------------------
 all: Gateway.out
 Gateway.out: $(OBJS) BeDIS.h Gateway.h Gateway.c
 	$(CC) $(CFLAGS) $(OBJS) Gateway.c -o Gateway.out
-# -lmulticobex -lbfb -lbluetooth -lobexftp -lopenobex
 BeDIS.o: BeDIS.c BeDIS.h
 	$(CC) $(CFLAGS) BeDIS.c -c
-Utilities.o: Utilities.c Utilities.h BeDIS.h
-	$(CC) $(CFLAGS) Utilities.c -c
 LinkedList.o: LinkedList.c LinkedList.h
 	$(CC) $(CFLAGS) LinkedList.c -c
 thpool.o: thpool.c thpool.h

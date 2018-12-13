@@ -42,13 +42,12 @@
 
  */
 
+#ifndef GATEWAY_H
+#define GATEWAY_H
 
 #define _GNU_SOURCE
 
 #include "BeDIS.h"
-
-#ifndef GATEWAY_H
-#define GATEWAY_H
 
 
 /* Gateway Config File Location and define about config file. */

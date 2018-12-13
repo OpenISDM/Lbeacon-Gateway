@@ -4,6 +4,8 @@
  *
  **********************************/
 
+#ifndef THPOOL_H
+#define THPOOL_H
 
 #define _GNU_SOURCE
 
@@ -17,10 +19,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include "Mempool.h"
-
-
-#ifndef THPOOL_H
-#define THPOOL_H
 
 
 /* The number of slots for the memory pool */

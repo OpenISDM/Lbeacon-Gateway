@@ -1,6 +1,6 @@
 #include "BeDIS.h"
 
-errordesc ErrorCode [] = {
+errordesc ErrorDesc [] = {
 
     {WORK_SUCCESSFULLY, "The code works successfullly"},
     {E_MALLOC, "Error allocating memory"},
@@ -41,3 +41,72 @@ errordesc ErrorCode [] = {
     {E_ZIGBEE_SHUT_DOWN,  "Error shutting down xbee."}
 
 };
+
+unsigned int *uuid_str_to_data(char *uuid) {
+    char conversion[] = "0123456789ABCDEF";
+    int uuid_length = strlen(uuid);
+    unsigned int *data =
+        (unsigned int *)malloc(sizeof(unsigned int) * uuid_length);
+
+    if (data == NULL) {
+        /* Error handling */
+        perror("Failed to allocate memory");
+        return NULL;
+    }
+
+    unsigned int *data_pointer = data;
+    char *uuid_counter = uuid;
+
+    for (; uuid_counter < uuid + uuid_length;
+
+         data_pointer++, uuid_counter += 2) {
+        *data_pointer =
+            ((strchr(conversion, toupper(*uuid_counter)) - conversion) * 16) +
+            (strchr(conversion, toupper(*(uuid_counter + 1))) - conversion);
+
+    }
+
+    return data;
+}
+
+
+unsigned int twoc(int in, int t) {
+
+    return (in < 0) ? (in + (2 << (t - 1))) : in;
+}
+
+
+void ctrlc_handler(int stop) { g_done = true; }
+
+
+ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
+
+    pthread_attr_t attr;
+
+    if ( pthread_attr_init( &attr) != 0
+      || pthread_create(threads, &attr, thfunct, arg) != 0){
+
+          printf("Start Thread Error.\n");
+          return E_START_THREAD;
+    }
+
+    printf("Start Thread Success.\n");
+    return WORK_SUCCESSFULLY;
+
+}
+
+
+long long get_system_time() {
+    /* A struct that stores the time */
+    struct timeb t;
+
+    /* Return value as a long long type */
+    long long system_time;
+
+    /* Convert time from Epoch to time in milliseconds of a long long type */
+    ftime(&t);
+    //system_time = 1000 * t.time + t.millitm;  //millisecond ver.
+    system_time = t.time;
+
+    return system_time;
+}

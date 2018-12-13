@@ -45,13 +45,14 @@
      Gary Xiao     , garyh0205@hotmail.com
 */
 
+#ifndef LINKEDLIST_H
+#define LINKEDLIST_H
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef LINKEDLIST_H
-#define LINKEDLIST_H
 
 /* CONSTANTS */
 
