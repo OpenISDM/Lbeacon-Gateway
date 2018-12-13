@@ -21,7 +21,7 @@
 
   Abstract:
 
-     BeDIPS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
      their locations to users' devices. Basically, a LBeacon is an inexpensive,
      Bluetooth Smart Ready device. The 3D coordinates and location description
      of every LBeacon are retrieved from BeDIS (Building/environment Data and
@@ -137,7 +137,7 @@ ErrorCode startThread(pthread_t *threads, void *( *thfunct)(void *), void *arg);
   get_system_time:
 
      This helper function fetches the current time according to the system
-     clock in terms of the number of milliseconds since January 1, 1970.
+     clock in terms of the number of seconds since January 1, 1970.
 
   Parameters:
 
@@ -145,7 +145,7 @@ ErrorCode startThread(pthread_t *threads, void *( *thfunct)(void *), void *arg);
 
   Return value:
 
-     system_time - system time in milliseconds
+     system_time - system time in seconds
 */
 
 long long get_system_time();

@@ -45,37 +45,7 @@
 
 #define _GNU_SOURCE
 
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <signal.h>
-#include <string.h>
-#include <semaphore.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/poll.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/timeb.h>
-#include <time.h>
-#include <unistd.h>
-#include "Utilities.h"
-#include "Mempool.h"
-#include "UDP_API.h"
-#include "LinkedList.h"
-#include "thpool.h"
-
-#ifndef BEDIS_H
 #include "BeDIS.h"
-#endif
 
 #ifndef GATEWAY_H
 #define GATEWAY_H
@@ -90,12 +60,12 @@
 #define MAX_NUMBER_NODES 32
 
 /*
-  Maximum length of time in millisecond low priority message lists are starved
+  Maximum length of time in second low priority message lists are starved
   of attention.
  */
-#define MAX_STARVATION_TIME 60000
+#define MAX_STARVATION_TIME 60
 
-/* The length of period in number of second for polling data from LBeacon. */
+/* The length of period in number of seconds for polling data from LBeacon. */
 #define MAX_POLLING_TIME 100
 
 /* Maximum number of worker threads */
@@ -104,7 +74,11 @@
 /* Maximum number of buffer Lists */
 #define MAX_NUM_BUFFER_LIST 6
 
+/* Number of lines in the config file */
+#define CONFIG_FILE_LENGTH 11
+
 /* Names of priority levels */
+#define CRITICAL_PRIORITY -4
 #define HIGH_PRIORITY -2
 #define NORMAL_PRIORITY 0
 #define LOW_PRIORITY 2
@@ -135,24 +109,24 @@ typedef struct Config {
 
 } GatewayConfig;
 
-typedef enum buffer_Order {
+typedef enum buffer_types {
 
     /* For tracked data from LBeacon at Geofence */
     Time_critical_LBeacon_receive_buffer = 0,
-    /* For data from server tobe send to LBeacon */
-    LBeacon_receive_buffer = 1,
-    /* For data from server to be send to LBeacons */
-    LBeacon_send_buffer = 2,
-    /* For data collected from LBeacons to be send to Server. */
-    Server_send_buffer = 3,
     /* For polling tracked object data from Lbeacons and msgs define by BHM */
-    Command_msg_buffer = 4,
+    Command_msg_buffer = 1,
+    /* For data from server tobe send to LBeacon */
+    LBeacon_receive_buffer = 2,
+    /* For data from server to be send to LBeacons */
+    LBeacon_send_buffer = 3,
+    /* For data collected from LBeacons to be send to Server. */
+    Server_send_buffer = 4,
     /* For health report from LBeacons */
     BHM_receive_buffer = 5,
     /* For processing health report to be send to LBeacons */
     BHM_send_buffer= 6
 
-} BufferDefaultOrder;
+} BufferTypes;
 
 typedef enum pkt_types {
 
@@ -174,7 +148,7 @@ typedef struct{
 
     char beacon_uuid[UUID_LENGTH];
 
-    /* network address of zigbee/wifi link to the LBeacon*/
+    /* network address of wifi link to the LBeacon*/
     char net_address[NETWORK_ADDR_LENGTH];
 
     Coordinates beacon_coordinates;
@@ -199,7 +173,7 @@ typedef struct BufferNode{
 
     struct List_Entry buffer_entry;
 
-    /* Zigbee network address of the source or destination */
+    /* network address of the source or destination */
     char net_address[NETWORK_ADDR_LENGTH];
 
     /* point to where the data is stored. */

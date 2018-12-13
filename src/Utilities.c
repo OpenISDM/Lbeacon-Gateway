@@ -21,7 +21,7 @@
 
   Abstract:
 
-     BeDIPS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
      their locations to users' devices. Basically, a LBeacon is an inexpensive,
      Bluetooth Smart Ready device. The 3D coordinates and location description
      of every LBeacon are retrieved from BeDIS (Building/environment Data and
@@ -108,7 +108,8 @@ long long get_system_time() {
 
     /* Convert time from Epoch to time in milliseconds of a long long type */
     ftime(&t);
-    system_time = 1000 * t.time + t.millitm;
+    //system_time = 1000 * t.time + t.millitm;  //millisecond ver.
+    system_time = t.time;
 
     return system_time;
 }

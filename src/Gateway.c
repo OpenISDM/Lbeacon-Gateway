@@ -381,7 +381,8 @@ void *CommUnit_routine(){
 
             /* If it is the time to poll the tracking data from LBeacon, Make a
             thread to do this work */
-            if(get_system_time() - poll_LBeacon_for_HR_time > MAX_POLLING_TIME){
+            if(get_system_time() -
+           poll_LBeacon_for_HR_time > MAX_POLLING_TIME * SECOND_TO_MILLISECOND){
 
                 /* Reset the poll_LBeacon_time */
                 poll_LBeacon_for_HR_time = get_system_time();
@@ -391,7 +392,8 @@ void *CommUnit_routine(){
             /* In the normal situation, the scanning starts from the high
             priority to lower priority. If the timer expired for
             MAX_STARVATION_TIME, reverse the scanning process. */
-            if(get_system_time() - init_time < MAX_STARVATION_TIME){
+            if(get_system_time() - init_time <
+                                   MAX_STARVATION_TIME * SECOND_TO_MILLISECOND){
                 /* Scan the priority_array to get the corresponding work fro the
                    worker thread */
                 List_Entry *tmp;
