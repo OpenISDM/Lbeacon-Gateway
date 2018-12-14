@@ -272,8 +272,8 @@ void *udp_recv_pkt(void *udpconfig){
                                                    ntohs(si_recv.sin_port));
             printf("Data: %s\n" , recv_buf);
 
-            addpkt(pkt_ptr pkt_queue, unsigned int type
-                     , char *raw_addr, char *content, int content_size);
+            addpkt(&udp_config -> Received_Queue, UDP
+                 , inet_ntoa(si_recv.sin_addr), recv_buf, strlen(recv_buf));
 
         }
         else
