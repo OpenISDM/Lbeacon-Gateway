@@ -8,11 +8,11 @@
 
  Project Name:
 
-     BeDIPS
+     BeDIS
 
   File Description:
 
-     BeDIPS
+     BeDIS
 
   File Description:
 

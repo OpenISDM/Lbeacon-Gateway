@@ -8,7 +8,7 @@
 
   Project Name:
 
-     BeDIPS
+     BeDIS
 
   File Description:
 
@@ -110,9 +110,10 @@ is possibily transient failed.*/
 /* Maximum length of message to be sent over WiFi in bytes */
 #define WIFI_MESSAGE_LENGTH 4096
 
-/* define the size of array to store Wi-Fi SSID and Password */
+/* define the size of array to store Wi-Fi SSID */
 #define WIFI_SSID_LENGTH 10
 
+/* define the size of array to store Wi-Fi Password */
 #define WIFI_PASS_LENGTH 10
 
 /* Length of the Lbeacon's UUID in a number of characters */

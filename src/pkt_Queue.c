@@ -8,7 +8,7 @@
 
   Project Name:
 
-     BeDIPS
+     BeDIS
 
   File Description:
 

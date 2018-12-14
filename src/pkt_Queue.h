@@ -8,7 +8,7 @@
 
   Project Name:
 
-     BeDIPS
+     BeDIS
 
   File Description:
 
@@ -48,6 +48,8 @@
 #define Gateway   "0000000000000000"
 #define Broadcast "000000000000FFFF"
 
+//#ifndef BEDIS_H
+
 /* Length of address of the network */
 #define NETWORK_ADDR_LENGTH 16
 
@@ -56,6 +58,8 @@
 
 /* Maximum length of message to be sent over WiFi in bytes */
 #define WIFI_MESSAGE_LENGTH 4096
+
+//#endif
 
 //define the maximum length of pkt Queue.
 #define MAX_QUEUE_LENGTH 1024

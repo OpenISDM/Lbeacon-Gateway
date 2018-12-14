@@ -8,7 +8,7 @@
 
   Project Name:
 
-     BeDIPS
+     BeDIS
 
   File Description:
 
@@ -124,9 +124,9 @@ int main(int argc, char **argv){
     if(return_value != WORK_SUCCESSFULLY) return return_value;
 
     /* Create threads for the main thread of Communication Unit  */
-    //return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
+    return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
 
-    //if(return_value != WORK_SUCCESSFULLY) return return_value;
+    if(return_value != WORK_SUCCESSFULLY) return return_value;
 
 
     while(NSI_initialization_complete == false ||

@@ -5,7 +5,7 @@ OBJS =  BeDIS.o LinkedList.o Mempool.o thpool.o pkt_Queue.o UDP_API.o
 CFLAGS = -std=gnu99 -lrt -lpthread
 
 #---------------------------------------------------------------------------
-all: Gateway.out
+all: clean Gateway.out
 Gateway.out: $(OBJS) BeDIS.h Gateway.h Gateway.c
 	$(CC) $(CFLAGS) $(OBJS) Gateway.c -o Gateway.out
 BeDIS.o: BeDIS.c BeDIS.h

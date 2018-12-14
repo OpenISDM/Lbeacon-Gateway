@@ -8,7 +8,7 @@
 
   Project Name:
 
-     BeDIPS
+     BeDIS
 
   File Description:
 
@@ -46,6 +46,8 @@
 #include <sys/socket.h>
 #include "pkt_Queue.h"
 
+//#ifndef BEDIS_H
+
 /* Length of address of the network */
 #define NETWORK_ADDR_LENGTH 16
 
@@ -59,6 +61,8 @@
 #define WIFI_MESSAGE_LENGTH 4096
 
 #define UDP_LISTEN_PORT 8888    //The port on which to listen for incoming data
+
+//#endif
 
 #define UDP_SELECT_TIMEOUT 5    //second
 
