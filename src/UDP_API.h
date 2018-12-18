@@ -33,7 +33,6 @@
   Authors:
      Gary Xiao		, garyh0205@hotmail.com
  */
-
 #ifndef UDP_API_H
 #define UDP_API_H
 
@@ -46,27 +45,12 @@
 #include <sys/socket.h>
 #include "pkt_Queue.h"
 
-//#ifndef BEDIS_H
-
-/* Length of address of the network */
-#define NETWORK_ADDR_LENGTH 16
-
-/* Length of address of the network in Hex */
-#define NETWORK_ADDR_LENGTH_HEX 8
-
-/* The maxinum length in bytes of the message to be sent over zigbee link */
-#define ZIG_MESSAGE_LENGTH 104
-
-/* Maximum length of message to be sent over WiFi in bytes */
-#define WIFI_MESSAGE_LENGTH 4096
 
 #define UDP_LISTEN_PORT 8888    //The port on which to listen for incoming data
 
-//#endif
-
 #define UDP_SELECT_TIMEOUT 5    //second
 
-typedef struct udp_config{
+typedef struct udp_config_{
 
     struct sockaddr_in si_server;
 
@@ -74,17 +58,20 @@ typedef struct udp_config{
 
     char Local_Address[NETWORK_ADDR_LENGTH];
 
-    spkt_ptr pkt_Queue, Received_Queue;
+    pthread_t udp_send, udp_receive;
 
     bool shutdown;
 
-    pthread_t udp_send, udp_receive;
+    spkt_ptr pkt_Queue, Received_Queue;
 
 } sudp_config;
 
 typedef sudp_config *pudp_config;
 
 enum{File_OPEN_ERROR = -1, E_ADDPKT_OVERSIZE = -2};
+
+enum{socket_error = -1, send_socket_error = -2, recv_socket_error = -3,
+set_socketopt_error = -4, recv_socket_bind_error = -5, addpkt_msg_oversize = -6};
 
 /*
   udp_initial
@@ -119,7 +106,23 @@ int udp_initial(pudp_config udp_config);
      int : If return 0, everything work successfully.
            If not 0   , something wrong.
  */
-int udp_addpkt(pkt_ptr pkt_queue, char *raw_addr, char *content, int size);
+int udp_addpkt(pudp_config udp_config, char *raw_addr, char *content, int size);
+
+/*
+  udp_getrecv
+
+     A function for get pkt from the assigned pkt_Queue.
+
+  Parameter:
+
+     udp_config : A structure contain all variables for UDP.
+
+  Return Value:
+
+     sPkt : return the first pkt content in Received_Queue.
+ */
+sPkt udp_getrecv(pudp_config udp_config);
+
 
 /*
   udp_send_pkt
