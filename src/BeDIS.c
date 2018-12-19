@@ -84,7 +84,8 @@ ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
     pthread_attr_t attr;
 
     if ( pthread_attr_init( &attr) != 0
-      || pthread_create(threads, &attr, thfunct, arg) != 0){
+      || pthread_create(threads, &attr, thfunct, arg) != 0
+      || pthread_detach( *threads)){
 
           printf("Start Thread Error.\n");
           return E_START_THREAD;
@@ -105,7 +106,7 @@ long long get_system_time() {
 
     /* Convert time from Epoch to time in milliseconds of a long long type */
     ftime(&t);
-    //system_time = 1000 * t.time + t.millitm;  //millisecond ver.
+    //system_time = 1000 * (long long)t.time + (long long)t.millitm;  //millisecond ver.
     system_time = t.time;
 
     return system_time;
