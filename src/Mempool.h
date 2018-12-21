@@ -1,157 +1,183 @@
 /*
-  Copyright (c) 2016 Academia Sinica, Institute of Information Science
+ Copyright (c) 2016 Academia Sinica, Institute of Information Science
 
-  License:
+ License:
 
-     GPL 3.0 : The content of this file is subject to the terms and conditions
-     defined in file 'COPYING.txt', which is part of this source code package.
+      GPL 3.0 : The content of this file is subject to the terms and
+      cnditions defined in file 'COPYING.txt', which is part of this source
+      code package.
 
-  Project Name:
+ Project Name:
 
-     BeDIS
+      BeDIPS
 
-  File Description:
+ File Description:
 
-     This file contains the declarations and definition of variables used in the
-     Mempool.c file.
+      This file contains the declarations and definition of variables
+      used in the Mempool.c file.
 
-     Note: This code is referred from a post by 2013Asker on 20140504
-     on the stackexchange website here:
-     https://codereview.stackexchange.com/questions/48919/simple-memory-
-     pool-using-no-extra-memory
+      Note: This code is referred from a post by 2013Asker on 20140504 
+      on the stackexchange website here:
+      https://codereview.stackexchange.com/questions/48919/simple-memory-
+      pool-using-no-extra-memory
 
-  File Name:
 
-     Mempool.h
+ File Name:
 
-  Version:
+      Mempool.h
 
-     1.2
+ Version:
 
-  Abstract:
+       1.2
 
-     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
-     their locations to users' devices. Basically, a LBeacon is an inexpensive,
-     Bluetooth Smart Ready device. The 3D coordinates and location description
-     of every LBeacon are retrieved from BeDIS (Building/environment Data and
-     Information System) and stored locally during deployment and maintenance
-     times. Once initialized, each LBeacon broadcasts its coordinates and
-     location description to Bluetooth enabled user devices within its coverage
-     area.
+ Abstract:
 
-  Authors:
+      BeDIPS uses LBeacons to deliver 3D coordinates and textual
+      descriptions of their locations to users' devices. Basically, a
+      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
+      coordinates and location description of every LBeacon are retrieved
+      from BeDIS (Building/environment Data and Information System) and
+      stored locally during deployment and maintenance times. Once
+      initialized, each LBeacon broadcasts its coordinates and location
+      description to Bluetooth enabled user devices within its coverage
+      area.
 
-     Han Wang, hollywang@iis.sinica.edu.tw
-     Han Wang, hollywang@iis.sinica.edu.tw
-     Gary Xiao, garyh0205@hotmail.com
+ Authors:
+
+      Holly Wang, hollywang@iis.sinica.edu.tw
+
+
 */
+
+#include <stdlib.h>
+#include <pthread.h>
 
 #ifndef MEMPOOL_H
 #define MEMPOOL_H
 
-#include <stdlib.h>
-
 #define MEMORY_POOL_SUCCESS 1
 #define MEMORY_POOL_ERROR 0
-/* The specified number of slots to be expanded in the memory pool */
-#define EXPAND_SLOT 1024
 #define MEMORY_POOL_MINIMUM_SIZE sizeof(void *)
+#define MAX_EXP_TIME 5
+#define MAX_MEM_OFFSET 9999999
 
 /* The structure of the memory pool */
 typedef struct {
     void **head;
-    void *memory;
+    void *memory[MAX_EXP_TIME];
+    int alloc_time;
+    /* A per list lock */
+    pthread_mutex_t mem_lock;
     int size;
+    int slots;
 } Memory_Pool;
 
 
 /*
-  mp_init
+  get_current_size_mempool:
 
-     This function allocates memory and initializes the memory pool and links
-     the slots in the pool.
+    This function returns the current size of the memory pool.
 
   Parameters:
 
-     mp: pointer to a specific memory pool
-     size: the size of slots in the pool
-     slots: the number of slots in the memory pool
+    mp - pointer to a specific memory pool
 
   Return value:
 
-     Status: the error code or the successful message
+    mem_size- the current size of the mempry pool
 */
+size_t get_current_size_mempool(Memory_Pool *mp);
+
+/*
+  mp_init:
+
+    This function allocates memory and initializes the memory pool and links
+    the slots in the pool.
+
+  Parameters:
+
+    mp - pointer to a specific memory pool
+    size - the size of slots in the pool
+    slots - the number of slots in the memory pool
+
+  Return value:
+
+    Status - the error code or the successful message
+*/
+
 int mp_init(Memory_Pool *mp, size_t size, size_t slots);
 
 
 /*
-  mp_expand
+  mp_expand:
 
-     This function expands the slots and allocates more memory to the memory
-     pool.
+    This function expands the slots and allocates more memory to the memory
+    pool.
 
   Parameters:
 
-     mp - pointer to a specific memory pool
-     slots - the number of slots in the memory pool
+    mp - pointer to a specific memory pool
+    slots - the number of slots in the memory pool
 
   Return value:
 
-     Status - the error code or the successful message
+    Status - the error code or the successful message
 */
 
 int mp_expand(Memory_Pool *mp, size_t slots);
 
 
 /*
-  mp_alloc
+  mp_destroy:
 
-     This function gets a free slot from the memory pool and returns a pointer
-     to a slot when a free slot is available and return NULL when no free slot
-     is available.
+  	This function frees the memory occupied by the specified memory pool.
 
   Parameters:
 
-     mp: pointer to the specific memory pool to be used
+  	mp - pointer to the specific memory pool to be destroyed
 
   Return value:
 
-     void: the pointer to the struct of a free slot or NULL
-*/
-void *mp_alloc(Memory_Pool *mp);
-
-
-/*
-  mp_destroy
-
-     This function frees the memory occupied by the specified memory pool.
-
-  Parameters:
-
-     mp: pointer to the specific memory pool to be destroyed
-
-  Return value:
-
-     None
+  	None
 
 */
+
 void mp_destroy(Memory_Pool *mp);
 
 
 /*
-  mp_free
+  mp_alloc:
 
-     This function releases an unused slot back to the memory pool and places
-     it in the head of the free list.
+  	This function gets a free slot from the memory pool and returns a pointer
+  	to a slot when a free slot is available and return NULL when no free slot
+  	is available.
 
   Parameters:
 
-     mp: the pointer to the specific memory pool
-     mem: the pointer to the strting address of the slot to be freed
+  	mp - pointer to the specific memory pool to be used
 
   Return value:
 
-     Errorcode: error code or sucessful message
+  	void - the pointer to the struct of a free slot or NULL
+*/
+
+void *mp_alloc(Memory_Pool *mp);
+
+
+/*
+  mp_free:
+
+  	This function releases an unused slot back to the memory pool and places
+  	it in the head of the free list.
+
+  Parameters:
+
+  	mp - the pointer to the specific memory pool
+  	mem - the pointer to the strting address of the slot to be freed
+
+  Return value:
+
+  	Errorcode - error code or sucessful message
 */
 int mp_free(Memory_Pool *mp, void *mem);
 
