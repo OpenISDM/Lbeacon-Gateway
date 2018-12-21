@@ -171,6 +171,22 @@ void *udp_recv_pkt(void *udpconfig);
 int udp_release(pudp_config udp_config);
 
 /*
+  udp_address_reduce_point
+
+     Convert address from address to a address remove all points.
+
+  Parameter:
+
+     raw_addr: A array pointer point to the address we want to convert.
+
+  Return Value:
+
+     char : return char array of the converted address.
+ */
+char *udp_address_reduce_point(char *raw_addr);
+
+
+/*
   udp_hex_to_address
 
      Convert address from hex format to char.

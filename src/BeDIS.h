@@ -55,6 +55,7 @@
 #include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <dirent.h>
 #include <pthread.h>
 #include <signal.h>
 #include <time.h>
@@ -80,6 +81,8 @@
 #include "UDP_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
+//#include "zlog.h"
+
 
 /* Parameter that marks the start of the config file */
 #define DELIMITER "="
@@ -126,11 +129,11 @@ is possibily transient failed.*/
 #define UDP_LISTEN_PORT 8888
 
 /* Number of bytes in the string format of epoch time */
-#define LENGTH_OF_EPOCH_TIME 3
+#define LENGTH_OF_EPOCH_TIME 11
 
 /* Timeout interval in seconds */
-#define A_LONG_TIME 36000
-#define A_SHORT_TIME 6000
+#define WAITING_TIME 4
+#define A_SHORT_TIME 6
 
 typedef enum _ErrorCode{
 
@@ -235,6 +238,31 @@ typedef enum DeviceType {
   max_type = 2
 
 } DeviceType;
+
+
+typedef enum pkt_types {
+
+    undefined = 0,
+    request_to_join = 1,
+    join_request_ack = 2,
+    join_request_deny = 3,
+    tracked_object_data = 8,
+    health_report = 9,
+    data_for_LBeacon = 10,
+    poll_for_tracked_object_data = 11,
+    RFHR_to_Lbeacons = 12,
+    poll_for_RFHR_from_sever = 13
+
+} PktType;
+
+typedef enum pkt_direction {
+
+    from_gateway = 10,
+    from_server = 8,
+    from_beacon = 0
+
+} PktDirection;
+
 
 // FUNCTIONS
 

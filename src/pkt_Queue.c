@@ -322,7 +322,7 @@ void char_to_hex(char *raw, unsigned char *raw_hex, int size){
 char *hex_to_char(unsigned char *hex, int size){
 
     int char_size = size * 2;
-    char *char_addr = malloc(sizeof(char) * ((char_size * 2) + 1));
+    char *char_addr = malloc(sizeof(char) * (char_size + 1));
 
     memset(char_addr, 0, sizeof(char) * (char_size + 1));
 

@@ -70,9 +70,6 @@
 /* Maximum number of worker threads */
 #define MAX_NUM_WORK_THREADS 5
 
-/* Maximum number of buffer Lists */
-#define MAX_NUM_BUFFER_LIST 6
-
 /* Number of lines in the config file */
 #define CONFIG_FILE_LENGTH 11
 
@@ -106,40 +103,10 @@ typedef struct Config {
 
     char WiFi_PASS[WIFI_PASS_LENGTH];
 
+    char SERVER_IP[NETWORK_ADDR_LENGTH];
+
 } GatewayConfig;
 
-typedef enum buffer_types {
-
-    /* For tracked data from LBeacon at Geofence */
-    Time_critical_LBeacon_receive_buffer = 0,
-    /* For polling tracked object data from Lbeacons and msgs define by BHM */
-    Command_msg_buffer = 1,
-    /* For data from server tobe send to LBeacon */
-    LBeacon_receive_buffer = 2,
-    /* For data from server to be send to LBeacons */
-    LBeacon_send_buffer = 3,
-    /* For data collected from LBeacons to be send to Server. */
-    Server_send_buffer = 4,
-    /* For health report from LBeacons */
-    BHM_receive_buffer = 5,
-    /* For processing health report to be send to LBeacons */
-    BHM_send_buffer= 6
-
-} BufferTypes;
-
-typedef enum pkt_types {
-
-    tracked_object_data = 1,
-    health_report = 2,
-    data_for_LBeacon = 3,
-    poll_for_tracked_object_data = 9,
-    RFHR_to_Lbeacons = 10,
-    poll_for_RFHR_from_sever = 11,
-    request_to_join = 12,
-    zigbee_network_control = 13,
-    maximum_type = 15
-
-} PktType;
 
 /*  A struct linking network address assigned to a LBeacon to its UUID,
     coordinates, and location description. */
@@ -153,6 +120,7 @@ typedef struct{
     Coordinates beacon_coordinates;
 
 }Address_map;
+
 
 typedef struct{
 
@@ -193,9 +161,6 @@ typedef struct buffer_list_head{
     struct List_Entry priority_entry;
 
     struct List_Entry buffer_entry;
-
-    /* Current number of msg buffers in the list */
-    int num_in_list;
 
     /* Number of levels relative to normal priority */
     int priority_boast;
@@ -240,8 +205,6 @@ BufferListHead Command_msg_buffer_list_head;
 
 /* An array of buffer_list_head in the priority order. */
 List_Entry Priority_buffer_list_head;
-
-//TODO Fix Prority List
 
 // Flags
 
@@ -461,7 +424,7 @@ void *wifi_send(void *buffer_head);
 
      None
  */
-void *wifi_receive(void *buffer_head);
+void *wifi_receive();
 
 
 #endif

@@ -50,6 +50,7 @@
 #define MEMPOOL_H
 
 #include <stdlib.h>
+#include <pthread.h>
 
 #define MEMORY_POOL_SUCCESS 1
 #define MEMORY_POOL_ERROR 0
@@ -62,6 +63,8 @@ typedef struct {
     void **head;
     void *memory;
     int size;
+    /* A per list lock */
+    pthread_mutex_t mem_lock;
 } Memory_Pool;
 
 

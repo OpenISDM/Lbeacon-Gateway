@@ -125,6 +125,38 @@ void insert_entry_list(List_Entry *new_node,
 
 
 /*
+  is_entry_list_empty:
+
+     This function checks if the input List_Entry is empty.
+
+  Parameters:
+
+     entry - the struct of list entry to be checked
+
+  Return value:
+
+     bool - Return true if the list is empty. Otherwise, false if returned.
+*/
+bool is_entry_list_empty(List_Entry *entry);
+
+
+/*
+  is_isolated_node:
+
+     This function checks if the input node is isolated.
+
+  Parameters:
+
+     node - the node to be checked
+
+  Return value:
+
+     bool - Return true if the node is isolated. Otherwise, false if returned.
+*/
+bool is_isolated_node(List_Entry *node);
+
+
+/*
   insert_list_first:
 
      This function calls inserts a new node at the head of a specified list.
