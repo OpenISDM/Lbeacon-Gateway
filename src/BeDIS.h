@@ -125,15 +125,12 @@ is possibily transient failed.*/
 // Length of coordinates in number of bits
 #define COORDINATE_LENGTH 64
 
-//The port on which to listen for incoming data
-#define UDP_LISTEN_PORT 8888
-
 /* Number of bytes in the string format of epoch time */
 #define LENGTH_OF_EPOCH_TIME 11
 
 /* Timeout interval in seconds */
 #define WAITING_TIME 4
-#define A_SHORT_TIME 6
+#define A_SHORT_TIME 10
 
 typedef enum _ErrorCode{
 
@@ -350,7 +347,7 @@ ErrorCode startThread(pthread_t *threads, void *( *thfunct)(void *), void *arg);
      system_time - system time in seconds
 */
 
-long long get_system_time();
+long long unsigned get_system_time();
 
 /*
   memset:

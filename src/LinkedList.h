@@ -65,7 +65,7 @@
 
 /*Macro for the method going through the list structure */
 #define list_for_each(pos, head) \
-      for (pos = (head)->next; pos != (head); pos = pos->next)
+    for (pos = (head)->next; pos != (head); pos = pos->next)
 
 #define list_for_each_safe(pos, n, head) \
     for (pos = (head)->next, n = pos->next; pos != (head); \

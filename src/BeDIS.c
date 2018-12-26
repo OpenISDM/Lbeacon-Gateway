@@ -97,12 +97,12 @@ ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
 }
 
 
-long long get_system_time() {
+long long unsigned get_system_time() {
     /* A struct that stores the time */
     struct timeb t;
 
     /* Return value as a long long type */
-    long long system_time;
+    long long unsigned system_time;
 
     /* Convert time from Epoch to time in milliseconds of a long long type */
     ftime(&t);

@@ -46,8 +46,6 @@
 #include "pkt_Queue.h"
 
 
-#define UDP_LISTEN_PORT 8888    //The port on which to listen for incoming data
-
 #define UDP_SELECT_TIMEOUT 5    //second
 
 typedef struct udp_config_{
@@ -55,6 +53,8 @@ typedef struct udp_config_{
     struct sockaddr_in si_server;
 
     int  send_socket, recv_socket;
+
+    int recv_port;
 
     char Local_Address[NETWORK_ADDR_LENGTH];
 
@@ -87,7 +87,7 @@ set_socketopt_error = -4, recv_socket_bind_error = -5, addpkt_msg_oversize = -6}
      int : If return 0, everything work successfully.
            If not 0   , somthing wrong.
  */
-int udp_initial(pudp_config udp_config);
+int udp_initial(pudp_config udp_config, int recv_port);
 
 /*
   udp_addpkt

@@ -62,10 +62,10 @@
   Maximum length of time in second low priority message lists are starved
   of attention.
  */
-#define MAX_STARVATION_TIME 60
+#define MAX_STARVATION_TIME 20
 
 /* The length of period in number of seconds for polling data from LBeacon. */
-#define MAX_POLLING_TIME 100
+#define MAX_POLLING_TIME 60
 
 /* Maximum number of worker threads */
 #define MAX_NUM_WORK_THREADS 5
@@ -218,10 +218,6 @@ bool CommUnit_initialization_complete;
 bool BHM_initialization_complete;
 
 bool initialization_failed;
-
-long long init_time;
-long long poll_LBeacon_for_HR_time;
-
 
 /*
   get_config:

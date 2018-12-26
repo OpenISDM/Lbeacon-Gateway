@@ -136,16 +136,13 @@ int main(int argc, char **argv){
         sleep(WAITING_TIME);
 
         if(initialization_failed == true){
-            printf("FAIL\n");
             ready_to_work = false;
             return E_INITIALIZATION_FAIL;
         }
     }
-
     while(ready_to_work == true){
         // Do bookkeeping work
     }
-
     return 0;
 }
 
@@ -154,11 +151,9 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
-
         /* Error handling */
         //zlog_info(category_health_report, errordesc[E_OPEN_FILE].message);
         return E_OPEN_FILE;
-
     }
     else {
 
@@ -291,9 +286,8 @@ void *Initialize_network(){
 
     if(return_value != WORK_SUCCESSFULLY){
         initialization_failed = true;
-        //return return_value;
+        return (void *)NULL;
     }
-    //pthread_setschedprio(&Lbeacon_listener, HIGH_PRIORITY);
 
     NSI_initialization_complete = true;
     while( ready_to_work == true ){
@@ -303,29 +297,27 @@ void *Initialize_network(){
 
     /* The thread is going to be ended. Free the connection of Wifi */
     Wifi_free();
-    //return;
+
+    return (void *)NULL;
 }
 
 
 void *CommUnit_routine(){
 
+    long long unsigned init_time;
+    long long unsigned poll_LBeacon_for_HR_time;
+
     Threadpool thpool;
     int return_error_value;
-    bool is_reverse = false;
-
-    /* Set the initial time. */
-    init_time = get_system_time();
 
     //wait for NSI get ready
-    while( NSI_initialization_complete == false || ready_to_work == false){
-        printf("In Initial\n");
-        //sleep(WAITING_TIME);
+    while(NSI_initialization_complete == false){
+        sleep(WAITING_TIME);
         if(initialization_failed == true){
-            printf("QQ\n");
-            pthread_exit(NULL);
+            return (void *)NULL;
         }
     }
-    printf("NSI_INITIALIZATION\n");
+
     /* Initialize the threadpool with assigned number of worker threads
        according to the data stored in the config file. */
     thpool = thpool_init(config.Number_worker_threads);
@@ -333,91 +325,111 @@ void *CommUnit_routine(){
     /* Start counting down the time for polling the tracking data */
     poll_LBeacon_for_HR_time = get_system_time();
 
-    /* After all the buffer are initialized and the static threads are created,
+    /* Set the initial time. */
+    init_time = get_system_time();
+
+    printf("init_time:%llu\nget_system_time:%llu\n", init_time, get_system_time());
+    /* After all the buffer are initialized and the thread pool initialized,
     set the flag to true. */
     CommUnit_initialization_complete = true;
 
     /* When there is no dead thead, do the work. */
-    while(thpool -> num_threads_alive > 0){
+    while(ready_to_work == true){
+        printf("init_time:%llu\nget_system_time:%llu\n", init_time, get_system_time());
 
-        /* There is still idle worker thread is waiting for the work */
-        if(thpool -> num_threads_working < thpool -> num_threads_alive){
+        /* If it is the time to poll the tracking data from LBeacon, Make a
+        thread to do this work */
+        if(get_system_time() - poll_LBeacon_for_HR_time > MAX_POLLING_TIME){
+            /* Reset the poll_LBeacon_time */
+            poll_LBeacon_for_HR_time = get_system_time();
+        }
 
-            /* If it is the time to poll the tracking data from LBeacon, Make a
-            thread to do this work */
-            if(get_system_time() - poll_LBeacon_for_HR_time > MAX_POLLING_TIME){
+        /* In the normal situation, the scanning starts from the high
+           priority to lower priority. If the timer expired for
+           MAX_STARVATION_TIME, reverse the scanning process */
+        if(get_system_time() - init_time < MAX_STARVATION_TIME){
+            /* Scan the priority_array to get the corresponding work fro the
+               worker thread */
+            List_Entry *tmp;
 
-                /* Reset the poll_LBeacon_time */
-                poll_LBeacon_for_HR_time = get_system_time();
+            list_for_each(tmp, &Priority_buffer_list_head){
 
-            }
+                BufferListHead *current_head = ListEntry(tmp, BufferListHead
+                                                       , priority_entry);
 
-            /* In the normal situation, the scanning starts from the high
-            priority to lower priority. If the timer expired for
-            MAX_STARVATION_TIME, reverse the scanning process. */
-            if(get_system_time() - init_time < MAX_STARVATION_TIME){
-                /* Scan the priority_array to get the corresponding work fro the
-                   worker thread */
-                List_Entry *tmp;
+                pthread_mutex_lock( &current_head -> list_lock);
 
-                list_for_each(tmp, &Priority_buffer_list_head){
+                /* There is still idle worker thread is waiting for the work */
+                if ((thpool -> num_threads_working < thpool -> num_threads_alive
+                    ) && (is_entry_list_empty( &current_head->buffer_entry)
+                    == false)){
 
-                    BufferListHead *current_head = ListEntry(tmp, BufferListHead
-                                                           , priority_entry);
-                    pthread_mutex_lock( &current_head -> list_lock);
-
-                    if (is_entry_list_empty( &current_head->buffer_entry) != true){
-                        /* If there is a node in the buffer and the buffer is
-                           not be occupied, do the work according to the
-                           function pointer
-                         */
-
-                        return_error_value = thpool_add_work(thpool
-                                           , current_head -> function
-                                           , current_head
-                                           , current_head -> priority_boast);
-
-                        if(return_error_value != WORK_SUCCESSFULLY){
-                            //return return_error_value;
-                        }
+                    printf("In not starvation\n");
+                    /* If there is a node in the buffer and the buffer
+                       is not be occupied, do the work according to the
+                       function pointer */
+                    return_error_value = thpool_add_work(thpool
+                                       , current_head -> function
+                                       , current_head
+                                       , current_head -> priority_boast);
+                    if(return_error_value != WORK_SUCCESSFULLY){
+                        //return return_error_value;
                     }
-                    pthread_mutex_unlock( &current_head -> list_lock);
-                } // End list for each
-            }
-            else{
-                /* Scan the priority_array to get the corresponding work fro the
-                   worker thread */
-                List_Entry *tmp;
-
-                list_for_each_reverse(tmp, &Priority_buffer_list_head){
-
-                    BufferListHead *current_head = ListEntry(tmp, BufferListHead
-                                                           , priority_entry);
-                    pthread_mutex_lock(&current_head->list_lock);
-
-                    if (is_entry_list_empty( &current_head->buffer_entry) != true){
-                        /* If there is a node in the buffer and the buffer is
-                           not be occupied, do the work according to the
-                           function pointer
-                         */
-
-                        return_error_value = thpool_add_work(thpool
-                                           , current_head -> function
-                                           , current_head
-                                           , current_head -> priority_boast);
-
-                        if(return_error_value != WORK_SUCCESSFULLY){
-                            //return return_error_value;
-                        }
-                    }
-                    pthread_mutex_unlock(&current_head->list_lock);
                 }
-                /* Reset the inital time */
-                init_time = get_system_time();
+                else{
+                    printf("In not starvation else\n");
+                }
+                pthread_mutex_unlock( &current_head -> list_lock);
+            } // End list for each
+        }
+        else{
+            /* Scan the priority_array to get the corresponding work fro the
+               worker thread */
+
+            List_Entry *tmp;
+
+            int count = 0;
+
+            list_for_each_reverse(tmp, &Priority_buffer_list_head){
+
+                BufferListHead *current_head = ListEntry(tmp, BufferListHead
+                                                       , priority_entry);
+                pthread_mutex_lock(&current_head->list_lock);
+
+                /* There is still idle worker thread is waiting for the work */
+                if ((thpool -> num_threads_working < thpool -> num_threads_alive
+                    ) && (is_entry_list_empty( &current_head->buffer_entry)
+                    == false)){
+
+                    printf("In starvation\n");
+
+                    /* If there is a node in the buffer and the buffer
+                       is not be occupied, do the work according to the
+                       function pointer */
+                    return_error_value = thpool_add_work(thpool
+                                       , current_head -> function
+                                       , current_head
+                                       , current_head -> priority_boast);
+                    if(return_error_value != WORK_SUCCESSFULLY){
+                        //return return_error_value;
+                    }
+                }
+                else{
+                    printf("In starvation else\n");
+                }
+                pthread_mutex_unlock(&current_head->list_lock);
+                sleep(A_SHORT_TIME);
+                printf("count %d\n", count++);
             }
-        } // End if
+            printf("I'm sleeping\n");
+            sleep(10000);
+
+            /* Reset the inital time */
+            init_time = get_system_time();
+        }
+        sleep(A_SHORT_TIME);
     } //End while
-    printf("thpool_destroy\n");
+
     /* Destroy the thread pool */
     thpool_destroy(thpool);
 
@@ -449,11 +461,16 @@ void *Process_message(void *buffer_head){
             printf("I'm not Command\n");
             char *type = hex_to_char( &temp->content[0], 1);
 
+            printf("type %c\n", type[1]);
+
             unsigned char join_type;
 
             sprintf(&join_type, "%x", request_to_join);
 
-            if (type[0] == join_type){
+            printf("join type %c\n", join_type);
+            printf("%d\n", type[1]);
+            printf("%d\n", join_type);
+            if (type[1] == join_type){
                 printf("Start JOIN\n");
 
                 char type[2];
@@ -503,9 +520,10 @@ void *Process_message(void *buffer_head){
             pthread_mutex_unlock(&BHM_send_buffer_list_head.list_lock);
         }
         else{
+            printf("WHAT?\n");
         }
     }
-
+    printf("CCC\n");
     pthread_mutex_unlock(&buffer->list_lock);
 
     //return;
@@ -541,7 +559,7 @@ int Wifi_init(char *IPaddress){
     array_copy(IPaddress, udp_config.Local_Address, strlen(IPaddress));
 
     /* Initialize the Wifi cinfig file */
-    if(udp_initial(&udp_config) != WORK_SUCCESSFULLY){
+    if(udp_initial(&udp_config, 8888) != WORK_SUCCESSFULLY){
 
         /* Error handling TODO */
         return E_WIFI_INIT_FAIL;

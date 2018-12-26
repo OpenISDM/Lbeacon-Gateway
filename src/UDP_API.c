@@ -37,7 +37,7 @@
 #include "UDP_API.h"
 
 
-int udp_initial(pudp_config udp_config){
+int udp_initial(pudp_config udp_config, int recv_port){
 
     int ret;
 
@@ -73,7 +73,7 @@ int udp_initial(pudp_config udp_config){
         return set_socketopt_error;
 
     udp_config -> si_server.sin_family = AF_INET;
-    udp_config -> si_server.sin_port = htons(UDP_LISTEN_PORT);
+    udp_config -> si_server.sin_port = htons(recv_port);
     udp_config -> si_server.sin_addr.s_addr = htonl(INADDR_ANY);
 
     udp_config -> shutdown = false;
@@ -139,7 +139,7 @@ void *udp_send_pkt(void *udpconfig){
 
                 memset(&si_send, 0, sizeof(si_send));
                 si_send.sin_family = AF_INET;
-                si_send.sin_port   = htons(UDP_LISTEN_PORT);
+                si_send.sin_port   = htons(udp_config -> recv_port);
 
                 if (inet_aton(dest_address, &si_send.sin_addr) == 0)
 
