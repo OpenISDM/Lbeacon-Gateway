@@ -68,10 +68,10 @@ inline bool is_entry_list_empty(List_Entry *entry){
 
 inline bool is_isolated_node(List_Entry *node){
 
-        if(node == node->next){
-	    return true;
-	}
-	return false;
+    if(node == node->next){
+        return true;
+    }
+    return false;
 }
 
 

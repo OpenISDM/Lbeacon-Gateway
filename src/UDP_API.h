@@ -43,6 +43,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <errno.h> 
 #include "pkt_Queue.h"
 
 

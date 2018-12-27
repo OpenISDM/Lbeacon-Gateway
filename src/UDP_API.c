@@ -78,6 +78,8 @@ int udp_initial(pudp_config udp_config, int recv_port){
 
     udp_config -> shutdown = false;
 
+    udp_config -> recv_port = recv_port;
+
     //bind recv socket to port
     if( bind(udp_config -> recv_socket , (struct sockaddr *)&udp_config ->
              si_server, sizeof(udp_config -> si_server) ) == -1)
@@ -135,20 +137,17 @@ void *udp_send_pkt(void *udpconfig){
             else{
                 char *dest_address = udp_hex_to_address(current_send_pkt.address);
 
-                printf("Dest Address : %s\n", dest_address );
-
-                memset(&si_send, 0, sizeof(si_send));
+                bzero(&si_send, sizeof(si_send));
                 si_send.sin_family = AF_INET;
                 si_send.sin_port   = htons(udp_config -> recv_port);
 
                 if (inet_aton(dest_address, &si_send.sin_addr) == 0)
-
                     perror("inet_aton error.\n");
 
                 if (sendto(udp_config -> send_socket, current_send_pkt.content
                   , current_send_pkt.content_size, 0, (struct sockaddr *) &si_send
-                  , socketaddr_len) == -1)
-                    perror("recvfrom error.\n");
+                  , sizeof(struct sockaddr)) == -1)
+                    printf("sendto error.[%s]\n", strerror(errno));
             }
         }
     }
@@ -196,10 +195,11 @@ void *udp_recv_pkt(void *udpconfig){
             printf("Received packet from %s:%d\n", inet_ntoa(si_recv.sin_addr),
                                                    ntohs(si_recv.sin_port));
             printf("Data: %s\n" , recv_buf);
+            printf("Data Length %d\n", recv_len);
 
             addpkt(&udp_config -> Received_Queue, UDP
                  , udp_address_reduce_point(inet_ntoa(si_recv.sin_addr))
-                 , recv_buf, strlen(recv_buf));
+                 , recv_buf, recv_len);
         }
         else
             perror("else recvfrom error.\n");

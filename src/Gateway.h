@@ -117,8 +117,6 @@ typedef struct{
     /* network address of wifi link to the LBeacon*/
     char net_address[NETWORK_ADDR_LENGTH];
 
-    Coordinates beacon_coordinates;
-
 }Address_map;
 
 
@@ -344,16 +342,13 @@ void *Process_message(void *buffer_head);
 
      ID - The UUIzd of the LBeacon
      mac - The mac address of the xbee
-     Coordinates - Pointerto the beacon coordinates
-     Loc_Description - Pointer to the beacon literal location description
 
   Return value:
 
      None
 
  */
-void beacon_join_request(char *ID, char *address
-                       , Coordinates Beacon_Coordinates);
+void beacon_join_request(char *ID, char *address);
 
 
 /*
