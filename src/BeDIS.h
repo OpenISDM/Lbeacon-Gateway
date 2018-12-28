@@ -129,7 +129,7 @@ is possibily transient failed.*/
 #define LENGTH_OF_EPOCH_TIME 11
 
 /* Timeout interval in seconds */
-#define WAITING_TIME 4
+#define WAITING_TIME 30
 #define A_SHORT_TIME 10
 
 typedef enum _ErrorCode{

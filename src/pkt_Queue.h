@@ -47,19 +47,11 @@
 // If need to debug.
 #define debugging
 
-#define Gateway   "0000000000000000"
-#define Broadcast "000000000000FFFF"
-
-
 /* Length of address of the network */
 #define NETWORK_ADDR_LENGTH 16
-//define the maximum pkt length per pkt.
-#define MAX_XBEE_PKT_LENGTH 100
 
 /* Length of address of the network in Hex */
 #define NETWORK_ADDR_LENGTH_HEX 8
-//define the maximum data length per pkt.
-#define MAX_XBEE_DATA_LENGTH 90
 
 /* Maximum length of message to be sent over WiFi in bytes */
 #define MESSAGE_LENGTH 4096

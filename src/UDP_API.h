@@ -43,11 +43,12 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <errno.h> 
+#include <errno.h>
 #include "pkt_Queue.h"
 
 
-#define UDP_SELECT_TIMEOUT 5    //second
+#define UDP_SELECT_TIMEOUT 30    //second
+#define SEND_NULL_SLEEP 30
 
 typedef struct udp_config_{
 

@@ -81,13 +81,24 @@ int main(int argc, char **argv){
     init_entry(&Priority_buffer_list_head);
     init_Address_map(&LBeacon_Address_Map);
 
+    /* Initialize the buffer_list_heads and add to the buffer array in the
+    order of priority. Each buffer has the corresponding function pointer. */
+
     init_buffer(&Time_critical_LBeacon_receive_buffer_list_head,
                 (void *) Process_message, HIGH_PRIORITY);
     insert_list_tail(&Time_critical_LBeacon_receive_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
-    /* Initialize the buffer_list_heads and add to the buffer array in the
-    order of priority. Each buffer has the corresponding function pointer. */
+    init_buffer(&NSI_send_buffer_list_head,
+                (void *) wifi_send, NORMAL_PRIORITY);
+    insert_list_tail(&NSI_send_buffer_list_head.priority_entry
+                    , &Priority_buffer_list_head);
+
+    init_buffer(&NSI_receive_buffer_list_head,
+                (void *) NSI_Process , NORMAL_PRIORITY);
+    insert_list_tail(&NSI_receive_buffer_list_head.priority_entry
+                    , &Priority_buffer_list_head);
+
     init_buffer(&LBeacon_receive_buffer_list_head,
                 (void *) Process_message, HIGH_PRIORITY);
     insert_list_tail(&LBeacon_receive_buffer_list_head.priority_entry
@@ -119,7 +130,7 @@ int main(int argc, char **argv){
                     , &Priority_buffer_list_head);
 
     /* Network Setup and Initialization for Wi-Fi */
-    return_value = startThread(&NSI_thread, Initialize_network, NULL);
+    return_value = startThread(&NSI_thread, NSI_routine, NULL);
 
     if(return_value != WORK_SUCCESSFULLY) return return_value;
 
@@ -127,7 +138,6 @@ int main(int argc, char **argv){
     return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
 
     if(return_value != WORK_SUCCESSFULLY) return return_value;
-
 
     while(NSI_initialization_complete == false ||
           CommUnit_initialization_complete == false ||
@@ -258,7 +268,7 @@ void init_Address_map(Address_map_head *LBeacon_map){
 }
 
 
-void *Initialize_network(){
+void *NSI_routine(){
 
     int return_value;
 
@@ -293,8 +303,49 @@ void *Initialize_network(){
 
     NSI_initialization_complete = true;
     while( ready_to_work == true ){
-        /* Nothing to do, go to sleep. */
-        sleep(WAITING_TIME);
+
+        pthread_mutex_lock(&NSI_receive_buffer_list_head.list_lock);
+
+        if(is_entry_list_empty( &NSI_receive_buffer_list_head.buffer_entry) == false){
+
+            /* Create a temporary node and set as the head */
+            struct List_Entry *list_pointers, *save_list_pointers;
+            list_for_each_safe(list_pointers, save_list_pointers
+                                            , &NSI_receive_buffer_list_head.buffer_entry){
+                remove_list_node(list_pointers);
+
+                BufferNode *temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+
+                int send_type = ((from_gateway & 0x0f)<<4) + (join_request_ack & 0x0f);
+
+                temp->content[0] = (char)send_type;
+
+                pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
+                /* Insert the node to the input buffer, and release
+                   list_lock. */
+
+                insert_list_tail(&temp->buffer_entry
+                               , &NSI_send_buffer_list_head.buffer_entry);
+
+                char current_uuid[UUID_LENGTH];
+
+                memcpy(current_uuid, &temp->content[3], UUID_LENGTH);
+
+                beacon_join_request(current_uuid, temp -> net_address);
+
+                pthread_mutex_unlock(&NSI_send_buffer_list_head.
+                                     list_lock);
+
+                pthread_mutex_unlock(&NSI_receive_buffer_list_head.list_lock);
+
+                mp_free(&node_mempool, temp);
+            }
+
+        }
+        else{
+            pthread_mutex_unlock(&NSI_receive_buffer_list_head.list_lock);
+            sleep(WAITING_TIME);
+        }
     }
 
     /* The thread is going to be ended. Free the connection of Wifi */
@@ -431,6 +482,14 @@ void *CommUnit_routine(){
 }
 
 
+void *NSI_Process(void *buffer_head){
+
+    BufferListHead *buffer = (BufferListHead *)buffer_head;
+
+
+}
+
+
 void *Process_message(void *buffer_head){
 
     BufferListHead *buffer = (BufferListHead *)buffer_head;
@@ -457,35 +516,21 @@ void *Process_message(void *buffer_head){
 
             if (type == request_to_join){
 
-                int send_type = ((from_gateway & 0x0f)<<4) + (join_request_ack & 0x0f);
-
-                temp->content[0] = (char)send_type;
-
-                pthread_mutex_lock(&LBeacon_send_buffer_list_head.list_lock);
-                /* Insert the node to the input buffer, and release
-                   list_lock. */
-
-                insert_list_first(&temp->buffer_entry
-                               , &LBeacon_send_buffer_list_head.buffer_entry);
-
-                char current_uuid[UUID_LENGTH];
-
-                memcpy(current_uuid, &temp->content[3], UUID_LENGTH);
-
-                print_content(current_uuid, UUID_LENGTH);
-
-                beacon_join_request(current_uuid, temp -> net_address);
-
-                pthread_mutex_unlock(&LBeacon_send_buffer_list_head.
-                                     list_lock);
+                pthread_mutex_lock(&NSI_receive_buffer_list_head.list_lock);
+                insert_list_tail(&temp->buffer_entry
+                               , &NSI_receive_buffer_list_head.buffer_entry);
+                pthread_mutex_unlock(&NSI_receive_buffer_list_head.list_lock);
 
             }
             else{
-                printf("Not join\n");
+
                 memset(temp -> net_address, 0, NETWORK_ADDR_LENGTH * sizeof(char));
                 memcpy(temp -> net_address, config.SERVER_IP, sizeof(config.SERVER_IP));
+                pthread_mutex_lock(&Server_send_buffer_list_head.list_lock);
                 insert_list_tail(&temp->buffer_entry
                                , &Server_send_buffer_list_head.buffer_entry);
+                pthread_mutex_unlock(&Server_send_buffer_list_head.list_lock);
+
             }
         }
         else if( buffer == &Command_msg_buffer_list_head){
@@ -496,14 +541,17 @@ void *Process_message(void *buffer_head){
             insert_list_tail(&temp->buffer_entry
                            , &LBeacon_send_buffer_list_head.buffer_entry);
             pthread_mutex_unlock(&LBeacon_send_buffer_list_head.list_lock);
+
         }
         else if( buffer == &BHM_receive_buffer_list_head){
+
             memset(temp -> net_address, 0, NETWORK_ADDR_LENGTH * sizeof(char));
             memcpy(temp -> net_address, config.SERVER_IP, sizeof(config.SERVER_IP));
             pthread_mutex_lock(&BHM_send_buffer_list_head.list_lock);
             insert_list_tail(&temp->buffer_entry
                            , &BHM_send_buffer_list_head.buffer_entry);
             pthread_mutex_unlock(&BHM_send_buffer_list_head.list_lock);
+
         }
         else{
         }
@@ -519,6 +567,7 @@ void beacon_join_request(char *ID, char *address){
     pthread_mutex_lock(&LBeacon_Address_Map.list_lock);
     /* Copy all the necessary information received from the LBeacon to the
        address map. */
+
     int not_in_use = -1;
 
     for(int n = 0;n<MAX_NUMBER_NODES;n++){

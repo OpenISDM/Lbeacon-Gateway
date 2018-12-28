@@ -62,7 +62,7 @@
   Maximum length of time in second low priority message lists are starved
   of attention.
  */
-#define MAX_STARVATION_TIME 20
+#define MAX_STARVATION_TIME 300
 
 /* The length of period in number of seconds for polling data from LBeacon. */
 #define MAX_POLLING_TIME 60
@@ -188,6 +188,10 @@ Address_map_head LBeacon_Address_Map;
 
 /* Message buffer list heads */
 BufferListHead Time_critical_LBeacon_receive_buffer_list_head;
+/* For beacon join request */
+BufferListHead NSI_send_buffer_list_head;
+/* For return join request status */
+BufferListHead NSI_receive_buffer_list_head;
 /* For data from server to be send to LBeacons */
 BufferListHead LBeacon_send_buffer_list_head;
 /* For data from server tobe send to LBeacon */
@@ -274,7 +278,7 @@ void init_Address_map(Address_map_head *LBeacon_map);
 
 
 /*
-  Initialize_network:
+  NSI_routine:
 
      This function initializes and the star network with the gateway at the root
      connecting LBeacons in the network. This the function executed by the
@@ -288,7 +292,7 @@ void init_Address_map(Address_map_head *LBeacon_map);
 
      None
  */
-void *Initialize_network();
+void *NSI_routine();
 
 
 /*
@@ -309,6 +313,23 @@ void *Initialize_network();
 
  */
 void *CommUnit_routine();
+
+/*
+  NSI_Process:
+
+     This is the function would be executed by worker threads which processed
+     the data node in NSI_receive_buffer. In current version, do nothing.
+
+  Parameters:
+
+     buffer - A pointer of the buffer to be modified.
+
+  Return value:
+
+     None
+
+ */
+void *NSI_Process(void *buffer_head);
 
 
 /*

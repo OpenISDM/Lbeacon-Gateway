@@ -99,8 +99,6 @@ int udp_addpkt(pudp_config udp_config, char *raw_addr, char *content, int size){
     if(size > MESSAGE_LENGTH)
         return addpkt_msg_oversize;
 
-    const int UDP = 3;
-
     char *removed_address = udp_address_reduce_point(raw_addr);
 
     addpkt(&udp_config -> pkt_Queue, UDP, removed_address, content, size);
@@ -131,10 +129,7 @@ void *udp_send_pkt(void *udpconfig){
 
             sPkt current_send_pkt = get_pkt(&udp_config -> pkt_Queue);
 
-            if (current_send_pkt.type != UDP){
-
-            }
-            else{
+            if (current_send_pkt.type == UDP){
                 char *dest_address = udp_hex_to_address(current_send_pkt.address);
 
                 bzero(&si_send, sizeof(si_send));
@@ -150,9 +145,11 @@ void *udp_send_pkt(void *udpconfig){
                     printf("sendto error.[%s]\n", strerror(errno));
             }
         }
-    }
+        else{
+            sleep(SEND_NULL_SLEEP);
+        }
 
-    printf("Exit Send.\n");
+    }
 
     return (void *)NULL;
 }
