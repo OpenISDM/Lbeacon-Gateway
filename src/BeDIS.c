@@ -1,3 +1,47 @@
+/*
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
+
+  License:
+
+     GPL 3.0 : The content of this file is subject to the terms and cnditions
+     defined in file 'COPYING.txt', which is part of this source code package.
+
+  Project Name:
+
+     BeDIS
+
+  File Description:
+
+     This file, contain the definitions and declarations of constant structure.
+     and function used in both Gateway and LBeacon.
+
+  File Name:
+
+     BeDIS.h
+
+  Abstract:
+
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
+     area.
+
+  Authors:
+
+     Gary Xiao     , garyh0205@hotmail.com
+     Joey Zhou     , joeyzhou5566@gmail.com
+     Holly Wang    , hollywang@iis.sinica.edu.tw
+     Jake Lee      , jakelee@iis.sinica.edu.tw
+     Johnson Su    , johnsonsu@iis.sinica.edu.tw
+     Shirley Huang , shirley.huang.93@gmail.com
+
+
+ */
+
 #include "BeDIS.h"
 
 errordesc ErrorDesc [] = {
@@ -76,7 +120,7 @@ unsigned int twoc(int in, int t) {
 }
 
 
-void ctrlc_handler(int stop) { g_done = true; }
+void ctrlc_handler(int stop) { ready_to_work = false; }
 
 
 ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
@@ -84,8 +128,8 @@ ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
     pthread_attr_t attr;
 
     if ( pthread_attr_init( &attr) != 0
-      || pthread_create(threads, &attr, thfunct, arg) != 0
-      || pthread_detach( *threads)){
+    || pthread_create(threads, &attr, thfunct, arg) != 0
+    || pthread_detach( *threads)){
 
           printf("Start Thread Error.\n");
           return E_START_THREAD;

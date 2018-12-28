@@ -50,6 +50,19 @@
 #define UDP_SELECT_TIMEOUT 30    //second
 #define SEND_NULL_SLEEP 30
 
+typedef struct udp_config_beacon{
+
+    char send_ipv4_addr[NETWORK_ADDR_LENGTH];
+    int send_portno;
+    spkt_ptr send_pkt_queue;
+
+    struct sockaddr_in si_recv;
+    int recv_portno;
+    int  recv_socket;
+    spkt_ptr recv_pkt_queue;
+
+} sudp_config_beacon;
+
 typedef struct udp_config_{
 
     struct sockaddr_in si_server;

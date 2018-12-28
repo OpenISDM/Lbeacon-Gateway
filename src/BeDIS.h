@@ -34,12 +34,12 @@
 
      Gary Xiao     , garyh0205@hotmail.com
      Joey Zhou     , joeyzhou5566@gmail.com
+     Holly Wang    , hollywang@iis.sinica.edu.tw
      Jake Lee      , jakelee@iis.sinica.edu.tw
      Johnson Su    , johnsonsu@iis.sinica.edu.tw
      Shirley Huang , shirley.huang.93@gmail.com
-     Han Hu        , hhu14@illinois.edu
-     Jeffrey Lin   , lin.jeff03@gmail.com
-     Howard Hsu    , haohsu0823@gmail.com
+
+
  */
 
 #ifndef BEDIS_H
@@ -81,8 +81,7 @@
 #include "UDP_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
-//#include "zlog.h"
-
+#include "zlog.h"
 
 /* Parameter that marks the start of the config file */
 #define DELIMITER "="
@@ -93,6 +92,10 @@
 /* Times of retrying to open file, because file openning operation
 is possibily transient failed. */
 #define FILE_OPEN_RETRY 5
+
+/* Times of retrying to get dongle, because this operation
+is possibily transient failed.*/
+#define DONGLE_GET_RETRY 5
 
 /* Times of retrying to open socket, because socket openning operation
 is possibily transient failed.*/
@@ -107,9 +110,6 @@ is possibily transient failed.*/
 /* Length of address of the network in Hex */
 #define NETWORK_ADDR_LENGTH_HEX 8
 
-/* The maxinum length in bytes of the message to be sent over zigbee link */
-#define ZIG_MESSAGE_LENGTH 104
-
 /* Maximum length of message to be sent over WiFi in bytes */
 #define WIFI_MESSAGE_LENGTH 4096
 
@@ -122,14 +122,23 @@ is possibily transient failed.*/
 /* Length of the Lbeacon's UUID in a number of characters */
 #define UUID_LENGTH 32
 
+// Legnth of temporary buffer
+#define BUFFER_LENGTH 1024
+
 // Length of coordinates in number of bits
 #define COORDINATE_LENGTH 64
+
+//The port on which to listen for incoming data
+#define UDP_LISTEN_PORT 8888
 
 /* Number of bytes in the string format of epoch time */
 #define LENGTH_OF_EPOCH_TIME 11
 
+/* Time interval in seconds for busy-wait checking in threads */
+#define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_SEC 3
+
 /* Timeout interval in seconds */
-#define WAITING_TIME 30
+#define WAITING_TIME 3
 #define A_SHORT_TIME 10
 
 typedef enum _ErrorCode{
@@ -176,6 +185,7 @@ typedef enum _ErrorCode{
 
 } ErrorCode;
 
+
 typedef struct _errordesc {
     ErrorCode code;
     char *message;
@@ -200,7 +210,6 @@ union {
 
     float f;
     unsigned char b[sizeof(float)];
-    int d[2];
 
 } coordinate_X;
 
@@ -219,12 +228,10 @@ union {
 } coordinate_Z;
 
 
-/* A flag that is used to check if CTRL-C is pressed */
-bool g_done;
-
 /* A global flag that is initially set to true by the main thread. It is set
    to false by any thread when the thread encounters a fatal error,
-   indicating that it is about to exit. */
+   indicating that it is about to exit. In addition, if user presses Ctrl+C,
+   the ready_to_work will be set as false to stop all threadts. */
 bool ready_to_work;
 
 /* Type of device to be tracked. */
@@ -236,6 +243,8 @@ typedef enum DeviceType {
 
 } DeviceType;
 
+/* The pointer to the category of the log file */
+zlog_category_t *category_health_report, *category_debug;
 
 typedef enum pkt_types {
 
@@ -259,7 +268,6 @@ typedef enum pkt_direction {
     from_beacon = 0
 
 } PktDirection;
-
 
 // FUNCTIONS
 
@@ -299,8 +307,8 @@ unsigned int twoc(int in, int t);
 /*
  ctrlc_handler:
 
-     If the user presses CTRL-C, the global variable g_done will be set to true,
-     and a signal will be thrown to stop running the LBeacon program.
+     If the user presses CTRL-C, the global variable ready_to_work will be set
+     to false, and a signal will be thrown to stop running the program.
 
  Parameters:
 
