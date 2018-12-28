@@ -249,10 +249,12 @@ void init_Address_map(Address_map_head *LBeacon_map){
 
     pthread_mutex_init( &LBeacon_map->list_lock, 0);
 
-    LBeacon_map->num_in_list = 0;
-
     memset(LBeacon_map->Address_map_list, 0
          , sizeof(LBeacon_map->Address_map_list));
+
+    for(int n=0; n < MAX_NUMBER_NODES; n++){
+        LBeacon_map->Address_map_list[n].in_use = reset_bit;
+    }
 }
 
 
@@ -451,7 +453,7 @@ void *Process_message(void *buffer_head){
            buffer  */
         if ( buffer == &LBeacon_receive_buffer_list_head){
 
-            int type = temp->content[0] & 0x0F;
+            int type = temp->content[0] & 0x0f;
 
             if (type == request_to_join){
 
@@ -466,13 +468,24 @@ void *Process_message(void *buffer_head){
                 insert_list_first(&temp->buffer_entry
                                , &LBeacon_send_buffer_list_head.buffer_entry);
 
-                int len = get_list_length(&LBeacon_send_buffer_list_head.buffer_entry);
+                char current_uuid[UUID_LENGTH];
 
-                beacon_join_request("0", temp -> net_address);
+                memcpy(current_uuid, &temp->content[3], UUID_LENGTH);
+
+                print_content(current_uuid, UUID_LENGTH);
+
+                beacon_join_request(current_uuid, temp -> net_address);
 
                 pthread_mutex_unlock(&LBeacon_send_buffer_list_head.
                                      list_lock);
 
+            }
+            else{
+                printf("Not join\n");
+                memset(temp -> net_address, 0, NETWORK_ADDR_LENGTH * sizeof(char));
+                memcpy(temp -> net_address, config.SERVER_IP, sizeof(config.SERVER_IP));
+                insert_list_tail(&temp->buffer_entry
+                               , &Server_send_buffer_list_head.buffer_entry);
             }
         }
         else if( buffer == &Command_msg_buffer_list_head){
@@ -506,11 +519,41 @@ void beacon_join_request(char *ID, char *address){
     pthread_mutex_lock(&LBeacon_Address_Map.list_lock);
     /* Copy all the necessary information received from the LBeacon to the
        address map. */
-    LBeacon_Address_Map.num_in_list += 1;
-    Address_map *tmp = &LBeacon_Address_Map
-                       .Address_map_list[LBeacon_Address_Map.num_in_list];
-    strcpy(tmp -> beacon_uuid, ID);
-    strcpy(tmp -> net_address, address);
+    int not_in_use = -1;
+
+    for(int n = 0;n<MAX_NUMBER_NODES;n++){
+        Address_map *current_addrmap = &LBeacon_Address_Map.Address_map_list[n];
+        printf("current_bit [%d]\ncurrent_address [%s]\n", current_addrmap->in_use, address);
+        if (current_addrmap->in_use == set_bit){
+            printf("current addrmap [%s]\n", current_addrmap->net_address);
+        }
+        if(current_addrmap->in_use == set_bit && strcmp(address, current_addrmap->net_address) == 0){
+            printf("In list\n");
+            return (void )NULL;
+        }
+        else if(current_addrmap->in_use == reset_bit && not_in_use == -1){
+            printf("not in use\n");
+            not_in_use = n;
+        }
+        else{
+            printf("map in else\n");
+        }
+    }
+
+    if (not_in_use != -1){
+        Address_map *tmp = &LBeacon_Address_Map
+                           .Address_map_list[not_in_use];
+
+        tmp->in_use = set_bit;
+
+        strncpy(tmp -> beacon_uuid, ID, UUID_LENGTH);
+        strncpy(tmp -> net_address, address, NETWORK_ADDR_LENGTH);
+        printf("Map Inserted\n");
+    }
+    else{
+        printf("Map Full\n");
+    }
+
 
     pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
 

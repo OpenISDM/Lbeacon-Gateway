@@ -79,6 +79,7 @@
 #define NORMAL_PRIORITY 0
 #define LOW_PRIORITY 2
 
+typedef enum bit_{set_bit = 1, reset_bit = 0} bit;
 
 /* The configuration file structure */
 typedef struct Config {
@@ -112,6 +113,8 @@ typedef struct Config {
     coordinates, and location description. */
 typedef struct{
 
+    bit in_use:1;
+
     char beacon_uuid[UUID_LENGTH];
 
     /* network address of wifi link to the LBeacon*/
@@ -124,9 +127,6 @@ typedef struct{
 
     /* A per list lock */
     pthread_mutex_t list_lock;
-
-    /* Current number of msg buffers in the list */
-    int num_in_list;
 
     Address_map Address_map_list[MAX_NUMBER_NODES];
 
@@ -416,6 +416,5 @@ void *wifi_send(void *buffer_head);
      None
  */
 void *wifi_receive();
-
 
 #endif
