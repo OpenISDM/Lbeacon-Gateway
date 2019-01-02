@@ -56,6 +56,8 @@ typedef struct udp_config_{
 
     int  send_socket, recv_socket;
 
+    int send_port;
+
     int recv_port;
 
     char Local_Address[NETWORK_ADDR_LENGTH];
@@ -89,7 +91,7 @@ set_socketopt_error = -4, recv_socket_bind_error = -5, addpkt_msg_oversize = -6}
      int : If return 0, everything work successfully.
            If not 0   , somthing wrong.
  */
-int udp_initial(pudp_config udp_config, int recv_port);
+int udp_initial(pudp_config udp_config, int send_port, int recv_port);
 
 /*
   udp_addpkt

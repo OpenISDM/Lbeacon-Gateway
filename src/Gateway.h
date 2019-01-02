@@ -146,7 +146,6 @@ typedef struct BufferNode{
 
     int content_size;
 
-
 } BufferNode;
 
 
@@ -264,7 +263,7 @@ void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
 /*
   init_Address_map:
 
-     The function initialize the head of the Address_map.
+     This function initialize the head of the Address_map.
 
   Parameters:
 
@@ -275,6 +274,22 @@ void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
      None
  */
 void init_Address_map(Address_map_head *LBeacon_map);
+
+
+/*
+  is_in_Address_map:
+
+     This function check whether the address is in Address_Map.
+
+  Parameters:
+
+     address: the address we decide to compare.
+
+  Return value:
+
+     bool: If return true means in the address map, else false.
+ */
+bool is_in_Address_map(char *address);
 
 
 /*
@@ -361,8 +376,8 @@ void *Process_message(void *buffer_head);
 
   Parameters:
 
-     ID - The UUIzd of the LBeacon
-     mac - The mac address of the xbee
+     ID - The UUID of the LBeacon
+     mac - The mac address of the Wi-Fi.
 
   Return value:
 
@@ -370,6 +385,25 @@ void *Process_message(void *buffer_head);
 
  */
 void beacon_join_request(char *ID, char *address);
+
+
+/*
+  beacon_brocast:
+
+     This function is executed when a command need to brocast to beacons.
+     When call this function, it will send msg to all beacons registered in the
+     address_map.
+
+  Parameters:
+    msg - The msg prepare to send to beacons.
+    size - The size of the msg.
+
+  Return value:
+
+     None
+
+ */
+void beacon_broadcast(char *msg, int size);
 
 
 /*
