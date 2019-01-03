@@ -185,24 +185,20 @@ Memory_Pool node_mempool;
 /* A list of address maps */
 Address_map_head LBeacon_Address_Map;
 
+/* For data from server tobe send to LBeacon */
+BufferListHead LBeacon_receive_buffer_list_head;
+/* For polling tracked object data from Lbeacons and msgs define by BHM */
+BufferListHead Command_msg_buffer_list_head;
 /* Message buffer list heads */
 BufferListHead Time_critical_LBeacon_receive_buffer_list_head;
 /* For beacon join request */
 BufferListHead NSI_send_buffer_list_head;
 /* For return join request status */
 BufferListHead NSI_receive_buffer_list_head;
-/* For data from server to be send to LBeacons */
-BufferListHead LBeacon_send_buffer_list_head;
-/* For data from server tobe send to LBeacon */
-BufferListHead LBeacon_receive_buffer_list_head;
-/* For data collected from LBeacons to be send to Server. */
-BufferListHead Server_send_buffer_list_head;
-/* For health report from LBeacons */
-BufferListHead BHM_receive_buffer_list_head;
 /* For processing health report to be send to LBeacons */
 BufferListHead BHM_send_buffer_list_head;
-/* For polling tracked object data from Lbeacons and msgs define by BHM */
-BufferListHead Command_msg_buffer_list_head;
+/* For health report from LBeacons */
+BufferListHead BHM_receive_buffer_list_head;
 
 /* An array of buffer_list_head in the priority order. */
 List_Entry Priority_buffer_list_head;
@@ -346,9 +342,9 @@ void *CommUnit_routine();
  */
 void *NSI_Process(void *buffer_head);
 
-
+void *BHM_Process(void *buffer_head);
 /*
-  Process_message:
+  LBeacon_Process:
 
      This is the function would be executed by worker threads which proceesed
      the data node in LBeacon_receive_buffer, Command_msg_buffer and
@@ -364,7 +360,27 @@ void *NSI_Process(void *buffer_head);
      None
 
  */
-void *Process_message(void *buffer_head);
+void *LBeacon_Process(void *buffer_head);
+
+
+/*
+  Gateway_Process:
+
+     This is the function would be executed by worker threads which proceesed
+     the data node in LBeacon_receive_buffer, Command_msg_buffer and
+     BHM_receive_buffer. This function remanages the node to be added to the
+     new buffer or removed from the orignal buffer.
+
+  Parameters:
+
+     buffer - A pointer of the buffer to be modified.
+
+  Return value:
+
+     None
+
+ */
+void *Gateway_Process(void *buffer_head);
 
 
 /*

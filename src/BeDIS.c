@@ -120,9 +120,9 @@ unsigned int twoc(int in, int t) {
 }
 
 void trim_string_tail(char *message) {
- 
+
     int idx = 0;
-   
+
     // discard the whitespace, newline, carry-return characters at the end
     if(strlen(message) > 0){
 
@@ -159,17 +159,18 @@ ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
 }
 
 
-long long unsigned get_system_time() {
+int get_system_time() {
     /* A struct that stores the time */
     struct timeb t;
 
     /* Return value as a long long type */
-    long long unsigned system_time;
+    int system_time;
 
     /* Convert time from Epoch to time in milliseconds of a long long type */
     ftime(&t);
-    //system_time = 1000 * (long long)t.time + (long long)t.millitm;  //millisecond ver.
-    system_time = t.time;
+    //system_time = 1000 * (long long)t.time + (long long)t.millitm;
+    //millisecond ver.
+    system_time = (int)t.time;
 
     return system_time;
 }

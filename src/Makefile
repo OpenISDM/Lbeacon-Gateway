@@ -6,7 +6,7 @@ CFLAGS = -std=gnu99 -lrt -lpthread
 
 #---------------------------------------------------------------------------
 all: clean Gateway.out
-Gateway.out: $(OBJS) BeDIS.h Gateway.h Gateway.c
+Gateway.out: $(OBJS) BeDIS.c Gateway.h Gateway.c
 	$(CC) $(CFLAGS) $(OBJS) Gateway.c -o Gateway.out
 BeDIS.o: BeDIS.c BeDIS.h
 	$(CC) $(CFLAGS) BeDIS.c -c
