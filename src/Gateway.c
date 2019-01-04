@@ -211,26 +211,6 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
         if(config_message[strlen(config_message)-1] == '\n')
-            config_message_size = strlen(config_message)-1;
-        else
-            config_message_size = strlen(config_message);
-        memcpy(config->WiFi_SSID, config_message, config_message_size);
-
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        if(config_message[strlen(config_message)-1] == '\n')
-            config_message_size = strlen(config_message)-1;
-        else
-            config_message_size = strlen(config_message);
-        memcpy(config->WiFi_PASS, config_message, config_message_size);
-
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        if(config_message[strlen(config_message)-1] == '\n')
             config_message_size = strlen(config_message) - 1;
         else
             config_message_size = strlen(config_message);

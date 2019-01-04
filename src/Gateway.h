@@ -94,12 +94,6 @@ typedef struct Config {
       and receiving packets to and from LBeacons and the sever.*/
     int Number_worker_threads;
 
-    /* The Wi-Fi ssid for gateway to connect */
-    char WiFi_SSID[WIFI_SSID_LENGTH];
-
-    /* The password of Wi-Fi ssid */
-    char WiFi_PASS[WIFI_PASS_LENGTH];
-
     /* The address of server ip */
     char SERVER_IP[NETWORK_ADDR_LENGTH];
 
