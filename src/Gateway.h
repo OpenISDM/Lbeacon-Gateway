@@ -62,10 +62,7 @@
   Maximum length of time in second low priority message lists are starved
   of attention.
  */
-#define MAX_STARVATION_TIME 300
-
-/* The length of period in number of seconds for polling data from LBeacon. */
-#define MAX_POLLING_TIME 60
+#define MAX_STARVATION_TIME 600
 
 /* Maximum number of worker threads */
 #define MAX_NUM_WORK_THREADS 5
@@ -78,6 +75,9 @@ typedef enum bit_{set_bit = 1, reset_bit = 0} bit;
 /* The configuration file structure */
 typedef struct Config {
 
+    /* If polling from gateway set true(1) else from the server set false(0) */
+    bool Isolated_Mode;
+
     /* The IP address of server for WiFi netwok connection. */
     char IPaddress[NETWORK_ADDR_LENGTH];
 
@@ -87,12 +87,12 @@ typedef struct Config {
     /* The time period for gateway sending health report requests to LBeacon */
     int Period_between_RFHR;
 
+    /* The time period for gateway sending object tracking request to LBeacon */
+    int Period_between_RFOT;
+
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
     int Number_worker_threads;
-
-    /* Priority levels at which worker threads execute. */
-    int Number_priority_levels;
 
     /* The Wi-Fi ssid for gateway to connect */
     char WiFi_SSID[WIFI_SSID_LENGTH];
@@ -227,6 +227,10 @@ bool BHM_initialization_complete;
 
 bool initialization_failed;
 
+/* Store last polling time in second*/
+int poll_LBeacon_for_HR_time;
+int polling_object_tracking_time;
+
 /*
   get_config:
 
@@ -303,7 +307,7 @@ bool is_in_Address_map(char *address);
   NSI_routine:
 
      This function initializes and the star network with the gateway at the root
-     connecting LBeacons in the network. This the function executed by the
+     connecting LBeacons in the network and executed by the
      network_setup_initialize module of the gateway.
 
   Parameters:
@@ -314,7 +318,7 @@ bool is_in_Address_map(char *address);
 
      None
  */
-void *NSI_routine();
+ErrorCode NSI_routine();
 
 
 /*

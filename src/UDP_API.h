@@ -31,6 +31,7 @@
      area.
 
   Authors:
+
      Gary Xiao		, garyh0205@hotmail.com
  */
 #ifndef UDP_API_H
@@ -88,7 +89,7 @@ typedef sudp_config *pudp_config;
 enum{File_OPEN_ERROR = -1, E_ADDPKT_OVERSIZE = -2};
 
 enum{socket_error = -1, send_socket_error = -2, recv_socket_error = -3,
-set_socketopt_error = -4, recv_socket_bind_error = -5, addpkt_msg_oversize = -6};
+set_socketopt_error = -4,recv_socket_bind_error = -5,addpkt_msg_oversize = -6};
 
 /*
   udp_initial

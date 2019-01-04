@@ -131,7 +131,8 @@ void *udp_send_pkt(void *udpconfig){
             sPkt current_send_pkt = get_pkt(&udp_config -> pkt_Queue);
 
             if (current_send_pkt.type == UDP){
-                char *dest_address = udp_hex_to_address(current_send_pkt.address);
+                char *dest_address = udp_hex_to_address(
+                                                      current_send_pkt.address);
 
                 bzero(&si_send, sizeof(si_send));
                 si_send.sin_family = AF_INET;
@@ -141,7 +142,7 @@ void *udp_send_pkt(void *udpconfig){
                     perror("inet_aton error.\n");
 
                 if (sendto(udp_config -> send_socket, current_send_pkt.content
-                  , current_send_pkt.content_size, 0, (struct sockaddr *) &si_send
+                  , current_send_pkt.content_size, 0,(struct sockaddr *)&si_send
                   , sizeof(struct sockaddr)) == -1)
                     printf("sendto error.[%s]\n", strerror(errno));
             }

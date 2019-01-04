@@ -17,7 +17,7 @@
 
   File Name:
 
-     BeDIS.h
+     BeDIS.c
 
   Version:
 
