@@ -17,7 +17,7 @@
 
   Version:
 
-     1.0, 20181130
+     1.0, 201901041100
 
   File Name:
 
@@ -100,11 +100,21 @@ typedef struct Config {
     /* Priority levels at which worker threads execute. */
     int Number_priority_levels;
 
+    /* The Wi-Fi ssid for gateway to connect */
     char WiFi_SSID[WIFI_SSID_LENGTH];
 
+    /* The password of Wi-Fi ssid */
     char WiFi_PASS[WIFI_PASS_LENGTH];
 
+    /* The address of server ip */
     char SERVER_IP[NETWORK_ADDR_LENGTH];
+
+    /* A port which beacons and server are listening on and for gateway to send
+       to. */
+    int send_port;
+
+    /* A port which gateway is listening for beacons and server to send to */
+    int recv_port;
 
 } GatewayConfig;
 
@@ -113,6 +123,7 @@ typedef struct Config {
     coordinates, and location description. */
 typedef struct{
 
+    /* A bit for record whether the address map is in use. */
     bit in_use:1;
 
     char beacon_uuid[UUID_LENGTH];
@@ -239,7 +250,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name);
 
      The function fills the attributes of buffer storing the packets.
      Including assigning the function to the corresponding buffer list and its
-     arguments and its priority level
+     arguments and its priority level.
 
   Parameters:
 
@@ -275,7 +286,7 @@ void init_Address_map(Address_map_head *LBeacon_map);
 /*
   is_in_Address_map:
 
-     This function check whether the address is in Address_Map.
+     This function check whether the address is in LBeacon_Address_Map.
 
   Parameters:
 
@@ -329,7 +340,7 @@ void *CommUnit_routine();
   NSI_Process:
 
      This is the function would be executed by worker threads which processed
-     the data node in NSI_receive_buffer. In current version, do nothing.
+     the data node in NSI_receive_buffer.
 
   Parameters:
 
@@ -342,14 +353,29 @@ void *CommUnit_routine();
  */
 void *NSI_Process(void *buffer_head);
 
+/*
+  BHM_Process:
+
+     This is the function would be executed by worker threads which processed
+     the data node in BHM_receive_buffer.
+
+  Parameters:
+
+     buffer - A pointer of the buffer to be modified.
+
+  Return value:
+
+     None
+
+ */
 void *BHM_Process(void *buffer_head);
+
+
 /*
   LBeacon_Process:
 
-     This is the function would be executed by worker threads which proceesed
-     the data node in LBeacon_receive_buffer, Command_msg_buffer and
-     BHM_receive_buffer. This function remanages the node to be added to the
-     new buffer or removed from the orignal buffer.
+     This is the function would be executed by worker threads which processed
+     the data node in LBeacon_receive_buffer and send to the server directly.
 
   Parameters:
 
@@ -364,12 +390,10 @@ void *LBeacon_Process(void *buffer_head);
 
 
 /*
-  Gateway_Process:
+  Server_Process:
 
      This is the function would be executed by worker threads which proceesed
-     the data node in LBeacon_receive_buffer, Command_msg_buffer and
-     BHM_receive_buffer. This function remanages the node to be added to the
-     new buffer or removed from the orignal buffer.
+     the data node in Command_msg_buffer and broadcast to LBeacons.
 
   Parameters:
 
@@ -380,7 +404,7 @@ void *LBeacon_Process(void *buffer_head);
      None
 
  */
-void *Gateway_Process(void *buffer_head);
+void *Server_Process(void *buffer_head);
 
 
 /*
@@ -397,10 +421,11 @@ void *Gateway_Process(void *buffer_head);
 
   Return value:
 
-     None
+     bool - true  : Join success.
+            false : Fail to join
 
  */
-void beacon_join_request(char *ID, char *address);
+bool beacon_join_request(char *ID, char *address);
 
 
 /*
@@ -411,8 +436,9 @@ void beacon_join_request(char *ID, char *address);
      address_map.
 
   Parameters:
-    msg - The msg prepare to send to beacons.
-    size - The size of the msg.
+
+     msg - The msg prepare to send to beacons.
+     size - The size of the msg.
 
   Return value:
 
@@ -429,7 +455,7 @@ void beacon_broadcast(char *msg, int size);
 
   Parameters:
 
-     IPaddress - The address of the local server
+     IPaddress - The address of the server.
 
   Return value:
 
@@ -442,7 +468,7 @@ int Wifi_init(char *IPaddress);
 /*
   Wifi_free:
 
-     When called, this function frees the necessory element.
+     When called, this function frees the queue of the Wi-Fi pkts and sockets.
 
   Parameters:
 
@@ -459,7 +485,7 @@ void Wifi_free();
 /*
   wifi_send:
 
-     This function sends the file to the sever via Wi-Fi.
+     This function sends the file to the server via Wi-Fi.
 
   Parameters:
 
@@ -475,8 +501,8 @@ void *wifi_send(void *buffer_head);
 /*
   wifi_recive:
 
-     This function listens the request or command received from the server.
-     After getting the message, push the data in to the buffer.
+     This function listens the request or command received from the server or
+     beacons. After getting the message, push the data into the buffer.
 
   Parameters:
 

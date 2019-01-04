@@ -19,8 +19,9 @@
 
      BeDIS.h
 
-  Version: 
-     2.0, 20190103
+  Version:
+
+     2.0, 201901041100
 
   Abstract:
 
@@ -253,9 +254,11 @@ typedef enum pkt_types {
 
 
 typedef enum pkt_direction {
-
+    // pkt from gateway
     from_gateway = 10,
+    // pkt from server
     from_server = 8,
+    // pkt from beacon
     from_beacon = 0
 
 } PktDirection;
@@ -297,7 +300,7 @@ unsigned int twoc(int in, int t);
 /*
   trim_string_tail:
 
-  Trim the whitespace, newline and carry-return at the end of string
+     Trim the whitespace, newline and carry-return at the end of string
 
   Parameters:
 
@@ -330,13 +333,14 @@ void ctrlc_handler(int stop);
 /*
   startThread:
 
-     This function initializes the specified threads.
+     This function initializes the specified thread. And threads initialize by
+     this function will be create in detach mode.
 
   Parameters:
 
-     threads - name of the thread
-     thfunct - the function for thread to execute.
-     arg - the argument for thread's function
+     threads - name of the thread.
+     thfunct - the function for the thread to execute.
+     arg - the argument for the function of the thread.
 
   Return value:
 

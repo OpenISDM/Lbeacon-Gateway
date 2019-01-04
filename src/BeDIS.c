@@ -20,8 +20,8 @@
      BeDIS.h
 
   Version:
-     
-     2.0, 20190103
+
+     2.0, 201901041100
 
   Abstract:
 
@@ -172,9 +172,11 @@ int get_system_time() {
 
     /* Convert time from Epoch to time in milliseconds of a long long type */
     ftime(&t);
+
     //system_time = 1000 * (long long)t.time + (long long)t.millitm;
     //millisecond ver.
-    system_time = (int)t.time;
+
+    system_time = (int)t.time; // second ver.
 
     return system_time;
 }
