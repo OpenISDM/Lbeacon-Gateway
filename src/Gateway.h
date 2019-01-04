@@ -73,12 +73,6 @@
 /* Number of lines in the config file */
 #define CONFIG_FILE_LENGTH 11
 
-/* Names of priority levels */
-#define CRITICAL_PRIORITY -4
-#define HIGH_PRIORITY -2
-#define NORMAL_PRIORITY 0
-#define LOW_PRIORITY 2
-
 typedef enum bit_{set_bit = 1, reset_bit = 0} bit;
 
 /* The configuration file structure */
@@ -115,6 +109,12 @@ typedef struct Config {
 
     /* A port which gateway is listening for beacons and server to send to */
     int recv_port;
+
+    /* each priority levels */
+    int CRITICAL_PRIORITY;
+    int HIGH_PRIORITY;
+    int NORMAL_PRIORITY;
+    int LOW_PRIORITY;
 
 } GatewayConfig;
 

@@ -157,7 +157,6 @@ ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
           return E_START_THREAD;
     }
 
-    printf("Start Thread Success.\n");
     return WORK_SUCCESSFULLY;
 
 }

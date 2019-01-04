@@ -85,37 +85,37 @@ int main(int argc, char **argv){
     order of priority. Each buffer has the corresponding function pointer. */
 
     init_buffer(&Time_critical_LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_Process, HIGH_PRIORITY);
+                (void *) LBeacon_Process, config.HIGH_PRIORITY);
     insert_list_tail(&Time_critical_LBeacon_receive_buffer_list_head
                      .priority_entry, &Priority_buffer_list_head);
 
     init_buffer(&NSI_send_buffer_list_head,
-                (void *) wifi_send, NORMAL_PRIORITY);
+                (void *) wifi_send, config.NORMAL_PRIORITY);
     insert_list_tail(&NSI_send_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
     init_buffer(&NSI_receive_buffer_list_head,
-                (void *) NSI_Process, NORMAL_PRIORITY);
+                (void *) NSI_Process, config.NORMAL_PRIORITY);
     insert_list_tail(&NSI_receive_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
     init_buffer(&LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_Process, HIGH_PRIORITY);
+                (void *) LBeacon_Process, config.HIGH_PRIORITY);
     insert_list_tail(&LBeacon_receive_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
     init_buffer(&Command_msg_buffer_list_head,
-                (void *) Server_Process, NORMAL_PRIORITY);
+                (void *) Server_Process, config.NORMAL_PRIORITY);
     insert_list_tail(&Command_msg_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
     init_buffer(&BHM_receive_buffer_list_head,
-                (void *) BHM_Process, LOW_PRIORITY);
+                (void *) BHM_Process, config.LOW_PRIORITY);
     insert_list_tail(&BHM_receive_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
     init_buffer(&BHM_send_buffer_list_head,
-                (void *) wifi_send, LOW_PRIORITY);
+                (void *) wifi_send, config.LOW_PRIORITY);
     insert_list_tail(&BHM_send_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
@@ -239,6 +239,30 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
         config->recv_port = atoi(config_message);
+
+        fgets(config_setting, sizeof(config_setting), file);
+        config_message = strstr((char *)config_setting, DELIMITER);
+        config_message = config_message + strlen(DELIMITER);
+        trim_string_tail(config_message);
+        config->CRITICAL_PRIORITY = atoi(config_message);
+
+        fgets(config_setting, sizeof(config_setting), file);
+        config_message = strstr((char *)config_setting, DELIMITER);
+        config_message = config_message + strlen(DELIMITER);
+        trim_string_tail(config_message);
+        config->HIGH_PRIORITY = atoi(config_message);
+
+        fgets(config_setting, sizeof(config_setting), file);
+        config_message = strstr((char *)config_setting, DELIMITER);
+        config_message = config_message + strlen(DELIMITER);
+        trim_string_tail(config_message);
+        config->NORMAL_PRIORITY = atoi(config_message);
+
+        fgets(config_setting, sizeof(config_setting), file);
+        config_message = strstr((char *)config_setting, DELIMITER);
+        config_message = config_message + strlen(DELIMITER);
+        trim_string_tail(config_message);
+        config->LOW_PRIORITY = atoi(config_message);
 
         fclose(file);
 
@@ -810,9 +834,11 @@ void *wifi_receive(){
                                 break;
 
                             case data_for_LBeacon:
+                                mp_free(&node_mempool, new_node);
                                 break;
 
                             default:
+                                mp_free(&node_mempool, new_node);
                                 break;
                         }
                         break;
@@ -850,11 +876,13 @@ void *wifi_receive(){
                                 break;
 
                             default:
+                                mp_free(&node_mempool, new_node);
                                 break;
                         }
                         break;
 
                     default:
+                        mp_free(&node_mempool, new_node);
                         break;
                 }
             }

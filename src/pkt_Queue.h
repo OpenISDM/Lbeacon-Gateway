@@ -45,7 +45,7 @@
 #include <sys/time.h>
 
 // If need to debug.
-#define debugging
+//#define debugging
 
 /* Length of address of the network */
 #define NETWORK_ADDR_LENGTH 16
