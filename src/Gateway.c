@@ -120,8 +120,6 @@ int main(int argc, char **argv){
 
     sorting_priority(&Priority_buffer_list_head);
 
-    printf("Priority_buffer_list_head length [%d]\n", get_list_length( &Priority_buffer_list_head));
-
     /* Network Setup and Initialization for Wi-Fi */
     return_value = NSI_routine();
 
@@ -168,6 +166,12 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         char *config_message = NULL;
         int config_message_size = 0;
 
+        fgets(config_setting, sizeof(config_setting), file);
+        config_message = strstr((char *)config_setting, DELIMITER);
+        config_message = config_message + strlen(DELIMITER);
+        trim_string_tail(config_message);
+        config->Isolated_Mode = atoi(config_message);
+
         /* Keep reading each line and store into the config struct */
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -179,12 +183,6 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
             config_message_size = strlen(config_message);
 
         memcpy(config->IPaddress, config_message, config_message_size);
-
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        config->Isolated_Mode = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -281,8 +279,6 @@ void init_buffer(BufferListHead *buffer, void (*function_p)(void*)
 
 
 void sorting_priority(List_Entry *Priority_buffer_list_head){
-
-    printf("In Sorting\n");
 
     List_Entry temp, *list_pointers, *save_list_pointers
                     , *list_pointers_tmp;
@@ -432,7 +428,7 @@ void *CommUnit_routine(){
             // Polling Tracked Object Data
             // set the pkt type
             int send_type = ((from_gateway & 0x0f)<<4) +
-                             (tracked_object_data & 0x0f);
+                             (health_report & 0x0f);
             char temp[WIFI_MESSAGE_LENGTH];
             memset(temp, 0, WIFI_MESSAGE_LENGTH);
 
@@ -450,7 +446,7 @@ void *CommUnit_routine(){
             // Pulling Health Report
             // set the pkt type
             int send_type = ((from_gateway & 0x0f)<<4) +
-                             (health_report & 0x0f);
+                             (tracked_object_data & 0x0f);
             char temp[WIFI_MESSAGE_LENGTH];
             memset(temp, 0, WIFI_MESSAGE_LENGTH);
 
