@@ -118,6 +118,10 @@ int main(int argc, char **argv){
     insert_list_tail(&BHM_send_buffer_list_head.priority_entry
                     , &Priority_buffer_list_head);
 
+    sorting_priority(&Priority_buffer_list_head);
+
+    printf("Priority_buffer_list_head length [%d]\n", get_list_length( &Priority_buffer_list_head));
+
     /* Network Setup and Initialization for Wi-Fi */
     return_value = NSI_routine();
 
@@ -274,6 +278,60 @@ void init_buffer(BufferListHead *buffer, void (*function_p)(void*)
 
     buffer->priority_boast = priority_boast;
 }
+
+
+void sorting_priority(List_Entry *Priority_buffer_list_head){
+
+    printf("In Sorting\n");
+
+    List_Entry temp, *list_pointers, *save_list_pointers
+                    , *list_pointers_tmp;
+
+    init_entry(&temp);
+
+    list_for_each_safe(list_pointers, save_list_pointers
+                     , Priority_buffer_list_head){
+
+        BufferListHead *current_head = ListEntry(list_pointers, BufferListHead
+                                               , priority_entry);
+        pthread_mutex_lock( &current_head->list_lock);
+        remove_list_node(list_pointers);
+        if (is_entry_list_empty(&temp))
+            insert_list_tail(list_pointers, &temp);
+        else{
+            bool sorted;
+            list_for_each(list_pointers_tmp, &temp){
+                sorted = false;
+                BufferListHead *current_head_in_tmp = ListEntry(list_pointers_tmp
+                                                  , BufferListHead, priority_entry);
+                pthread_mutex_lock( &current_head_in_tmp->list_lock);
+                if( current_head_in_tmp->priority_boast > current_head->priority_boast){
+                    insert_entry_list(list_pointers, list_pointers_tmp-> prev, list_pointers_tmp);
+                    pthread_mutex_unlock( &current_head_in_tmp->list_lock);
+                    sorted = true;
+                    break;
+                }
+                pthread_mutex_unlock( &current_head_in_tmp->list_lock);
+            }
+            if(sorted == false)
+                insert_list_tail(list_pointers, &temp);
+        }
+        pthread_mutex_unlock( &current_head->list_lock);
+    }
+
+    BufferListHead *temp_prev, *temp_next;
+    temp_prev = ListEntry(temp.prev, BufferListHead, priority_entry);
+    temp_next = ListEntry(temp.next, BufferListHead, priority_entry);
+
+    pthread_mutex_lock( &temp_prev->list_lock);
+    pthread_mutex_lock( &temp_next->list_lock);
+
+    insert_entry_list(Priority_buffer_list_head, temp.prev, temp.next);
+
+    pthread_mutex_unlock( &temp_prev->list_lock);
+    pthread_mutex_unlock( &temp_next->list_lock);
+}
+
 
 
 void init_Address_map(Address_map_head *LBeacon_map){
@@ -646,8 +704,8 @@ bool beacon_join_request(char *ID, char *address){
     for(int n = 0 ; n < MAX_NUMBER_NODES ; n ++){
         Address_map *current_addrmap = &LBeacon_Address_Map.Address_map_list[n];
 
-        if(current_addrmap->in_use == set_bit && strcmp(address
-         , current_addrmap->net_address) == 0){
+        if(current_addrmap->in_use == set_bit &&
+           strcmp(address, current_addrmap->net_address) == 0){
             pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
             return true;
         }
@@ -696,7 +754,6 @@ void beacon_broadcast(char *msg, int size){
 
     pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
 }
-
 
 
 int Wifi_init(char *IPaddress){

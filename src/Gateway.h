@@ -64,12 +64,6 @@
  */
 #define MAX_STARVATION_TIME 600
 
-/* Maximum number of worker threads */
-#define MAX_NUM_WORK_THREADS 5
-
-/* Number of lines in the config file */
-#define CONFIG_FILE_LENGTH 11
-
 typedef enum bit_{set_bit = 1, reset_bit = 0} bit;
 
 /* The configuration file structure */
@@ -263,6 +257,23 @@ ErrorCode get_config(GatewayConfig *config, char *file_name);
  */
 void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
 								int priority_boast);
+
+
+/*
+  sorting_priority:
+
+     The function arrange Priority_buffer_list_head in descending order
+     of Priority_boast.
+
+  Parameters:
+
+     Priority_buffer_list_head - The pointer of Priority_buffer_list_head.
+
+  Return value:
+
+     None
+ */
+void sorting_priority(List_Entry *Priority_buffer_list_head);
 
 
 /*
