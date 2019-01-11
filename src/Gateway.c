@@ -19,7 +19,7 @@
 
   Version:
 
-     1.0, 201901041100
+     1.0, 20190111
 
   File Name:
 
@@ -138,6 +138,7 @@ int main(int argc, char **argv){
 
         if(initialization_failed == true){
             ready_to_work = false;
+            printf("NSI Fail\n");
             return E_INITIALIZATION_FAIL;
         }
     }
@@ -817,13 +818,25 @@ void *wifi_receive(){
 
         if(temppkt.type == UDP){
 
-            /* Allocate form zigbee packet memory pool a buffer for received
-               data and copy the data from Xbee receive queue to the buffer. */
-            new_node = mp_alloc( &node_mempool);
+            // counting test time for mp_alloc times
+            int test_times = 0;
+
+            /* Allocate from node_mempool a buffer for received data and copy
+               the data from Wi-Fi receive queue to the buffer. */
+            do{
+                if(test_times == test_malloc_max_time)
+                    break;
+                else if(test_times != 0)
+                    sleep(1);
+
+                new_node = mp_alloc( &node_mempool);
+                test_times ++;
+
+            }while( new_node == NULL);
 
             if(new_node == NULL){
-                /* Alloc mempry failed, error handling. */
-                printf("E_MALLOC");
+                /* Alloc memory failed, error handling. */
+                printf("E_MALLOC\n");
             }
             else{
                 /* Initialize the entry of the buffer node */

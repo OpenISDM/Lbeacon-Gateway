@@ -17,7 +17,7 @@
 
   Version:
 
-     1.0, 201901041100
+     1.0, 20190111
 
   File Name:
 
@@ -57,6 +57,8 @@
 
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 32
+
+#define test_malloc_max_time 5
 
 /*
   Maximum length of time in second low priority message lists are starved
