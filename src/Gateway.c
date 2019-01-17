@@ -42,6 +42,7 @@
      Jake Lee       , jakelee@iis.sinica.edu.tw
      Ray Chao       , raychao5566@gmail.com
      Gary Xiao      , garyh0205@hotmail.com
+     Chun Yu Lai    , chunyu1202@gmail.com
 
  */
 
