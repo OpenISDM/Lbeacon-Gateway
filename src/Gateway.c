@@ -19,7 +19,7 @@
 
   Version:
 
-     1.0, 20190111
+     1.0, 20190117
 
   File Name:
 
@@ -78,56 +78,75 @@ int main(int argc, char **argv){
         return E_MALLOC;
     }
 
-    init_entry(&Priority_buffer_list_head);
-    init_Address_map(&LBeacon_Address_Map);
+    init_entry(&priority_list_head);
+    init_Address_Map(&LBeacon_address_map);
 
     /* Initialize the buffer_list_heads and add to the buffer array in the
     order of priority. Each buffer has the corresponding function pointer. */
 
-    init_buffer(&Time_critical_LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_Process, config.HIGH_PRIORITY);
-    insert_list_tail(&Time_critical_LBeacon_receive_buffer_list_head
-                     .priority_entry, &Priority_buffer_list_head);
+    init_buffer(&time_critical_LBeacon_receive_buffer_list_head,
+                (void *) LBeacon_routine, config.high_priority);
+    insert_list_tail(&time_critical_LBeacon_receive_buffer_list_head
+                     .priority_entry, &priority_list_head);
 
     init_buffer(&NSI_send_buffer_list_head,
-                (void *) wifi_send, config.NORMAL_PRIORITY);
+                (void *) process_wifi_send, config.normal_priority);
     insert_list_tail(&NSI_send_buffer_list_head.priority_entry
-                    , &Priority_buffer_list_head);
+                    , &priority_list_head);
 
     init_buffer(&NSI_receive_buffer_list_head,
-                (void *) NSI_Process, config.NORMAL_PRIORITY);
+                (void *) NSI_routine, config.normal_priority);
     insert_list_tail(&NSI_receive_buffer_list_head.priority_entry
-                    , &Priority_buffer_list_head);
+                    , &priority_list_head);
 
     init_buffer(&LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_Process, config.HIGH_PRIORITY);
+                (void *) LBeacon_routine, config.high_priority);
     insert_list_tail(&LBeacon_receive_buffer_list_head.priority_entry
-                    , &Priority_buffer_list_head);
+                    , &priority_list_head);
 
-    init_buffer(&Command_msg_buffer_list_head,
-                (void *) Server_Process, config.NORMAL_PRIORITY);
-    insert_list_tail(&Command_msg_buffer_list_head.priority_entry
-                    , &Priority_buffer_list_head);
+    init_buffer(&command_msg_buffer_list_head,
+                (void *) Server_routine, config.normal_priority);
+    insert_list_tail(&command_msg_buffer_list_head.priority_entry
+                    , &priority_list_head);
 
     init_buffer(&BHM_receive_buffer_list_head,
-                (void *) BHM_Process, config.LOW_PRIORITY);
+                (void *) BHM_routine, config.low_priority);
     insert_list_tail(&BHM_receive_buffer_list_head.priority_entry
-                    , &Priority_buffer_list_head);
+                    , &priority_list_head);
 
     init_buffer(&BHM_send_buffer_list_head,
-                (void *) wifi_send, config.LOW_PRIORITY);
+                (void *) process_wifi_send, config.low_priority);
     insert_list_tail(&BHM_send_buffer_list_head.priority_entry
-                    , &Priority_buffer_list_head);
+                    , &priority_list_head);
 
-    sorting_priority(&Priority_buffer_list_head);
+    sorting_priority(&priority_list_head);
 
     /* Network Setup and Initialization for Wi-Fi */
-    return_value = NSI_routine();
+    pthread_t wifi_listener;
+
+    /* Initialize the Wifi connection */
+    if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
+        /* Error handling and return */
+        initialization_failed = true;
+        return E_WIFI_INIT_FAIL;
+    }
+
+    /* Create threads for sending and receiving data from and to LBeacon and
+       server. */
+    /* Two static threads for listening the data from LBeacon or Sever */
+    return_value = startThread(&wifi_listener, (void *)wifi_receive_process, NULL);
+
+    if(return_value != WORK_SUCCESSFULLY){
+        initialization_failed = true;
+        return E_WIFI_INIT_FAIL;
+    }
+
+    NSI_initialization_complete = true;
 
     if(return_value != WORK_SUCCESSFULLY) return return_value;
 
     /* Create threads for the main thread of Communication Unit  */
-    return_value = startThread(&CommUnit_thread, CommUnit_routine, NULL);
+    return_value = startThread(&CommUnit_thread, CommUnit_process, NULL);
 
     if(return_value != WORK_SUCCESSFULLY) return return_value;
 
@@ -172,7 +191,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->Isolated_Mode = atoi(config_message);
+        config->is_polled_by_server = atoi(config_message);
 
         /* Keep reading each line and store into the config struct */
         fgets(config_setting, sizeof(config_setting), file);
@@ -196,13 +215,13 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->Period_between_RFHR = atoi(config_message);
+        config->period_between_RFHR = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->Period_between_RFOT = atoi(config_message);
+        config->period_between_RFOT = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -218,7 +237,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
             config_message_size = strlen(config_message) - 1;
         else
             config_message_size = strlen(config_message);
-        memcpy(config->SERVER_IP, config_message, config_message_size);
+        memcpy(config->server_ip, config_message, config_message_size);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -236,25 +255,25 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->CRITICAL_PRIORITY = atoi(config_message);
+        config->critical_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->HIGH_PRIORITY = atoi(config_message);
+        config->high_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->NORMAL_PRIORITY = atoi(config_message);
+        config->normal_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->LOW_PRIORITY = atoi(config_message);
+        config->low_priority = atoi(config_message);
 
         fclose(file);
 
@@ -264,9 +283,9 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 
 
 void init_buffer(BufferListHead *buffer, void (*function_p)(void*)
-               , int priority_boast){
+               , int priority_nice){
 
-    init_entry( &(buffer->buffer_entry));
+    init_entry( &(buffer->list_head));
 
     init_entry( &(buffer->priority_entry));
 
@@ -276,11 +295,11 @@ void init_buffer(BufferListHead *buffer, void (*function_p)(void*)
 
     buffer->arg = (void *) buffer;
 
-    buffer->priority_boast = priority_boast;
+    buffer->priority_nice = priority_nice;
 }
 
 
-void sorting_priority(List_Entry *Priority_buffer_list_head){
+void sorting_priority(List_Entry *priority_list_head){
 
     List_Entry temp, *list_pointers, *save_list_pointers
                     , *list_pointers_tmp;
@@ -288,7 +307,7 @@ void sorting_priority(List_Entry *Priority_buffer_list_head){
     init_entry(&temp);
 
     list_for_each_safe(list_pointers, save_list_pointers
-                     , Priority_buffer_list_head){
+                     , priority_list_head){
 
         BufferListHead *current_head = ListEntry(list_pointers, BufferListHead
                                                , priority_entry);
@@ -300,11 +319,13 @@ void sorting_priority(List_Entry *Priority_buffer_list_head){
             bool sorted;
             list_for_each(list_pointers_tmp, &temp){
                 sorted = false;
-                BufferListHead *current_head_in_tmp = ListEntry(list_pointers_tmp
-                                                  , BufferListHead, priority_entry);
+                BufferListHead *current_head_in_tmp =
+                   ListEntry(list_pointers_tmp, BufferListHead, priority_entry);
                 pthread_mutex_lock( &current_head_in_tmp->list_lock);
-                if( current_head_in_tmp->priority_boast > current_head->priority_boast){
-                    insert_entry_list(list_pointers, list_pointers_tmp-> prev, list_pointers_tmp);
+                if( current_head_in_tmp->priority_nice > current_head ->
+                                                                 priority_nice){
+                    insert_entry_list(list_pointers, list_pointers_tmp-> prev,
+                                                             list_pointers_tmp);
                     pthread_mutex_unlock( &current_head_in_tmp->list_lock);
                     sorted = true;
                     break;
@@ -324,7 +345,7 @@ void sorting_priority(List_Entry *Priority_buffer_list_head){
     pthread_mutex_lock( &temp_prev->list_lock);
     pthread_mutex_lock( &temp_next->list_lock);
 
-    insert_entry_list(Priority_buffer_list_head, temp.prev, temp.next);
+    insert_entry_list(priority_list_head, temp.prev, temp.next);
 
     pthread_mutex_unlock( &temp_prev->list_lock);
     pthread_mutex_unlock( &temp_next->list_lock);
@@ -332,25 +353,26 @@ void sorting_priority(List_Entry *Priority_buffer_list_head){
 
 
 
-void init_Address_map(Address_map_head *LBeacon_map){
+void init_Address_Map(AddressMapArray *LBeacon_map){
 
     pthread_mutex_init( &LBeacon_map->list_lock, 0);
 
-    memset(LBeacon_map->Address_map_list, 0
-         , sizeof(LBeacon_map->Address_map_list));
+    memset(LBeacon_map->address_map_list, 0
+         , sizeof(LBeacon_map->address_map_list));
 
     for(int n=0; n < MAX_NUMBER_NODES; n++){
-        LBeacon_map->Address_map_list[n].in_use = reset_bit;
+        LBeacon_map->in_use[n] = false;
     }
 }
 
 
-bool is_in_Address_map(char *address){
+bool is_in_Address_Map(char *address){
 
     for(int n=0;n<MAX_NUMBER_NODES;n++){
-        Address_map *curent_address = &LBeacon_Address_Map.Address_map_list[n];
-        if (curent_address->in_use == set_bit){
-            if(strcmp(curent_address->net_address, address) == 0){
+
+        if (LBeacon_address_map.in_use[n] == true){
+            if(strcmp(LBeacon_address_map.address_map_list[n].net_address
+                                                               , address) == 0){
                 return true;
             }
         }
@@ -359,39 +381,10 @@ bool is_in_Address_map(char *address){
 }
 
 
-ErrorCode NSI_routine(){
-
-    int return_value;
-
-    pthread_t wifi_listener;
-
-    /* Initialize the Wifi connection */
-    if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
-        /* Error handling and return */
-        initialization_failed = true;
-        return E_WIFI_INIT_FAIL;
-    }
-
-    /* Create threads for sending and receiving data from and to LBeacon and
-       server. */
-    /* Two static threads for listening the data from LBeacon or Sever */
-    return_value = startThread(&wifi_listener, (void *)wifi_receive, NULL);
-
-    if(return_value != WORK_SUCCESSFULLY){
-        initialization_failed = true;
-        return E_WIFI_INIT_FAIL;
-    }
-
-    NSI_initialization_complete = true;
-
-    return WORK_SUCCESSFULLY;
-}
-
-
-void *CommUnit_routine(){
+void *CommUnit_process(){
 
     int init_time;
-
+    int current_time;
     Threadpool thpool;
     int return_error_value;
 
@@ -407,13 +400,15 @@ void *CommUnit_routine(){
        according to the data stored in the config file. */
     thpool = thpool_init(config.Number_worker_threads);
 
+    current_time = get_system_time();
+
     /* Set the initial time. */
-    init_time = get_system_time();
+    init_time = current_time;
 
     /* Start counting down the time for polling the tracking data */
-    poll_LBeacon_for_HR_time = get_system_time();
+    last_poll_LBeacon_for_HR_time = current_time;
 
-    polling_object_tracking_time = get_system_time();
+    last_polling_object_tracking_time = current_time;
 
     /* After all the buffer are initialized and the thread pool initialized,
     set the flag to true. */
@@ -422,117 +417,114 @@ void *CommUnit_routine(){
     /* When there is no dead thead, do the work. */
     while(ready_to_work == true){
 
-        /* If it is the time to poll the tracking data from LBeacon, Make a
-        thread to do this work */
-        if((config.Isolated_Mode == true) && (get_system_time() -
-           poll_LBeacon_for_HR_time > config.Period_between_RFHR)){
+        current_time = get_system_time();
 
-            // Polling Tracked Object Data
-            // set the pkt type
-            int send_type = ((from_gateway & 0x0f)<<4) +
-                             (health_report & 0x0f);
-            char temp[WIFI_MESSAGE_LENGTH];
-            memset(temp, 0, WIFI_MESSAGE_LENGTH);
+        if(config.is_polled_by_server == false){
+            /* If it is the time to poll the tracking data from LBeacon, Make a
+            thread to do this work */
+            if(current_time - last_poll_LBeacon_for_HR_time
+                                                  > config.period_between_RFHR){
 
-            temp[0] = (char)send_type;
+                // Polling Tracked Object Data
+                // set the pkt type
+                int send_type = ((from_gateway & 0x0f)<<4) +
+                                 (health_report & 0x0f);
+                char temp[WIFI_MESSAGE_LENGTH];
+                memset(temp, 0, WIFI_MESSAGE_LENGTH);
 
-            // broadcast to LBeacons
-            beacon_broadcast(temp, 2);
+                temp[0] = (char)send_type;
 
-            poll_LBeacon_for_HR_time = get_system_time();
-        }
+                // broadcast to LBeacons
+                beacon_broadcast(temp, 2);
 
-        if((config.Isolated_Mode == true) && (get_system_time() -
-           polling_object_tracking_time > config.Period_between_RFOT)){
-
-            // Pulling Health Report
-            // set the pkt type
-            int send_type = ((from_gateway & 0x0f)<<4) +
-                             (tracked_object_data & 0x0f);
-            char temp[WIFI_MESSAGE_LENGTH];
-            memset(temp, 0, WIFI_MESSAGE_LENGTH);
-
-            temp[0] = (char)send_type;
-
-            // broadcast to LBeacons
-            beacon_broadcast(temp, 2);
-
-            /* Reset the poll_LBeacon_time */
-            polling_object_tracking_time = get_system_time();
-        }
-
-        /* In the normal situation, the scanning starts from the high
-           priority to lower priority. If the timer expired for
-           MAX_STARVATION_TIME, reverse the scanning process */
-        if(get_system_time() - init_time < MAX_STARVATION_TIME){
-
-            /* Scan the priority_array to get the corresponding work for the
-               worker thread */
-            List_Entry *tmp;
-
-            list_for_each(tmp, &Priority_buffer_list_head){
-
-                BufferListHead *current_head = ListEntry(tmp, BufferListHead
-                                                       , priority_entry);
-
-                pthread_mutex_lock( &current_head -> list_lock);
-
-                /* There is still idle worker thread is waiting for the work */
-                if ((thpool -> num_threads_working < thpool -> num_threads_alive
-                    ) && (is_entry_list_empty( &current_head->buffer_entry)
-                    == false)){
-
-                    /* If there is a node in the buffer and the buffer
-                       is not be occupied, do the work according to the
-                       function pointer */
-                    return_error_value = thpool_add_work(thpool
-                                       , current_head -> function
-                                       , current_head
-                                       , current_head -> priority_boast);
-                    if(return_error_value != WORK_SUCCESSFULLY){
-                        //return return_error_value;
-                    }
-                }
-
-                pthread_mutex_unlock( &current_head -> list_lock);
-            } // End list for each
-        }
-        else{
-            /* Scan the priority_array to get the corresponding work for the
-               worker thread */
-
-            List_Entry *tmp;
-
-            int count = 0;
-
-            list_for_each_reverse(tmp, &Priority_buffer_list_head){
-
-                BufferListHead *current_head = ListEntry(tmp, BufferListHead
-                                                       , priority_entry);
-                pthread_mutex_lock(&current_head->list_lock);
-
-                /* There is still idle worker thread is waiting for the work */
-                if ((thpool -> num_threads_working < thpool -> num_threads_alive
-                    ) && (is_entry_list_empty( &current_head->buffer_entry)
-                    == false)){
-
-                    /* If there is a node in the buffer and the buffer
-                       is not be occupied, do the work according to the
-                       function pointer */
-                    return_error_value = thpool_add_work(thpool
-                                       , current_head -> function
-                                       , current_head
-                                       , current_head -> priority_boast);
-                    if(return_error_value != WORK_SUCCESSFULLY){
-                        //return return_error_value;
-                    }
-                }
-
-                pthread_mutex_unlock(&current_head->list_lock);
+                last_poll_LBeacon_for_HR_time = current_time;
             }
 
-            /* Reset the inital time */
-            init_time = get_system_time();
+            else if(current_time - last_polling_object_tracking_time
+                                                  > config.period_between_RFOT){
+
+                // Pulling Health Report
+                // set the pkt type
+                int send_type = ((from_gateway & 0x0f)<<4) +
+                                 (tracked_object_data & 0x0f);
+                char temp[WIFI_MESSAGE_LENGTH];
+                memset(temp, 0, WIFI_MESSAGE_LENGTH);
+
+                temp[0] = (char)send_type;
+
+                // broadcast to LBeacons
+                beacon_broadcast(temp, 2);
+
+                /* Reset the poll_LBeacon_time */
+                last_polling_object_tracking_time = current_time;
+            }
+        }
+
+        if(thpool -> num_threads_working < thpool -> num_threads_alive){
+            /* In the normal situation, the scanning starts from the high
+               priority to lower priority. If the timer expired for
+               MAX_STARVATION_TIME, reverse the scanning process */
+            if(current_time - init_time < MAX_STARVATION_TIME){
+
+                /* Scan the priority_array to get the corresponding work for the
+                   worker thread */
+                List_Entry *tmp;
+
+                list_for_each(tmp, &priority_list_head){
+
+                    BufferListHead *current_head = ListEntry(tmp, BufferListHead
+                                                           , priority_entry);
+
+                    pthread_mutex_lock( &current_head -> list_lock);
+
+                    /* There is still idle worker thread is waiting for the work
+                     */
+                    if (is_entry_list_empty( &current_head->list_head)== false){
+
+                        /* If there is a node in the buffer and the buffer
+                           is not be occupied, do the work according to the
+                           function pointer */
+                        return_error_value = thpool_add_work(thpool
+                                           , current_head -> function
+                                           , current_head
+                                           , current_head -> priority_nice);
+                    }
+
+                    pthread_mutex_unlock( &current_head -> list_lock);
+                } // End list for each
+            }
+            else{
+                /* Scan the priority_array to get the corresponding work for the
+                   worker thread */
+
+                List_Entry *tmp;
+
+                int count = 0;
+
+                list_for_each_reverse(tmp, &priority_list_head){
+
+                    BufferListHead *current_head = ListEntry(tmp, BufferListHead
+                                                           , priority_entry);
+                    pthread_mutex_lock(&current_head->list_lock);
+
+                    /* There is still idle worker thread is waiting for the work */
+                    if (is_entry_list_empty( &current_head->list_head)== false){
+
+                        /* If there is a node in the buffer and the buffer
+                           is not be occupied, do the work according to the
+                           function pointer */
+                        return_error_value = thpool_add_work(thpool
+                                           , current_head -> function
+                                           , current_head
+                                           , current_head -> priority_nice);
+                    }
+
+                    pthread_mutex_unlock(&current_head->list_lock);
+                }
+
+                /* Reset the inital time */
+                init_time = current_time;
+            }
         }
 
         sleep(WAITING_TIME);
@@ -546,17 +538,17 @@ void *CommUnit_routine(){
 }
 
 
-void *NSI_Process(void *buffer_head){
+void *NSI_routine(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)buffer_head;
+    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
 
     pthread_mutex_lock(&buffer -> list_lock);
 
-    if(is_entry_list_empty( &buffer -> buffer_entry) == false){
+    if(is_entry_list_empty( &buffer -> list_head) == false){
         /* Create a temporary node and set as the head */
         struct List_Entry *list_pointers, *save_list_pointers;
         list_for_each_safe(list_pointers, save_list_pointers
-                         , &buffer -> buffer_entry){
+                         , &buffer -> list_head){
             remove_list_node(list_pointers);
 
             BufferNode *temp = ListEntry(list_pointers, BufferNode
@@ -568,7 +560,7 @@ void *NSI_Process(void *buffer_head){
 
             int send_type = (from_gateway & 0x0f)<<4;
 
-            /* Put the address into LBeacon_Address_Map and set the return
+            /* Put the address into LBeacon_address_map and set the return
                pkt type */
             if (beacon_join_request(current_uuid, temp -> net_address)
                 == true)
@@ -582,7 +574,7 @@ void *NSI_Process(void *buffer_head){
             pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
 
             insert_list_tail(&temp->buffer_entry
-                           , &NSI_send_buffer_list_head.buffer_entry);
+                           , &NSI_send_buffer_list_head.list_head);
 
             pthread_mutex_unlock(&NSI_send_buffer_list_head.list_lock);
 
@@ -599,9 +591,9 @@ void *NSI_Process(void *buffer_head){
 }
 
 
-void *BHM_Process(void *buffer_head){
+void *BHM_routine(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)buffer_head;
+    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
 
     /* Create a temporary node and set as the head */
     struct List_Entry *list_pointers, *save_list_pointers;
@@ -611,7 +603,7 @@ void *BHM_Process(void *buffer_head){
     pthread_mutex_lock(&buffer->list_lock);
 
     list_for_each_safe(list_pointers, save_list_pointers
-                                    , &buffer->buffer_entry){
+                                    , &buffer->list_head){
 
         /* Remove the node from the orignal buffer list. And directly send to
            the server. */
@@ -622,7 +614,7 @@ void *BHM_Process(void *buffer_head){
         //TODO Make a buffer to merge all the HR pkt and wait for polling.
 
         insert_list_tail( &temp -> buffer_entry
-                        , &BHM_send_buffer_list_head.buffer_entry);
+                        , &BHM_send_buffer_list_head.list_head);
 
     }
 
@@ -632,9 +624,9 @@ void *BHM_Process(void *buffer_head){
 }
 
 
-void *LBeacon_Process(void *buffer_head){
+void *LBeacon_routine(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)buffer_head;
+    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
 
     /* Create a temporary node and set as the head */
     struct List_Entry *list_pointers, *save_list_pointers;
@@ -644,7 +636,7 @@ void *LBeacon_Process(void *buffer_head){
     pthread_mutex_lock(&buffer->list_lock);
 
     list_for_each_safe(list_pointers, save_list_pointers
-                                    , &buffer->buffer_entry){
+                                    , &buffer->list_head){
 
         /* Remove the node from the orignal buffer list. */
         remove_list_node(list_pointers);
@@ -652,7 +644,7 @@ void *LBeacon_Process(void *buffer_head){
         temp = ListEntry(list_pointers, BufferNode, buffer_entry);
 
         /* Add the content that to be sent to the server */
-        udp_addpkt( &udp_config, config.SERVER_IP, temp->content
+        udp_addpkt( &udp_config, config.server_ip, temp->content
                   , temp->content_size);
 
         mp_free(&node_mempool, temp);
@@ -664,8 +656,8 @@ void *LBeacon_Process(void *buffer_head){
 }
 
 
-void *Server_Process(void *buffer_head){
-    BufferListHead *buffer = (BufferListHead *)buffer_head;
+void *Server_routine(void *_buffer_list_head){
+    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
 
     /* Create a temporary node and set as the head */
     struct List_Entry *list_pointers, *save_list_pointers;
@@ -675,7 +667,7 @@ void *Server_Process(void *buffer_head){
     pthread_mutex_lock(&buffer->list_lock);
 
     list_for_each_safe(list_pointers, save_list_pointers
-                                    , &buffer->buffer_entry){
+                                    , &buffer->list_head){
 
         /* Remove the node from the orignal buffer list. */
         remove_list_node(list_pointers);
@@ -691,7 +683,7 @@ void *Server_Process(void *buffer_head){
 
 bool beacon_join_request(char *ID, char *address){
 
-    pthread_mutex_lock(&LBeacon_Address_Map.list_lock);
+    pthread_mutex_lock(&LBeacon_address_map.list_lock);
     /* Copy all the necessary information received from the LBeacon to the
        address map. */
 
@@ -700,32 +692,31 @@ bool beacon_join_request(char *ID, char *address){
     int not_in_use = -1;
 
     for(int n = 0 ; n < MAX_NUMBER_NODES ; n ++){
-        Address_map *current_addrmap = &LBeacon_Address_Map.Address_map_list[n];
 
-        if(current_addrmap->in_use == set_bit &&
-           strcmp(address, current_addrmap->net_address) == 0){
-            pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
+        if(LBeacon_address_map.in_use[n] == true && strcmp(address,
+           LBeacon_address_map.address_map_list[n].net_address) == 0){
+            pthread_mutex_unlock(&LBeacon_address_map.list_lock);
             return true;
         }
-        else if(current_addrmap->in_use == reset_bit && not_in_use == -1){
+        else if(LBeacon_address_map.in_use[n] == false && not_in_use == -1){
             not_in_use = n;
         }
     }
 
     /* If still has space for the LBeacon to register */
     if (not_in_use != -1){
-        Address_map *tmp = &LBeacon_Address_Map
-                           .Address_map_list[not_in_use];
+        AddressMap *tmp = &LBeacon_address_map
+                           .address_map_list[not_in_use];
 
-        tmp->in_use = set_bit;
+        LBeacon_address_map.in_use[not_in_use] = true;
 
         strncpy(tmp -> beacon_uuid, ID, UUID_LENGTH);
         strncpy(tmp -> net_address, address, NETWORK_ADDR_LENGTH);
-        pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
+        pthread_mutex_unlock(&LBeacon_address_map.list_lock);
         return true;
     }
     else{
-        pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
+        pthread_mutex_unlock(&LBeacon_address_map.list_lock);
         return false;
     }
 
@@ -735,26 +726,24 @@ bool beacon_join_request(char *ID, char *address){
 
 void beacon_broadcast(char *msg, int size){
 
-    pthread_mutex_lock(&LBeacon_Address_Map.list_lock);
+    pthread_mutex_lock(&LBeacon_address_map.list_lock);
 
     if (size <= WIFI_MESSAGE_LENGTH){
         for(int n = 0;n<MAX_NUMBER_NODES;n++){
-            Address_map *current_addrmap =
-                                       &LBeacon_Address_Map.Address_map_list[n];
-            if (current_addrmap->in_use == set_bit){
 
+            if (LBeacon_address_map.in_use[n] == true){
                 /* Add the pkt that to be sent to the server */
-                udp_addpkt( &udp_config, current_addrmap -> net_address, msg
-                          , size);
+                udp_addpkt( &udp_config, LBeacon_address_map.address_map_list[n]
+                            .net_address, msg, size);
             }
         }
     }
 
-    pthread_mutex_unlock(&LBeacon_Address_Map.list_lock);
+    pthread_mutex_unlock(&LBeacon_address_map.list_lock);
 }
 
 
-int Wifi_init(char *IPaddress){
+ErrorCode Wifi_init(char *IPaddress){
 
     /* Set the address of server */
     array_copy(IPaddress, udp_config.Local_Address, strlen(IPaddress));
@@ -778,9 +767,9 @@ void Wifi_free(){
 }
 
 
-void *wifi_send(void *buffer_head){
+void *process_wifi_send(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)buffer_head;
+    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
 
     struct List_Entry *list_pointers, *save_list_pointers;
     BufferNode *temp;
@@ -789,7 +778,7 @@ void *wifi_send(void *buffer_head){
 
     list_for_each_safe(list_pointers,
                        save_list_pointers,
-                       &buffer -> buffer_entry){
+                       &buffer -> list_head){
 
         /* Remove the node from the orignal buffer list and free the memory. */
         remove_list_node(list_pointers);
@@ -809,7 +798,7 @@ void *wifi_send(void *buffer_head){
 }
 
 
-void *wifi_receive(){
+void *wifi_receive_process(){
 
     while (ready_to_work == true) {
 
@@ -821,7 +810,7 @@ void *wifi_receive(){
 
             // counting test time for mp_alloc times
             int test_times = 0;
-
+            int current_time = get_system_time();
             /* Allocate from node_mempool a buffer for received data and copy
                the data from Wi-Fi receive queue to the buffer. */
             do{
@@ -866,26 +855,25 @@ void *wifi_receive(){
                         switch (type_L) {
 
                             case RFHR_from_server:
-                                poll_LBeacon_for_HR_time = get_system_time();
-                                pthread_mutex_lock(&Command_msg_buffer_list_head
+                                last_poll_LBeacon_for_HR_time = current_time;
+                                pthread_mutex_lock(&command_msg_buffer_list_head
                                                  .list_lock);
                                 insert_list_tail(&new_node -> buffer_entry
-                                               , &Command_msg_buffer_list_head
-                                               .buffer_entry);
+                                               , &command_msg_buffer_list_head
+                                               .list_head);
                                 pthread_mutex_unlock(
-                                       &Command_msg_buffer_list_head.list_lock);
+                                       &command_msg_buffer_list_head.list_lock);
 
                                 break;
 
                             case poll_for_tracked_object_data_from_server:
-                                polling_object_tracking_time =
-                                                              get_system_time();
-                                pthread_mutex_lock(&Command_msg_buffer_list_head
+                                last_polling_object_tracking_time= current_time;
+                                pthread_mutex_lock(&command_msg_buffer_list_head
                                                  .list_lock);
                                 insert_list_tail( &new_node -> buffer_entry
-                                  , &Command_msg_buffer_list_head.buffer_entry);
+                                  , &command_msg_buffer_list_head.list_head);
                                 pthread_mutex_unlock(
-                                       &Command_msg_buffer_list_head.list_lock);
+                                       &command_msg_buffer_list_head.list_lock);
                                 break;
 
                             case data_for_LBeacon:
@@ -907,7 +895,7 @@ void *wifi_receive(){
                                                  .list_lock);
                                 insert_list_tail(&new_node -> buffer_entry
                                                , &NSI_receive_buffer_list_head
-                                               .buffer_entry);
+                                               .list_head);
                                 pthread_mutex_unlock(
                                        &NSI_receive_buffer_list_head.list_lock);
                                 break;
@@ -916,7 +904,7 @@ void *wifi_receive(){
                                 pthread_mutex_lock(
                                    &LBeacon_receive_buffer_list_head.list_lock);
                                 insert_list_tail( &new_node -> buffer_entry
-                              , &LBeacon_receive_buffer_list_head.buffer_entry);
+                              , &LBeacon_receive_buffer_list_head.list_head);
                                 pthread_mutex_unlock(
                                    &LBeacon_receive_buffer_list_head.list_lock);
                                 break;
@@ -925,7 +913,7 @@ void *wifi_receive(){
                                 pthread_mutex_lock(&BHM_receive_buffer_list_head
                                                    .list_lock);
                                 insert_list_tail( &new_node -> buffer_entry
-                                  , &BHM_receive_buffer_list_head.buffer_entry);
+                                  , &BHM_receive_buffer_list_head.list_head);
                                 pthread_mutex_unlock(
                                        &BHM_receive_buffer_list_head.list_lock);
                                 break;
