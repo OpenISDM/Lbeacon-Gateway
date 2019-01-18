@@ -149,8 +149,11 @@ void *mp_alloc(Memory_Pool *mp){
 
         /* If the next position which mp->head is pointing to is NULL,
            expand the memory pool. */
-      if(mp_expand(mp, mp->slots) == MEMORY_POOL_ERROR)
-        return NULL;
+      if(mp_expand(mp, mp->slots) == MEMORY_POOL_ERROR){
+
+          pthread_mutex_unlock(&mp->mem_lock);
+          return NULL;
+      }
     }
 
     //store first address, i.e., address of the start of first element
@@ -181,20 +184,14 @@ int mp_free(Memory_Pool *mp, void *mem){
         int diffrenceinbyte = (mem - mp->memory[i]) * sizeof(mem);
 
         // Only consider the positive offset
-        if(diffrenceinbyte > 0){
-
-        // Find the smalleset offset
-        if(diffrenceinbyte < closest)
+        if((diffrenceinbyte > 0) && (diffrenceinbyte < closest))
             closest = diffrenceinbyte;
-        }
     }
 
     //check if mem is correct, i.e. is pointing to the struct of a slot
     if((closest % mp->size) != 0){
-
         pthread_mutex_unlock(&mp->mem_lock);
         return MEMORY_POOL_ERROR;
-
       }
 
     //store first address
