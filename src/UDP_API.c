@@ -122,8 +122,6 @@ void *udp_send_pkt(void *udpconfig){
 
     struct sockaddr_in si_send;
 
-    const int socketaddr_len = sizeof(si_send);
-
     while(!(udp_config -> shutdown)){
 
         if(!(is_null( &udp_config -> pkt_Queue))){

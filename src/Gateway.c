@@ -282,8 +282,8 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 }
 
 
-void init_buffer(BufferListHead *buffer, void (*function_p)(void*)
-               , int priority_nice){
+void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
+                 int priority_nice){
 
     init_entry( &(buffer->list_head));
 
@@ -301,16 +301,15 @@ void init_buffer(BufferListHead *buffer, void (*function_p)(void*)
 
 void sorting_priority(List_Entry *priority_list_head){
 
-    List_Entry temp, *list_pointers, *save_list_pointers
-                    , *list_pointers_tmp;
+    List_Entry temp, *list_pointers, *save_list_pointers, *list_pointers_tmp;
 
     init_entry(&temp);
 
     list_for_each_safe(list_pointers, save_list_pointers
                      , priority_list_head){
 
-        BufferListHead *current_head = ListEntry(list_pointers, BufferListHead
-                                               , priority_entry);
+        BufferListHead *current_head = ListEntry(list_pointers, BufferListHead,
+                                                 priority_entry);
         pthread_mutex_lock( &current_head->list_lock);
         remove_list_node(list_pointers);
         if (is_entry_list_empty(&temp))
@@ -322,10 +321,10 @@ void sorting_priority(List_Entry *priority_list_head){
                 BufferListHead *current_head_in_tmp =
                    ListEntry(list_pointers_tmp, BufferListHead, priority_entry);
                 pthread_mutex_lock( &current_head_in_tmp->list_lock);
-                if( current_head_in_tmp->priority_nice > current_head ->
-                                                                 priority_nice){
+                if(current_head_in_tmp->priority_nice > current_head ->
+                   priority_nice){
                     insert_entry_list(list_pointers, list_pointers_tmp-> prev,
-                                                             list_pointers_tmp);
+                                      list_pointers_tmp);
                     pthread_mutex_unlock( &current_head_in_tmp->list_lock);
                     sorted = true;
                     break;
@@ -357,12 +356,11 @@ void init_Address_Map(AddressMapArray *LBeacon_map){
 
     pthread_mutex_init( &LBeacon_map->list_lock, 0);
 
-    memset(LBeacon_map->address_map_list, 0
-         , sizeof(LBeacon_map->address_map_list));
+    memset(LBeacon_map->address_map_list, 0,
+           sizeof(LBeacon_map->address_map_list));
 
-    for(int n=0; n < MAX_NUMBER_NODES; n++){
+    for(int n=0; n < MAX_NUMBER_NODES; n++)
         LBeacon_map->in_use[n] = false;
-    }
 }
 
 
@@ -371,8 +369,8 @@ bool is_in_Address_Map(char *address){
     for(int n=0;n<MAX_NUMBER_NODES;n++){
 
         if (LBeacon_address_map.in_use[n] == true){
-            if(strcmp(LBeacon_address_map.address_map_list[n].net_address
-                                                               , address) == 0){
+            if(strcmp(LBeacon_address_map.address_map_list[n].net_address,
+               address) == 0){
                 return true;
             }
         }
@@ -422,8 +420,8 @@ void *CommUnit_process(){
         if(config.is_polled_by_server == false){
             /* If it is the time to poll the tracking data from LBeacon, Make a
             thread to do this work */
-            if(current_time - last_poll_LBeacon_for_HR_time
-                                                  > config.period_between_RFHR){
+            if(current_time - last_poll_LBeacon_for_HR_time >
+               config.period_between_RFHR){
 
                 // Polling Tracked Object Data
                 // set the pkt type
@@ -440,8 +438,8 @@ void *CommUnit_process(){
                 last_poll_LBeacon_for_HR_time = current_time;
             }
 
-            else if(current_time - last_polling_object_tracking_time
-                                                  > config.period_between_RFOT){
+            else if(current_time - last_polling_object_tracking_time >
+                    config.period_between_RFOT){
 
                 // Pulling Health Report
                 // set the pkt type
@@ -472,8 +470,8 @@ void *CommUnit_process(){
 
                 list_for_each(tmp, &priority_list_head){
 
-                    BufferListHead *current_head = ListEntry(tmp, BufferListHead
-                                                           , priority_entry);
+                    BufferListHead *current_head= ListEntry(tmp, BufferListHead,
+                                                            priority_entry);
 
                     pthread_mutex_lock( &current_head -> list_lock);
 
@@ -484,10 +482,10 @@ void *CommUnit_process(){
                         /* If there is a node in the buffer and the buffer
                            is not be occupied, do the work according to the
                            function pointer */
-                        return_error_value = thpool_add_work(thpool
-                                           , current_head -> function
-                                           , current_head
-                                           , current_head -> priority_nice);
+                        return_error_value = thpool_add_work(thpool,
+                                             current_head -> function,
+                                             current_head,
+                                             current_head -> priority_nice);
                     }
 
                     pthread_mutex_unlock( &current_head -> list_lock);
@@ -498,8 +496,6 @@ void *CommUnit_process(){
                    worker thread */
 
                 List_Entry *tmp;
-
-                int count = 0;
 
                 list_for_each_reverse(tmp, &priority_list_head){
 
@@ -513,10 +509,10 @@ void *CommUnit_process(){
                         /* If there is a node in the buffer and the buffer
                            is not be occupied, do the work according to the
                            function pointer */
-                        return_error_value = thpool_add_work(thpool
-                                           , current_head -> function
-                                           , current_head
-                                           , current_head -> priority_nice);
+                        return_error_value = thpool_add_work(thpool,
+                                             current_head -> function,
+                                             current_head,
+                                             current_head -> priority_nice);
                     }
 
                     pthread_mutex_unlock(&current_head->list_lock);
@@ -526,8 +522,9 @@ void *CommUnit_process(){
                 init_time = current_time;
             }
         }
-
-        sleep(WAITING_TIME);
+        else{
+            sleep(WAITING_TIME);
+        }
 
     } //End while
 
@@ -540,19 +537,24 @@ void *CommUnit_process(){
 
 void *NSI_routine(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
+    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
-    pthread_mutex_lock(&buffer -> list_lock);
+    struct List_Entry *list_pointers, *save_list_pointers;
 
-    if(is_entry_list_empty( &buffer -> list_head) == false){
+    BufferNode *temp;
+
+    pthread_mutex_lock( &buffer_list_head -> list_lock);
+
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
+
         /* Create a temporary node and set as the head */
-        struct List_Entry *list_pointers, *save_list_pointers;
-        list_for_each_safe(list_pointers, save_list_pointers
-                         , &buffer -> list_head){
+        list_for_each_safe(list_pointers, save_list_pointers,
+                           &buffer_list_head -> list_head){
+
             remove_list_node(list_pointers);
 
-            BufferNode *temp = ListEntry(list_pointers, BufferNode
-                                       , buffer_entry);
+            temp = ListEntry(list_pointers, BufferNode,
+                                         buffer_entry);
 
             char current_uuid[UUID_LENGTH];
 
@@ -562,8 +564,7 @@ void *NSI_routine(void *_buffer_list_head){
 
             /* Put the address into LBeacon_address_map and set the return
                pkt type */
-            if (beacon_join_request(current_uuid, temp -> net_address)
-                == true)
+            if (beacon_join_request(current_uuid, temp -> net_address) == true)
                 send_type += join_request_ack & 0x0f;
             else
                 send_type += join_request_deny & 0x0f;
@@ -573,19 +574,15 @@ void *NSI_routine(void *_buffer_list_head){
 
             pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
 
-            insert_list_tail(&temp->buffer_entry
-                           , &NSI_send_buffer_list_head.list_head);
+            insert_list_tail( &temp->buffer_entry,
+                              &NSI_send_buffer_list_head.list_head);
 
-            pthread_mutex_unlock(&NSI_send_buffer_list_head.list_lock);
+            pthread_mutex_unlock( &NSI_send_buffer_list_head.list_lock);
 
-            mp_free(&node_mempool, temp);
         }
-        pthread_mutex_unlock(&buffer -> list_lock);
     }
-    else{
-        pthread_mutex_unlock(&buffer -> list_lock);
-        sleep(WAITING_TIME);
-    }
+
+    pthread_mutex_unlock( &buffer_list_head -> list_lock);
 
     return (void *)NULL;
 }
@@ -593,32 +590,35 @@ void *NSI_routine(void *_buffer_list_head){
 
 void *BHM_routine(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
+    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
     /* Create a temporary node and set as the head */
     struct List_Entry *list_pointers, *save_list_pointers;
 
     BufferNode *temp;
 
-    pthread_mutex_lock(&buffer->list_lock);
+    pthread_mutex_lock( &buffer_list_head->list_lock);
 
-    list_for_each_safe(list_pointers, save_list_pointers
-                                    , &buffer->list_head){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
-        /* Remove the node from the orignal buffer list. And directly send to
-           the server. */
-        remove_list_node(list_pointers);
+        list_for_each_safe(list_pointers, save_list_pointers,
+                           &buffer_list_head->list_head){
 
-        temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+            /* Remove the node from the orignal buffer list. And directly send to
+               the server. */
+            remove_list_node(list_pointers);
 
-        //TODO Make a buffer to merge all the HR pkt and wait for polling.
+            temp = ListEntry(list_pointers, BufferNode, buffer_entry);
 
-        insert_list_tail( &temp -> buffer_entry
-                        , &BHM_send_buffer_list_head.list_head);
+            //TODO Make a buffer to merge all the HR pkt and wait for polling.
 
+            insert_list_tail( &temp -> buffer_entry,
+                              &BHM_send_buffer_list_head.list_head);
+
+        }
     }
 
-    pthread_mutex_unlock(&buffer->list_lock);
+    pthread_mutex_unlock( &buffer_list_head->list_lock);
 
     return (void *)NULL;
 }
@@ -626,58 +626,66 @@ void *BHM_routine(void *_buffer_list_head){
 
 void *LBeacon_routine(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
+    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
     /* Create a temporary node and set as the head */
     struct List_Entry *list_pointers, *save_list_pointers;
 
     BufferNode *temp;
 
-    pthread_mutex_lock(&buffer->list_lock);
+    pthread_mutex_lock(&buffer_list_head->list_lock);
 
-    list_for_each_safe(list_pointers, save_list_pointers
-                                    , &buffer->list_head){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
-        /* Remove the node from the orignal buffer list. */
-        remove_list_node(list_pointers);
+        list_for_each_safe(list_pointers, save_list_pointers,
+                           &buffer_list_head->list_head){
 
-        temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+            /* Remove the node from the orignal buffer list. */
+            remove_list_node(list_pointers);
 
-        /* Add the content that to be sent to the server */
-        udp_addpkt( &udp_config, config.server_ip, temp->content
-                  , temp->content_size);
+            temp = ListEntry(list_pointers, BufferNode, buffer_entry);
 
-        mp_free(&node_mempool, temp);
+            /* Add the content that to be sent to the server */
+            udp_addpkt( &udp_config, config.server_ip, temp->content,
+                        temp->content_size);
+
+            mp_free(&node_mempool, temp);
+        }
     }
 
-    pthread_mutex_unlock(&buffer->list_lock);
+    pthread_mutex_unlock(&buffer_list_head->list_lock);
 
     return (void *)NULL;
 }
 
 
 void *Server_routine(void *_buffer_list_head){
-    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
+    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
     /* Create a temporary node and set as the head */
     struct List_Entry *list_pointers, *save_list_pointers;
 
     BufferNode *temp;
 
-    pthread_mutex_lock(&buffer->list_lock);
+    pthread_mutex_lock(&buffer_list_head->list_lock);
 
-    list_for_each_safe(list_pointers, save_list_pointers
-                                    , &buffer->list_head){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
-        /* Remove the node from the orignal buffer list. */
-        remove_list_node(list_pointers);
+        list_for_each_safe(list_pointers, save_list_pointers,
+                           &buffer_list_head->list_head){
 
-        temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+            /* Remove the node from the orignal buffer list. */
+            remove_list_node(list_pointers);
 
-        beacon_broadcast(temp -> content, temp -> content_size);
+            temp = ListEntry(list_pointers, BufferNode, buffer_entry);
 
-        mp_free(&node_mempool, temp);
+            beacon_broadcast(temp -> content, temp -> content_size);
+
+            mp_free(&node_mempool, temp);
+        }
     }
+
+    pthread_mutex_unlock(&buffer_list_head->list_lock);
 }
 
 
@@ -705,6 +713,7 @@ bool beacon_join_request(char *ID, char *address){
 
     /* If still has space for the LBeacon to register */
     if (not_in_use != -1){
+
         AddressMap *tmp = &LBeacon_address_map
                            .address_map_list[not_in_use];
 
@@ -769,30 +778,33 @@ void Wifi_free(){
 
 void *process_wifi_send(void *_buffer_list_head){
 
-    BufferListHead *buffer = (BufferListHead *)_buffer_list_head;
+    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
     struct List_Entry *list_pointers, *save_list_pointers;
     BufferNode *temp;
 
-    pthread_mutex_lock(&buffer -> list_lock);
+    pthread_mutex_lock(&buffer_list_head -> list_lock);
 
-    list_for_each_safe(list_pointers,
-                       save_list_pointers,
-                       &buffer -> list_head){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
-        /* Remove the node from the orignal buffer list and free the memory. */
-        remove_list_node(list_pointers);
+        list_for_each_safe(list_pointers,
+                           save_list_pointers,
+                           &buffer_list_head -> list_head){
 
-        temp = ListEntry(list_pointers, BufferNode, buffer_entry);
+            /* Remove the node from the orignal buffer list and free the memory. */
+            remove_list_node(list_pointers);
 
-        /* Add the content that to be sent to the server */
-        udp_addpkt( &udp_config, temp -> net_address, temp->content
-                  , temp->content_size);
+            temp = ListEntry(list_pointers, BufferNode, buffer_entry);
 
-        mp_free(&node_mempool, temp);
+            /* Add the content that to be sent to the server */
+            udp_addpkt( &udp_config, temp -> net_address, temp->content
+                      , temp->content_size);
+
+            mp_free(&node_mempool, temp);
+        }
     }
 
-    pthread_mutex_unlock(&buffer -> list_lock);
+    pthread_mutex_unlock(&buffer_list_head -> list_lock);
 
     return (void *)NULL;
 }
@@ -857,10 +869,10 @@ void *wifi_receive_process(){
                             case RFHR_from_server:
                                 last_poll_LBeacon_for_HR_time = current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
-                                                 .list_lock);
-                                insert_list_tail(&new_node -> buffer_entry
-                                               , &command_msg_buffer_list_head
-                                               .list_head);
+                                                   .list_lock);
+                                insert_list_tail(&new_node -> buffer_entry,
+                                                 &command_msg_buffer_list_head
+                                                 .list_head);
                                 pthread_mutex_unlock(
                                        &command_msg_buffer_list_head.list_lock);
 
@@ -869,9 +881,9 @@ void *wifi_receive_process(){
                             case poll_for_tracked_object_data_from_server:
                                 last_polling_object_tracking_time= current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
-                                                 .list_lock);
-                                insert_list_tail( &new_node -> buffer_entry
-                                  , &command_msg_buffer_list_head.list_head);
+                                                   .list_lock);
+                                insert_list_tail( &new_node -> buffer_entry,
+                                       &command_msg_buffer_list_head.list_head);
                                 pthread_mutex_unlock(
                                        &command_msg_buffer_list_head.list_lock);
                                 break;
@@ -892,10 +904,10 @@ void *wifi_receive_process(){
 
                             case request_to_join:
                                 pthread_mutex_lock(&NSI_receive_buffer_list_head
-                                                 .list_lock);
-                                insert_list_tail(&new_node -> buffer_entry
-                                               , &NSI_receive_buffer_list_head
-                                               .list_head);
+                                                   .list_lock);
+                                insert_list_tail(&new_node -> buffer_entry,
+                                                 &NSI_receive_buffer_list_head
+                                                 .list_head);
                                 pthread_mutex_unlock(
                                        &NSI_receive_buffer_list_head.list_lock);
                                 break;
@@ -912,8 +924,8 @@ void *wifi_receive_process(){
                             case health_report:
                                 pthread_mutex_lock(&BHM_receive_buffer_list_head
                                                    .list_lock);
-                                insert_list_tail( &new_node -> buffer_entry
-                                  , &BHM_receive_buffer_list_head.list_head);
+                                insert_list_tail( &new_node -> buffer_entry,
+                                       &BHM_receive_buffer_list_head.list_head);
                                 pthread_mutex_unlock(
                                        &BHM_receive_buffer_list_head.list_lock);
                                 break;

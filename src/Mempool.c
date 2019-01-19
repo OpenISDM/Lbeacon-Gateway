@@ -49,9 +49,11 @@
 
 size_t get_current_size_mempool(Memory_Pool *mp){
 
-    size_t mem_size = 0;
-    for(int i = 0; i < mp->alloc_time; i++)
-        mem_size = mem_size + mp->size * mp->slots;
+    pthread_mutex_lock(&mp->mem_lock);
+
+    size_t mem_size = mp->alloc_time * mp->size * mp->slots;
+
+    pthread_mutex_unlock(&mp->mem_lock);
 
     return mem_size;
 }
@@ -63,7 +65,7 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots)
 
     //allocate memory
     if((mp->memory[0] = malloc(size * slots)) == NULL)
-      return MEMORY_POOL_ERROR;
+        return MEMORY_POOL_ERROR;
 
     //initialize
     mp->head = NULL;
@@ -132,11 +134,17 @@ int mp_expand(Memory_Pool *mp, size_t slots)
 
 void mp_destroy(Memory_Pool *mp){
 
+    pthread_mutex_lock( &mp->mem_lock);
+
     for(int i = 0; i < MAX_EXP_TIME; i++){
 
         mp->memory[i] = NULL;
         free(mp->memory[i]);
     }
+
+    pthread_mutex_unlock( &mp->mem_lock);
+
+    pthread_mutex_destroy( &mp->mem_lock);
 
 }
 
@@ -162,7 +170,7 @@ void *mp_alloc(Memory_Pool *mp){
     //link one past it
     mp->head = *mp->head;
 
-    pthread_mutex_unlock(&mp->mem_lock);
+    pthread_mutex_unlock( &mp->mem_lock);
 
     //return the first address
     return temp;
@@ -172,7 +180,7 @@ void *mp_alloc(Memory_Pool *mp){
 
 int mp_free(Memory_Pool *mp, void *mem){
 
-    int closest = MAX_MEM_OFFSET;
+    int closest = -1;
 
     pthread_mutex_lock(&mp->mem_lock);
 
@@ -181,18 +189,16 @@ int mp_free(Memory_Pool *mp, void *mem){
     for(int i = 0; i < mp->alloc_time; i++){
 
         //calculate the offset from mem to mp->memory
-        int diffrenceinbyte = (mem - mp->memory[i]) * sizeof(mem);
-
+        int differenceinbyte = (mem - mp->memory[i]) * sizeof(mem);
         // Only consider the positive offset
-        if((diffrenceinbyte > 0) && (diffrenceinbyte < closest))
-            closest = diffrenceinbyte;
+        if((differenceinbyte > 0) && ((differenceinbyte < closest)||(closest == -1)))
+            closest = differenceinbyte;
     }
-
     //check if mem is correct, i.e. is pointing to the struct of a slot
     if((closest % mp->size) != 0){
         pthread_mutex_unlock(&mp->mem_lock);
         return MEMORY_POOL_ERROR;
-      }
+    }
 
     //store first address
     void *temp = mp->head;
