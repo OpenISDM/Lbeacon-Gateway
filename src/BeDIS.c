@@ -46,6 +46,7 @@
 
 #include "BeDIS.h"
 
+
 errordesc ErrorDesc [] = {
 
     {WORK_SUCCESSFULLY, "The code works successfullly"},
@@ -85,6 +86,7 @@ errordesc ErrorDesc [] = {
     {E_START_TRACKING_THREAD, "Start Tracking Thread Fail."}
 };
 
+
 unsigned int *uuid_str_to_data(char *uuid) {
     char conversion[] = "0123456789ABCDEF";
     int uuid_length = strlen(uuid);
@@ -117,6 +119,7 @@ unsigned int twoc(int in, int t) {
 
     return (in < 0) ? (in + (2 << (t - 1))) : in;
 }
+
 
 void trim_string_tail(char *message) {
 

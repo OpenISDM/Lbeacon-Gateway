@@ -58,6 +58,7 @@ size_t get_current_size_mempool(Memory_Pool *mp){
     return mem_size;
 }
 
+
 int mp_init(Memory_Pool *mp, size_t size, size_t slots){
 
     pthread_mutex_init( &mp->mem_lock, 0);
@@ -74,7 +75,6 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots){
 
     //add every slot to the free list
     char *end = (char *)mp->memory[0] + size * slots;
-
 
     for(char *ite = mp->memory[0]; ite < end; ite += size){
 

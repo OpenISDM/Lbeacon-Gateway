@@ -363,7 +363,6 @@ void sorting_priority(List_Entry *priority_list_head){
 }
 
 
-
 void init_Address_Map(AddressMapArray *LBeacon_map){
 
     pthread_mutex_init( &LBeacon_map->list_lock, 0);

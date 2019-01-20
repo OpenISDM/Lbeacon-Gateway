@@ -47,6 +47,7 @@
 #ifndef BEDIS_H
 #define BEDIS_H
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -139,6 +140,7 @@
 /* Timeout interval in seconds */
 #define WAITING_TIME 10
 
+
 typedef enum _ErrorCode{
 
     WORK_SUCCESSFULLY = 0,
@@ -183,7 +185,6 @@ typedef enum _ErrorCode{
 
 } ErrorCode;
 
-
 typedef struct _errordesc {
     ErrorCode code;
     char *message;
@@ -197,15 +198,6 @@ typedef struct coordinates{
 
 } Coordinates;
 
-/* A global flag that is initially set to true by the main thread. It is set
-   to false by any thread when the thread encounters a fatal error,
-   indicating that it is about to exit. In addition, if user presses Ctrl+C,
-   the ready_to_work will be set as false to stop all threadts. */
-bool ready_to_work;
-
-
-/* The pointer to the category of the log file */
-zlog_category_t *category_health_report, *category_debug;
 
 typedef enum pkt_types {
     /* Unknown type of pkt type */
@@ -263,6 +255,16 @@ typedef enum DeviceType {
     max_type = 2
 
 } DeviceType;
+
+
+/* A global flag that is initially set to true by the main thread. It is set
+   to false by any thread when the thread encounters a fatal error,
+   indicating that it is about to exit. In addition, if user presses Ctrl+C,
+   the ready_to_work will be set as false to stop all threadts. */
+bool ready_to_work;
+
+/* The pointer to the category of the log file */
+zlog_category_t *category_health_report, *category_debug;
 
 
 /* FUNCTIONS */
@@ -369,8 +371,8 @@ ErrorCode startThread(pthread_t *thread, void *( *start_routine)(void *),
 
      system_time - system time in seconds
 */
-
 int get_system_time();
+
 
 /*
   memset:
