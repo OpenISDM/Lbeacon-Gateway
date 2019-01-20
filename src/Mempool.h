@@ -26,7 +26,7 @@
 
   Version:
 
-      2.0, 20190111
+      2.0, 20190119
 
   Abstract:
 
@@ -45,11 +45,11 @@
 
 */
 
-#include <stdlib.h>
-#include <pthread.h>
-
 #ifndef MEMPOOL_H
 #define MEMPOOL_H
+
+#include <stdlib.h>
+#include <pthread.h>
 
 #define MEMORY_POOL_SUCCESS 1
 #define MEMORY_POOL_ERROR 0

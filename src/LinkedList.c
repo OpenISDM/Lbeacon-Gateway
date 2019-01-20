@@ -24,7 +24,7 @@
 
   Version:
 
-     2.0
+     2.0, 20190119
 
   Abstract:
 
@@ -52,44 +52,38 @@
 #include "LinkedList.h"
 
 
-inline void init_entry(List_Entry *entry){
+inline void init_entry(List_Entry *entry) {
 
     entry->next = entry;
     entry->prev = entry;
-
 }
 
 
-inline bool is_entry_list_empty(List_Entry *entry){
+inline bool is_entry_list_empty(List_Entry *entry) {
 
 	return is_isolated_node(entry);
 }
 
 
-inline bool is_isolated_node(List_Entry *node){
+inline bool is_isolated_node(List_Entry *node) {
 
-    if(node == node->next){
-        return true;
-    }
-    return false;
+    return (node == node->next);
 }
 
 
 inline void insert_entry_list(List_Entry *new_node, List_Entry *prev,
-                         List_Entry *next) {
+                              List_Entry *next) {
 
     next->prev = new_node;
     new_node->next = next;
     new_node->prev = prev;
     prev->next = new_node;
-
 }
 
 
 inline void insert_list_first(List_Entry *new_node, List_Entry *head) {
 
     insert_entry_list(new_node, head, head->next);
-
 }
 
 
@@ -103,7 +97,6 @@ inline void remove_entry_list(List_Entry *prev, List_Entry *next) {
 
     next->prev = prev;
     prev->next = next;
-
 }
 
 
@@ -113,7 +106,6 @@ inline void remove_list_node(List_Entry *removed_node_ptrs) {
 
     removed_node_ptrs->prev = removed_node_ptrs;
     removed_node_ptrs->next = removed_node_ptrs;
-
 }
 
 
@@ -123,7 +115,7 @@ inline int get_list_length(List_Entry *entry) {
     int list_length = 0;
 
     for (listptrs = (entry)->next; listptrs != (entry);
-        listptrs = listptrs->next) {
+         listptrs = listptrs->next) {
         list_length++;
     }
 

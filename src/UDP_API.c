@@ -19,7 +19,6 @@
 
      UDP_API.c
 
-
   Abstract:
 
      BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of

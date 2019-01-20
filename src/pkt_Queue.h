@@ -18,6 +18,10 @@
 
      pkt_Queue.h
 
+  Version:
+
+     2.0, 20190119
+
   Abstract:
 
      BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
@@ -149,7 +153,7 @@ int Free_Packet_Queue(pkt_ptr pkt_queue);
 
   Parameter:
 
-      pkt_Queue: The Queue we store pkt.
+      pkt_Queue : The Queue we store pkt.
       type      : Record the type of packets working environment.
       raw_addr  : The destnation address of the packet.
       content   : The content we decided to send.

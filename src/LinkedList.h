@@ -25,7 +25,7 @@
 
   Version:
 
-     2.0
+     2.0, 20190119
 
   Abstract:
 
@@ -67,12 +67,13 @@
 #define list_for_each(pos, head) \
     for (pos = (head)->next; pos != (head); pos = pos->next)
 
+/*Macro for the method going through the list structure reversely */
+#define list_for_each_reverse(pos, head) \
+    for (pos = (head)->prev; pos != (head); pos = pos->prev)
+
 #define list_for_each_safe(pos, n, head) \
     for (pos = (head)->next, n = pos->next; pos != (head); \
         pos = n, n = pos->next)
-
-#define list_for_each_reverse(pos, head) \
-    for (pos = (head)->prev; pos != (head); pos = pos->prev)
 
 /*Struct for the head of a list or doubly linked list entry used in link a
   node in to a list */

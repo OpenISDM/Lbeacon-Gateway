@@ -12,8 +12,8 @@
 
   File Description:
 
-     This file, contain the definitions and declarations of constants
-     , structures, and functions used in both Gateway and LBeacon.
+     This file, contain the definitions and declarations of constants,
+     structures, and functions used in both Gateway and LBeacon.
 
   File Name:
 
@@ -21,7 +21,7 @@
 
   Version:
 
-     2.0, 201901041100
+     2.0, 20190119
 
   Abstract:
 
@@ -82,10 +82,7 @@ errordesc ErrorDesc [] = {
     {E_XBEE_VALIDATE, "Zigbee Connection Fail."},
     {E_START_COMMUNICAT_ROUTINE_THREAD, "Start Communocation Thread Fail."},
     {E_START_BHM_ROUTINE_THREAD, "Start BHM THread Fail."},
-    {E_START_TRACKING_THREAD, "Start Tracking Thread Fail."},
-    {E_ZIGBEE_CALL_BACK, "Error enabling call back function for xbee"},
-    {E_ZIGBEE_SHUT_DOWN,  "Error shutting down xbee."}
-
+    {E_START_TRACKING_THREAD, "Start Tracking Thread Fail."}
 };
 
 unsigned int *uuid_str_to_data(char *uuid) {
@@ -125,7 +122,7 @@ void trim_string_tail(char *message) {
 
     int idx = 0;
 
-    // discard the whitespace, newline, carry-return characters at the end
+    /* discard the whitespace, newline, carry-return characters at the end */
     if(strlen(message) > 0){
 
         idx = strlen(message) - 1;
@@ -143,13 +140,14 @@ void trim_string_tail(char *message) {
 void ctrlc_handler(int stop) { ready_to_work = false; }
 
 
-ErrorCode startThread(pthread_t *threads ,void *( *thfunct)(void *), void *arg){
+ErrorCode startThread(pthread_t *thread, void *( *start_routine)(void *),
+                      void *arg){
 
     pthread_attr_t attr;
 
     if ( pthread_attr_init( &attr) != 0
-    || pthread_create(threads, &attr, thfunct, arg) != 0
-    || pthread_detach( *threads)){
+    || pthread_create(thread, &attr, start_routine, arg) != 0
+    || pthread_detach( *thread)){
 
           printf("Start Thread Error.\n");
           return E_START_THREAD;
@@ -170,10 +168,11 @@ int get_system_time() {
     /* Convert time from Epoch to time in milliseconds of a long long type */
     ftime(&t);
 
-    //system_time = 1000 * (long long)t.time + (long long)t.millitm;
-    //millisecond ver.
+    /* millisecond ver. */
+    /* system_time = 1000 * (long long)t.time + (long long)t.millitm; */
 
-    system_time = (int)t.time; // second ver.
+    /* second ver. */
+    system_time = (int)t.time;
 
     return system_time;
 }

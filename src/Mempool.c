@@ -21,11 +21,11 @@
 
   File Name:
 
-     Mempool.c, 20190111
+     Mempool.c
 
   Version:
 
-     2.0, 20190111
+     2.0, 20190119
 
   Abstract:
 
@@ -58,8 +58,7 @@ size_t get_current_size_mempool(Memory_Pool *mp){
     return mem_size;
 }
 
-int mp_init(Memory_Pool *mp, size_t size, size_t slots)
-{
+int mp_init(Memory_Pool *mp, size_t size, size_t slots){
 
     pthread_mutex_init( &mp->mem_lock, 0);
 
@@ -93,13 +92,11 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots)
 }
 
 
-int mp_expand(Memory_Pool *mp, size_t slots)
-{
-    //void *new_mem;
+int mp_expand(Memory_Pool *mp, size_t slots){
+
     int alloc_count;
 
     alloc_count = mp->alloc_time;
-
 
     if(alloc_count == MAX_EXP_TIME)
         return MEMORY_POOL_ERROR;
@@ -107,7 +104,6 @@ int mp_expand(Memory_Pool *mp, size_t slots)
     mp->memory[alloc_count] = malloc(mp->size * slots);
     if(mp->memory[alloc_count] == NULL )
         return MEMORY_POOL_ERROR;
-
 
     //add every slot to the free list
     char *end = (char *) mp->memory[alloc_count] + mp->size * slots;
@@ -191,7 +187,8 @@ int mp_free(Memory_Pool *mp, void *mem){
         //calculate the offset from mem to mp->memory
         int differenceinbyte = (mem - mp->memory[i]) * sizeof(mem);
         // Only consider the positive offset
-        if((differenceinbyte > 0) && ((differenceinbyte < closest)||(closest == -1)))
+        if((differenceinbyte > 0) && ((differenceinbyte < closest) ||
+           (closest == -1)))
             closest = differenceinbyte;
     }
     //check if mem is correct, i.e. is pointing to the struct of a slot

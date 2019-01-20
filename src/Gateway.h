@@ -15,13 +15,13 @@
      This is the header file containing the declarations of functions and
      variables used in the Gateway.c file.
 
-  Version:
-
-     1.0, 20190117
-
   File Name:
 
      Gateway.h
+
+  Version:
+
+     1.0, 20190117
 
   Abstract:
 
@@ -88,7 +88,7 @@ typedef struct Config {
 
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
-    int Number_worker_threads;
+    int number_worker_threads;
 
     /* The address of server ip */
     char server_ip[NETWORK_ADDR_LENGTH];
@@ -478,11 +478,11 @@ void Wifi_free();
 /*
   process_wifi_send:
 
-     This function sends the msg to the server via Wi-Fi.
+     This function sends the msg in the buffer list to the server via Wi-Fi.
 
   Parameters:
 
-     _buffer_list_head - A pointer to the buffer list head to be send.
+     _buffer_list_head - A pointer to the buffer list head.
 
   Return value:
 
