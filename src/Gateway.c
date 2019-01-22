@@ -504,6 +504,7 @@ void *CommUnit_process(){
                                                  current_head -> function,
                                                  current_head,
                                                  current_head -> priority_nice);
+                            break;
                         }
                         pthread_mutex_unlock( &current_head -> list_lock);
                     }
@@ -538,6 +539,7 @@ void *CommUnit_process(){
                                                  current_head -> function,
                                                  current_head,
                                                  current_head -> priority_nice);
+                            break;
                         }
                         pthread_mutex_unlock( &current_head -> list_lock);
                     }
@@ -974,7 +976,7 @@ void *wifi_receive_process(){
                 }
             }
         }
-        else{
+        else if(temppkt.type == NONE){
             /* If there is no packet received, sleep a short time */
             sleep(WAITING_TIME);
         }

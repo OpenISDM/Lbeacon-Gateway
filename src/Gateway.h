@@ -204,7 +204,7 @@ BufferListHead BHM_receive_buffer_list_head;
 /* Head of a list of buffer_list_head in the priority order. */
 List_Entry priority_list_head;
 
-// Flags
+/* Flags */
 
 /*
   Initialization of gateway components invole network activates that may take
