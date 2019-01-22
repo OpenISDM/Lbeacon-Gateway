@@ -10,17 +10,16 @@
 
      BeDIS
 
+  File Name:
+
+     LinkedList.c
+
   File Description:
 
      This file contains the generic implementation of a double-linked-list
      data structure.It has functions for inserting a node to the front of the
      list and deleting a specific node. It can also check the length of the
      list. Any datatype of data could be stored in this list.
-
-
-  File Name:
-
-     LinkedList.c
 
   Version:
 

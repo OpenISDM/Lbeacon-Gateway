@@ -6,22 +6,18 @@
      GPL 3.0 : The content of this file is subject to the terms and conditions
      defined in file 'COPYING.txt', which is part of this source code package.
 
- Project Name:
+  Project Name:
 
      BeDIS
 
-  File Description:
+  File Name:
 
-     BeDIS
+     LinkedList.h
 
   File Description:
 
      This header file contains the function declarations and variables used in
      the LinkedList.c file.
-
-  File Name:
-
-     LinkedList.h
 
   Version:
 

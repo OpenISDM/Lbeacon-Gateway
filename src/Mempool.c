@@ -10,6 +10,10 @@
 
      BeDIS
 
+  File Name:
+
+     Mempool.c
+
   File Description:
 
      This file contains the program to allow the necessory memory allocation
@@ -18,10 +22,6 @@
      Note: The code is referred to the site:
      https://codereview.stackexchange.com/questions/48919/simple-memory-pool-
      %20using-no-extra-memory
-
-  File Name:
-
-     Mempool.c
 
   Version:
 

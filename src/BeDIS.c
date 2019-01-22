@@ -10,14 +10,14 @@
 
      BeDIS
 
+  File Name:
+
+     BeDIS.c
+
   File Description:
 
      This file, contain the definitions and declarations of constants,
      structures, and functions used in both Gateway and LBeacon.
-
-  File Name:
-
-     BeDIS.c
 
   Version:
 

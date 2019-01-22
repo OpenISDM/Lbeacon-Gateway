@@ -10,14 +10,14 @@
 
      BeDIS
 
+  File Name:
+
+     Gateway.h
+
   File Description:
 
      This is the header file containing the declarations of functions and
      variables used in the Gateway.c file.
-
-  File Name:
-
-     Gateway.h
 
   Version:
 

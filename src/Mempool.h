@@ -10,6 +10,10 @@
 
      BeDIS
 
+  File Name:
+
+     Mempool.h
+
   File Description:
 
      This file contains the declarations and definition of variables used in
@@ -19,10 +23,6 @@
      stackexchange website here:
      https://codereview.stackexchange.com/questions/48919/simple-memory-pool-
      using-no-extra-memory
-
-  File Name:
-
-     Mempool.h
 
   Version:
 

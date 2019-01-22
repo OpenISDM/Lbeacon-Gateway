@@ -10,14 +10,14 @@
 
      BeDIS
 
+  File Name:
+
+     UDP_API.h
+
   File Description:
 
      This file contains the header of  function declarations and variable used
      in UDP_API.c
-
-  File Name:
-
-     UDP_API.h
 
   Abstract:
 

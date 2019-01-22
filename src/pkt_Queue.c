@@ -10,13 +10,13 @@
 
      BeDIS
 
-  File Description:
-
-     This file contains functions for the waiting queue.
-
   File Name:
 
      pkt_Queue.c
+
+  File Description:
+
+     This file contains functions for the waiting queue.
 
   Version:
 

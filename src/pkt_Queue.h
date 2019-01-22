@@ -10,13 +10,13 @@
 
      BeDIS
 
-  File Description:
-
-     This file contains the header of function declarations used in pkt_Queue.c
-
   File Name:
 
      pkt_Queue.h
+
+  File Description:
+
+     This file contains the header of function declarations used in pkt_Queue.c
 
   Version:
 

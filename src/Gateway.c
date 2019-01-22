@@ -10,6 +10,10 @@
 
      BeDIS
 
+  File Name:
+
+     Gateway.c
+
   File Description:
 
      This file contains programs to transmit and receive data to and from
@@ -17,10 +21,6 @@
      programs executed by network setup and initialization, Beacon health
      monitor and comminication unit. Each gateway is the root of a star network
      of LBeacons.
-
-  File Name:
-
-     Gateway.c
 
   Version:
 

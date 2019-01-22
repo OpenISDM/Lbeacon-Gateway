@@ -10,14 +10,14 @@
 
      BeDIS
 
+  File Name:
+
+     BeDIS.h
+
   File Description:
 
      This file, contain the definitions and declarations of constants,
      structures, and functions used in both Gateway and LBeacon.
-
-  File Name:
-
-     BeDIS.h
 
   Version:
 
@@ -320,16 +320,16 @@ void trim_string_tail(char *message);
 
 
 /*
- ctrlc_handler:
+  ctrlc_handler:
 
      If the user presses CTRL-C, the global variable ready_to_work will be set
      to false, and a signal will be thrown to stop running the program.
 
- Parameters:
+  Parameters:
 
      stop - A interger signal when trigger ctrl-c.
 
- Return value:
+  Return value:
 
      None
 
