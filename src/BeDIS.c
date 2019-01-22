@@ -148,9 +148,9 @@ ErrorCode startThread(pthread_t *thread, void *( *start_routine)(void *),
 
     pthread_attr_t attr;
 
-    if ( pthread_attr_init( &attr) != 0
-    || pthread_create(thread, &attr, start_routine, arg) != 0
-    || pthread_detach( *thread)){
+    if ( pthread_attr_init( &attr) != 0 ||
+         pthread_create(thread, &attr, start_routine, arg) != 0 ||
+         pthread_detach( *thread)){
 
           printf("Start Thread Error.\n");
           return E_START_THREAD;

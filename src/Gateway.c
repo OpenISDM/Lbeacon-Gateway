@@ -174,6 +174,8 @@ int main(int argc, char **argv){
     /* The while loop keep the program running */
     while(ready_to_work == true){
         sleep(WAITING_TIME);
+        sleep(WAITING_TIME);
+
     }
 
     /* The program is going to be ended.
@@ -293,33 +295,35 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 }
 
 
-void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
+void init_buffer(BufferListHead* buffer_list_head, void (* function_p)(void* ),
                  int priority_nice){
 
-    init_entry( &(buffer->list_head));
+    init_entry( &(buffer_list_head->list_head));
 
-    init_entry( &(buffer->priority_entry));
+    init_entry( &(buffer_list_head->priority_entry));
 
-    pthread_mutex_init( &buffer->list_lock, 0);
+    pthread_mutex_init( &buffer_list_head->list_lock, 0);
 
-    buffer->function = function_p;
+    buffer_list_head->is_processing = false;
 
-    buffer->arg = (void *) buffer;
+    buffer_list_head->function = function_p;
 
-    buffer->priority_nice = priority_nice;
+    buffer_list_head->arg = (void *) buffer_list_head;
+
+    buffer_list_head->priority_nice = priority_nice;
 }
 
 
-void sorting_priority(List_Entry *priority_list_head){
+void sorting_priority(List_Entry* priority_list_head){
 
-    List_Entry temp, *list_pointers, *save_list_pointers, *list_pointers_tmp;
+    List_Entry temp, * list_pointers, * save_list_pointers, * list_pointers_tmp;
 
     init_entry(&temp);
 
     list_for_each_safe(list_pointers, save_list_pointers
                      , priority_list_head){
 
-        BufferListHead *current_head = ListEntry(list_pointers, BufferListHead,
+        BufferListHead* current_head = ListEntry(list_pointers, BufferListHead,
                                                  priority_entry);
         pthread_mutex_lock( &current_head->list_lock);
         remove_list_node(list_pointers);
@@ -495,7 +499,7 @@ void *CommUnit_process(){
                     if(thpool -> num_threads_working < thpool ->
                        num_threads_alive){
                         if (is_entry_list_empty( &current_head->list_head) ==
-                            false){
+                            false && current_head-> is_processing == false){
 
                             /* If there is a node in the buffer and the buffer
                                is not be occupied, do the work according to the
@@ -530,7 +534,7 @@ void *CommUnit_process(){
                     if(thpool -> num_threads_working < thpool ->
                        num_threads_alive){
                         if (is_entry_list_empty( &current_head->list_head) ==
-                            false){
+                            false && current_head-> is_processing == false){
 
                             /* If there is a node in the buffer and the buffer
                                is not be occupied, do the work according to the
@@ -576,6 +580,8 @@ void *NSI_routine(void *_buffer_list_head){
 
     pthread_mutex_lock( &buffer_list_head -> list_lock);
 
+    buffer_list_head -> is_processing = true;
+
     if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
         /* Create a temporary node and set as the head */
@@ -613,6 +619,8 @@ void *NSI_routine(void *_buffer_list_head){
         }
     }
 
+    buffer_list_head -> is_processing = false;
+
     pthread_mutex_unlock( &buffer_list_head -> list_lock);
 
     return (void *)NULL;
@@ -621,19 +629,21 @@ void *NSI_routine(void *_buffer_list_head){
 
 void *BHM_routine(void *_buffer_list_head){
 
-    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
+    BufferListHead* buffer_list_head = (BufferListHead* )_buffer_list_head;
+
+    buffer_list_head -> is_processing = true;
 
     /* Create a temporary node and set as the head */
-    struct List_Entry *list_pointers, *save_list_pointers;
+    struct List_Entry* list_pointers, * save_list_pointers;
 
-    BufferNode *temp;
+    BufferNode* temp;
 
     pthread_mutex_lock( &buffer_list_head->list_lock);
 
     if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
         list_for_each_safe(list_pointers, save_list_pointers,
-                           &buffer_list_head->list_head){
+                            &buffer_list_head->list_head){
 
             /* Remove the node from the orignal buffer list. And directly send to
                the server. */
@@ -649,6 +659,8 @@ void *BHM_routine(void *_buffer_list_head){
         }
     }
 
+    buffer_list_head -> is_processing = false;
+
     pthread_mutex_unlock( &buffer_list_head->list_lock);
 
     return (void *)NULL;
@@ -658,6 +670,8 @@ void *BHM_routine(void *_buffer_list_head){
 void *LBeacon_routine(void *_buffer_list_head){
 
     BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
+
+    buffer_list_head -> is_processing = true;
 
     /* Create a temporary node and set as the head */
     struct List_Entry *list_pointers, *save_list_pointers;
@@ -684,6 +698,8 @@ void *LBeacon_routine(void *_buffer_list_head){
         }
     }
 
+    buffer_list_head -> is_processing = false;
+
     pthread_mutex_unlock(&buffer_list_head->list_lock);
 
     return (void *)NULL;
@@ -700,6 +716,8 @@ void *Server_routine(void *_buffer_list_head){
 
     pthread_mutex_lock(&buffer_list_head->list_lock);
 
+    buffer_list_head -> is_processing = true;
+
     if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
         list_for_each_safe(list_pointers, save_list_pointers,
@@ -715,6 +733,8 @@ void *Server_routine(void *_buffer_list_head){
             mp_free(&node_mempool, temp);
         }
     }
+
+    buffer_list_head -> is_processing = false;
 
     pthread_mutex_unlock(&buffer_list_head->list_lock);
 }

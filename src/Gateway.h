@@ -156,6 +156,10 @@ typedef struct buffer_list_head{
     /* A per list lock */
     pthread_mutex_t list_lock;
 
+    /* A flag to identify whether the buffer list is processing by a work
+       thread. */
+    bool is_processing;
+
     struct List_Entry priority_entry;
 
     struct List_Entry list_head;
@@ -164,10 +168,10 @@ typedef struct buffer_list_head{
     int priority_nice;
 
     /* function pointer */
-    void (*function)(void* arg);
+    void (* function)(void* arg);
 
     /* function's argument */
-    void *arg;
+    void* arg;
 
 } BufferListHead;
 
@@ -257,7 +261,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name);
 
      None
  */
-void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
+void init_buffer(BufferListHead* buffer_list_head, void (* function_p)(void* ),
 								int priority_nice);
 
 
@@ -275,7 +279,7 @@ void init_buffer(BufferListHead *buffer, void (*function_p)(void*),
 
      None
  */
-void sorting_priority(List_Entry *priority_list_head);
+void sorting_priority(List_Entry* priority_list_head);
 
 
 /*
@@ -291,7 +295,7 @@ void sorting_priority(List_Entry *priority_list_head);
 
      None
  */
-void init_Address_Map(AddressMapArray *LBeacon_map);
+void init_Address_Map(AddressMapArray* LBeacon_map);
 
 
 /*
@@ -307,7 +311,7 @@ void init_Address_Map(AddressMapArray *LBeacon_map);
 
      bool: If return true means in the address map, else false.
  */
-bool is_in_Address_Map(char *address);
+bool is_in_Address_Map(char* address);
 
 
 /*
@@ -327,7 +331,7 @@ bool is_in_Address_Map(char *address);
      None
 
  */
-void *CommUnit_process();
+void* CommUnit_process();
 
 /*
   NSI_routine:
@@ -344,7 +348,7 @@ void *CommUnit_process();
      None
 
  */
-void *NSI_routine(void *_buffer_list_head);
+void* NSI_routine(void* _buffer_list_head);
 
 /*
   BHM_routine:
@@ -361,7 +365,7 @@ void *NSI_routine(void *_buffer_list_head);
      None
 
  */
-void *BHM_routine(void *_buffer_list_head);
+void* BHM_routine(void* _buffer_list_head);
 
 
 /*
@@ -379,7 +383,7 @@ void *BHM_routine(void *_buffer_list_head);
      None
 
  */
-void *LBeacon_routine(void *_buffer_list_head);
+void* LBeacon_routine(void* _buffer_list_head);
 
 
 /*
@@ -397,7 +401,7 @@ void *LBeacon_routine(void *_buffer_list_head);
      None
 
  */
-void *Server_routine(void *_buffer_list_head);
+void* Server_routine(void* _buffer_list_head);
 
 
 /*
@@ -418,7 +422,7 @@ void *Server_routine(void *_buffer_list_head);
             false : Fail to join
 
  */
-bool beacon_join_request(char *ID, char *address);
+bool beacon_join_request(char* ID, char* address);
 
 
 /*
@@ -438,7 +442,7 @@ bool beacon_join_request(char *ID, char *address);
      None
 
  */
-void beacon_broadcast(char *msg, int size);
+void beacon_broadcast(char* msg, int size);
 
 
 /*
@@ -455,7 +459,7 @@ void beacon_broadcast(char *msg, int size);
       ErrorCode - The error code for the corresponding error or successful
 
  */
-ErrorCode Wifi_init(char *IPaddress);
+ErrorCode Wifi_init(char* IPaddress);
 
 
 /*
@@ -488,7 +492,7 @@ void Wifi_free();
 
      None
  */
-void *process_wifi_send(void *_buffer_list_head);
+void* process_wifi_send(void* _buffer_list_head);
 
 
 /*
@@ -506,6 +510,6 @@ void *process_wifi_send(void *_buffer_list_head);
 
      None
  */
-void *wifi_receive_process();
+void* wifi_receive_process();
 
 #endif
