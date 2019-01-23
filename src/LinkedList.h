@@ -71,6 +71,10 @@
     for (pos = (head)->next, n = pos->next; pos != (head); \
         pos = n, n = pos->next)
 
+#define list_for_each_safe_reverse(pos, n, head) \
+    for (pos = (head)->prev, n = pos->prev; pos != (head); \
+        pos = n, n = pos->prev)
+
 /*Struct for the head of a list or doubly linked list entry used in link a
   node in to a list */
 typedef struct List_Entry {

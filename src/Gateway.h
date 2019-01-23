@@ -156,10 +156,6 @@ typedef struct buffer_list_head{
     /* A per list lock */
     pthread_mutex_t list_lock;
 
-    /* A flag to identify whether the buffer list is processing by a work
-       thread. */
-    bool is_processing;
-
     struct List_Entry priority_entry;
 
     struct List_Entry list_head;
@@ -168,10 +164,10 @@ typedef struct buffer_list_head{
     int priority_nice;
 
     /* function pointer */
-    void (* function)(void* arg);
+    void (*function)(void *arg);
 
     /* function's argument */
-    void* arg;
+    void *arg;
 
 } BufferListHead;
 
@@ -206,7 +202,7 @@ BufferListHead BHM_send_buffer_list_head;
 BufferListHead BHM_receive_buffer_list_head;
 
 /* Head of a list of buffer_list_head in the priority order. */
-List_Entry priority_list_head;
+BufferListHead priority_list_head;
 
 /* Flags */
 
@@ -261,7 +257,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name);
 
      None
  */
-void init_buffer(BufferListHead* buffer_list_head, void (* function_p)(void* ),
+void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
 								int priority_nice);
 
 
@@ -269,17 +265,17 @@ void init_buffer(BufferListHead* buffer_list_head, void (* function_p)(void* ),
   sort_priority:
 
      The function arrange priority_list_head in descending order
-     of Priority_boast.
+     of Priority_nice.
 
   Parameters:
 
-     priority_list_head - The pointer of priority_list_head.
+     list_head - The pointer of priority_list_head.
 
   Return value:
 
      None
  */
-void sort_priority(List_Entry* priority_list_head);
+void *sort_priority(BufferListHead *list_head);
 
 
 /*
@@ -295,7 +291,7 @@ void sort_priority(List_Entry* priority_list_head);
 
      None
  */
-void init_Address_Map(AddressMapArray* LBeacon_map);
+void init_Address_Map(AddressMapArray *LBeacon_map);
 
 
 /*
@@ -311,11 +307,11 @@ void init_Address_Map(AddressMapArray* LBeacon_map);
 
      bool: If return true means in the address map, else false.
  */
-bool is_in_Address_Map(char* address);
+bool is_in_Address_Map(char *address);
 
 
 /*
-  CommUnit_process:
+  CommUnit_routine:
 
      The function is executed by the main thread of the communication unit that
      is responsible for sending and receiving packets to and from the sever and
@@ -331,7 +327,7 @@ bool is_in_Address_Map(char* address);
      None
 
  */
-void* CommUnit_process();
+void *CommUnit_routine();
 
 /*
   NSI_routine:
@@ -348,7 +344,7 @@ void* CommUnit_process();
      None
 
  */
-void* NSI_routine(void* _buffer_list_head);
+void *NSI_routine(void *_buffer_list_head);
 
 /*
   BHM_routine:
@@ -365,7 +361,7 @@ void* NSI_routine(void* _buffer_list_head);
      None
 
  */
-void* BHM_routine(void* _buffer_list_head);
+void *BHM_routine(void *_buffer_list_head);
 
 
 /*
@@ -383,7 +379,7 @@ void* BHM_routine(void* _buffer_list_head);
      None
 
  */
-void* LBeacon_routine(void* _buffer_list_head);
+void *LBeacon_routine(void *_buffer_list_head);
 
 
 /*
@@ -401,7 +397,7 @@ void* LBeacon_routine(void* _buffer_list_head);
      None
 
  */
-void* Server_routine(void* _buffer_list_head);
+void *Server_routine(void *_buffer_list_head);
 
 
 /*
@@ -422,7 +418,7 @@ void* Server_routine(void* _buffer_list_head);
             false : Fail to join
 
  */
-bool beacon_join_request(char* ID, char* address);
+bool beacon_join_request(char *ID, char *address);
 
 
 /*
@@ -442,7 +438,11 @@ bool beacon_join_request(char* ID, char* address);
      None
 
  */
-void beacon_broadcast(char* msg, int size);
+void beacon_broadcast(char *msg, int size);
+
+void *polling_object_tracking_message();
+
+void *polling_health_report();
 
 
 /*
@@ -459,7 +459,7 @@ void beacon_broadcast(char* msg, int size);
       ErrorCode - The error code for the corresponding error or successful
 
  */
-ErrorCode Wifi_init(char* IPaddress);
+ErrorCode Wifi_init(char *IPaddress);
 
 
 /*
@@ -492,11 +492,11 @@ void Wifi_free();
 
      None
  */
-void* process_wifi_send(void* _buffer_list_head);
+void *process_wifi_send(void *_buffer_list_head);
 
 
 /*
-  wifi_recive:
+  process_wifi_receive:
 
      This function listens for messages or command received from the server or
      beacons. After getting the message, push the data in the message into the
@@ -510,6 +510,6 @@ void* process_wifi_send(void* _buffer_list_head);
 
      None
  */
-void* wifi_receive_process();
+void *process_wifi_receive();
 
 #endif
