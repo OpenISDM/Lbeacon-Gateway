@@ -55,7 +55,7 @@ int main(int argc, char **argv){
 
     int return_value;
 
-    /* The thread for CommUnit process */
+    /* The main thread do the communication Unit */
     pthread_t CommUnit_thread;
 
     /* The thread to listen for messages from Wi-Fi */
@@ -86,8 +86,7 @@ int main(int argc, char **argv){
         return E_MALLOC;
     }
 
-    /* Initialize buffer_list_heads and add to the buffer array in the order of
-       priority. Each buffer has the corresponding function pointer.
+    /* Initialize buffer_list_heads and add to the head in to the priority list.
      */
 
     init_entry( &priority_list_head);
@@ -128,7 +127,7 @@ int main(int argc, char **argv){
     insert_list_tail( &BHM_send_buffer_list_head.priority_entry,
                       &priority_list_head);
 
-    sorting_priority( &priority_list_head);
+    sort_priority( &priority_list_head);
 
     /* Initialize the Wifi connection */
     if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
@@ -150,14 +149,12 @@ int main(int argc, char **argv){
 
     NSI_initialization_complete = true;
 
-    if(return_value != WORK_SUCCESSFULLY) return return_value;
-
     /* Create the thread of Communication Unit  */
     return_value = startThread(&CommUnit_thread, CommUnit_process, NULL);
 
     if(return_value != WORK_SUCCESSFULLY) return return_value;
 
-    /* The while loop waiting for NSI, BHM and CommUnit ready */
+    /* The while loop waiting for NSI, BHM and CommUnit to be ready */
     while(NSI_initialization_complete == false ||
           CommUnit_initialization_complete == false ||
           BHM_initialization_complete == false){
@@ -171,7 +168,7 @@ int main(int argc, char **argv){
         }
     }
 
-    /* The while loop keep the program running */
+    /* The while loop that keeps the program running */
     while(ready_to_work == true){
         sleep(WAITING_TIME);
         sleep(WAITING_TIME);
@@ -314,7 +311,7 @@ void init_buffer(BufferListHead* buffer_list_head, void (* function_p)(void* ),
 }
 
 
-void sorting_priority(List_Entry* priority_list_head){
+void sort_priority(List_Entry* priority_list_head){
 
     List_Entry temp, * list_pointers, * save_list_pointers, * list_pointers_tmp;
 
@@ -362,8 +359,8 @@ void sorting_priority(List_Entry* priority_list_head){
 
     insert_entry_list(priority_list_head, temp.prev, temp.next);
 
-    pthread_mutex_unlock( &temp_prev->list_lock);
     pthread_mutex_unlock( &temp_next->list_lock);
+    pthread_mutex_unlock( &temp_prev->list_lock);
 }
 
 
@@ -420,13 +417,13 @@ void *CommUnit_process(){
 
     if(config.is_polled_by_server == false){
 
-        /* Start counting down the time for polling the health report and
+        /* Start counting down the time for polling the health reports and
            tracking object data */
-        last_poll_LBeacon_for_HR_time = current_time;
+        last_polling_LBeacon_for_HR_time = current_time;
         last_polling_object_tracking_time = current_time;
     }
 
-    /* After all the buffer are initialized and the thread pool initialized,
+    /* After all the buffers are initialized and the thread pool initialized,
        set the flag to true. */
     CommUnit_initialization_complete = true;
 
@@ -437,12 +434,12 @@ void *CommUnit_process(){
 
         if(config.is_polled_by_server == false){
 
-            /* If it is the time to poll the health report from LBeacon, Make a
+            /* If it is the time to poll health reports from LBeacons, get a
                thread to do this work */
             if(current_time - last_polling_object_tracking_time >
                        config.period_between_RFOT){
 
-                /* Pulling for object tracking object data */
+                /* Pull object tracking object data */
                 /* set the pkt type */
                 int send_type = ((from_gateway & 0x0f)<<4) +
                                  (tracked_object_data & 0x0f);
@@ -454,13 +451,13 @@ void *CommUnit_process(){
                 /* broadcast to LBeacons */
                 beacon_broadcast(temp, MINIMUM_WIFI_MESSAGE_LENGTH);
 
-                /* Reset the poll_LBeacon_time */
+                /* Update the last_polling_object_tracking_time */
                 last_polling_object_tracking_time = current_time;
             }
-            else if(current_time - last_poll_LBeacon_for_HR_time >
+            else if(current_time - last_polling_LBeacon_for_HR_time >
                     config.period_between_RFHR){
 
-                /* Polling for health report. */
+                /* Polling for health reports. */
                 /* set the pkt type */
                 int send_type = ((from_gateway & 0x0f)<<4) +
                                  (health_report & 0x0f);
@@ -472,7 +469,8 @@ void *CommUnit_process(){
                 /* broadcast to LBeacons */
                 beacon_broadcast(temp, MINIMUM_WIFI_MESSAGE_LENGTH);
 
-                last_poll_LBeacon_for_HR_time = current_time;
+                /* Update the last_polling_LBeacon_for_HR_time */
+                last_polling_LBeacon_for_HR_time = get_system_time();
             }
 
         }
@@ -483,7 +481,7 @@ void *CommUnit_process(){
                MAX_STARVATION_TIME, reverse the scanning process */
             if(current_time - init_time < MAX_STARVATION_TIME){
 
-                /* Scan the priority_array to get the corresponding work for the
+                /* Scan the priority_list to get the corresponding work for the
                    worker thread */
                 List_Entry *tmp;
 
@@ -553,8 +551,8 @@ void *CommUnit_process(){
                     }
                 }
 
-                /* Reset the inital time */
-                init_time = current_time;
+                /* Update the init_time */
+                init_time = get_system_time();
             }
         }
         else{
@@ -921,7 +919,7 @@ void *wifi_receive_process(){
                         switch (pkt_type) {
 
                             case RFHR_from_server:
-                                last_poll_LBeacon_for_HR_time = current_time;
+                                last_polling_LBeacon_for_HR_time = current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
                                                    .list_lock);
                                 insert_list_tail(&new_node -> buffer_entry,

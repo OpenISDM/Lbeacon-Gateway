@@ -222,7 +222,7 @@ bool BHM_initialization_complete;
 bool initialization_failed;
 
 /* Store last polling time in second*/
-int last_poll_LBeacon_for_HR_time;
+int last_polling_LBeacon_for_HR_time;
 int last_polling_object_tracking_time;
 
 /*
@@ -266,7 +266,7 @@ void init_buffer(BufferListHead* buffer_list_head, void (* function_p)(void* ),
 
 
 /*
-  sorting_priority:
+  sort_priority:
 
      The function arrange priority_list_head in descending order
      of Priority_boast.
@@ -279,7 +279,7 @@ void init_buffer(BufferListHead* buffer_list_head, void (* function_p)(void* ),
 
      None
  */
-void sorting_priority(List_Entry* priority_list_head);
+void sort_priority(List_Entry* priority_list_head);
 
 
 /*
