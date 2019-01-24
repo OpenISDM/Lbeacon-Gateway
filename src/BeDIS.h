@@ -16,7 +16,7 @@
 
   File Description:
 
-     This file, contain the definitions and declarations of constants,
+     This file contains the definitions and declarations of constants,
      structures, and functions used in both Gateway and LBeacon.
 
   Version:
@@ -101,16 +101,16 @@
 /* The number of slots in the memory pool */
 #define SLOTS_IN_MEM_POOL 1024
 
-/* Length of address of the IP address */
+/* Length of the IP address in byte */
 #define NETWORK_ADDR_LENGTH 16
 
-/* Length of address of the IP address in Hex */
+/* Length of the IP address in Hex */
 #define NETWORK_ADDR_LENGTH_HEX 8
 
 /* Maximum length of message to be sent over WiFi in bytes */
 #define WIFI_MESSAGE_LENGTH 4096
 
-/* Minimum message size (At least one byte for data type and one space)*/
+/* Minimum Wi-Fi message size (One byte for data type and one byte for a space) */
 #define MINIMUM_WIFI_MESSAGE_LENGTH 2
 
 /* The size of array to store Wi-Fi SSID */
@@ -121,9 +121,6 @@
 
 /* Length of the LBeacon's UUID in number of characters */
 #define UUID_LENGTH 32
-
-/* Legnth of temporary buffer */
-//#define BUFFER_LENGTH 1024 unused(to be checked)
 
 /* Length of coordinates in number of bits */
 #define COORDINATE_LENGTH 64
@@ -214,21 +211,21 @@ typedef enum pkt_types {
 
     /* For LBeacon send pkt type */
 
-    /* A pkt contain tracked object data */
+    /* A pkt containing tracked object data */
     tracked_object_data = 4,
-    /* A pkt contain health report */
+    /* A pkt containing health report */
     health_report = 5,
-    /* A pkt that is for LBeacon */
+    /* A pkt for LBeacon */
     data_for_LBeacon = 6,
 
     /* For Gayeway */
 
-    /* For the Gateway polling health report from LBeacon */
+    /* For the Gateway polling health reports from LBeacons */
     RFHR_from_gateway = 8,
 
     /* For server */
 
-    /* For the Gateway polling tracked object data from LBeacon */
+    /* For the Gateway polling tracked object data from LBeacons */
     poll_for_tracked_object_data_from_server = 9,
     /* A polling request for health report from server */
     RFHR_from_server = 10
@@ -327,7 +324,7 @@ void trim_string_tail(char *message);
 
   Parameters:
 
-     stop - A interger signal when trigger ctrl-c.
+     stop - A interger signal triggered by ctrl-c.
 
   Return value:
 

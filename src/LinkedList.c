@@ -115,7 +115,7 @@ inline int get_list_length(List_Entry *entry) {
 
     for (listptrs = (entry)->next; listptrs != (entry);
          listptrs = listptrs->next) {
-        list_length++;
+        list_length ++;
     }
 
     return list_length;

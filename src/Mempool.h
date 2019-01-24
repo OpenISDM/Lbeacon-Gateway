@@ -42,8 +42,7 @@
   Authors:
 
      Holly Wang, hollywang@iis.sinica.edu.tw
-
-*/
+ */
 
 #ifndef MEMPOOL_H
 #define MEMPOOL_H
@@ -79,9 +78,10 @@ typedef struct {
 
   Return value:
 
-     mem_size- the current size of the mempry pool
-*/
+     mem_size- the current size of the memory pool
+ */
 size_t get_current_size_mempool(Memory_Pool *mp);
+
 
 /*
   mp_init:
@@ -98,16 +98,15 @@ size_t get_current_size_mempool(Memory_Pool *mp);
   Return value:
 
      Status - the error code or the successful message
-*/
-
+ */
 int mp_init(Memory_Pool *mp, size_t size, size_t slots);
 
 
 /*
   mp_expand:
 
-     This function expands the slots and allocates more memory to the memory
-     pool.
+     This function expands the number of slots and allocates more memory to the
+     memory pool.
 
   Parameters:
 
@@ -117,8 +116,7 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots);
   Return value:
 
      Status - the error code or the successful message
-*/
-
+ */
 int mp_expand(Memory_Pool *mp, size_t slots);
 
 
@@ -135,8 +133,7 @@ int mp_expand(Memory_Pool *mp, size_t slots);
 
      None
 
-*/
-
+ */
 void mp_destroy(Memory_Pool *mp);
 
 
@@ -144,7 +141,7 @@ void mp_destroy(Memory_Pool *mp);
   mp_alloc:
 
      This function gets a free slot from the memory pool and returns a pointer
-     to a slot when a free slot is available and return NULL when no free slot
+     to the slot when a free slot is available and return NULL when no free slot
      is available.
 
   Parameters:
@@ -154,16 +151,14 @@ void mp_destroy(Memory_Pool *mp);
   Return value:
 
      void - the pointer to the struct of a free slot or NULL
-*/
-
+ */
 void *mp_alloc(Memory_Pool *mp);
 
 
 /*
   mp_free:
 
-     This function releases an unused slot back to the memory pool and places
-     it in the head of the free list.
+     This function releases a slot back to the memory pool.
 
   Parameters:
 
@@ -173,7 +168,8 @@ void *mp_alloc(Memory_Pool *mp);
   Return value:
 
      Errorcode - error code or sucessful message
-*/
+ */
 int mp_free(Memory_Pool *mp, void *mem);
+
 
 #endif

@@ -16,8 +16,8 @@
 
   File Description:
 
-     This file contains the program to allow the necessory memory allocation
-     for the nodes in the linked list.
+     This file contains the program to allow memory allocation
+     for structs of identical size.
 
      Note: The code is referred to the site:
      https://codereview.stackexchange.com/questions/48919/simple-memory-pool-
@@ -63,28 +63,28 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots){
 
     pthread_mutex_init( &mp->mem_lock, 0);
 
-    //allocate memory
+    /* allocate memory */
     if((mp->memory[0] = malloc(size * slots)) == NULL)
         return MEMORY_POOL_ERROR;
 
-    //initialize
+    /* initialize and set parameters */
     mp->head = NULL;
     mp->size = size;
     mp->slots = slots;
     mp->alloc_time = 1;
 
-    //add every slot to the free list
+    /* add every slot to the free list */
     char *end = (char *)mp->memory[0] + size * slots;
 
     for(char *ite = mp->memory[0]; ite < end; ite += size){
 
-        //store first address
+        /* store first address */
         void *temp = mp->head;
 
-        //link the new node
+        /* link the new node */
         mp->head = (void *)ite;
 
-        //link to the list from new node
+        /* link to the list from new node */
         *mp->head = temp;
     }
 
@@ -105,17 +105,17 @@ int mp_expand(Memory_Pool *mp, size_t slots){
     if(mp->memory[alloc_count] == NULL )
         return MEMORY_POOL_ERROR;
 
-    //add every slot to the free list
+    /* add every slot to the free list */
     char *end = (char *) mp->memory[alloc_count] + mp->size * slots;
 
     for(char *ite = mp->memory[alloc_count]; ite < end; ite += mp->size){
 
-        //store first address
+        /* store first address */
         void *temp = mp->head;
 
-        //link the new node
+        /* link the new node */
         mp->head = (void *)ite;
-        //link to the list from new node
+        /* link to the list from new node */
         *mp->head = temp;
 
     }
@@ -124,8 +124,6 @@ int mp_expand(Memory_Pool *mp, size_t slots){
 
 
     return MEMORY_POOL_SUCCESS;
-
-
 }
 
 void mp_destroy(Memory_Pool *mp){
@@ -160,15 +158,15 @@ void *mp_alloc(Memory_Pool *mp){
       }
     }
 
-    //store first address, i.e., address of the start of first element
+    /* store first address, i.e., address of the start of first element */
     void *temp = mp->head;
 
-    //link one past it
+    /* link one past it */
     mp->head = *mp->head;
 
     pthread_mutex_unlock( &mp->mem_lock);
 
-    //return the first address
+    /* return the first address */
     return temp;
 }
 
@@ -184,24 +182,24 @@ int mp_free(Memory_Pool *mp, void *mem){
     most relevant mem_head for the current freeing memory. */
     for(int i = 0; i < mp->alloc_time; i++){
 
-        //calculate the offset from mem to mp->memory
+        /* Calculate the offset from mem to mp->memory */
         int differenceinbyte = (mem - mp->memory[i]) * sizeof(mem);
-        // Only consider the positive offset
+        /* Only consider the positive offset */
         if((differenceinbyte > 0) && ((differenceinbyte < closest) ||
            (closest == -1)))
             closest = differenceinbyte;
     }
-    //check if mem is correct, i.e. is pointing to the struct of a slot
+    /* check if mem is correct, i.e. is pointing to the struct of a slot */
     if((closest % mp->size) != 0){
         pthread_mutex_unlock(&mp->mem_lock);
         return MEMORY_POOL_ERROR;
     }
 
-    //store first address
+    /* store first address */
     void *temp = mp->head;
-    //link new node
+    /* link new node */
     mp->head = mem;
-    //link to the list from new node
+    /* link to the list from new node */
     *mp->head = temp;
 
     pthread_mutex_unlock(&mp->mem_lock);

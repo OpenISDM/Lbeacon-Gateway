@@ -16,8 +16,7 @@
 
   File Description:
 
-     This file, contain the definitions and declarations of constants,
-     structures, and functions used in both Gateway and LBeacon.
+     This file contains code of functions used in both Gateway and LBeacon.
 
   Version:
 
