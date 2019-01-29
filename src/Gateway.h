@@ -54,7 +54,7 @@
 /* Gateway config file location and defining of config file. */
 
 /* File path of the config file of the LBeacon */
-#define CONFIG_FILE_NAME "../config/gateway.conf"
+#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
 
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 32
@@ -82,7 +82,8 @@ typedef struct Config {
        report data to LBeacon */
     int period_between_RFHR;
 
-    /* The time interval in seconds for gateway sending request for tracked object data to LBeacon */
+    /* The time interval in seconds for gateway sending request for tracked
+       object data to LBeacon */
     int period_between_RFTOD;
 
     /*The number of worker threads used by the communication unit for sending
@@ -112,10 +113,13 @@ typedef struct Config {
     coordinates, and location description. */
 typedef struct{
 
-    char beacon_uuid[UUID_LENGTH];
+    char uuid[UUID_LENGTH];
 
     /* network address of wifi link to the LBeacon*/
     char net_address[NETWORK_ADDR_LENGTH];
+
+    /* The last request join time */
+    int last_request_time;
 
 }AddressMap;
 
@@ -172,7 +176,7 @@ typedef struct buffer_list_head{
 } BufferListHead;
 
 
-// Global variables
+/* Global variables */
 
 /* A Gateway config struct stored config from the config file */
 GatewayConfig config;
@@ -291,29 +295,30 @@ void *sort_priority(BufferListHead *list_head);
 
   Parameters:
 
-     LBeacon_map - The head of the AddressMap.
+     address_map - The head of the AddressMap.
 
   Return value:
 
      None
  */
-void init_Address_Map(AddressMapArray *LBeacon_map);
+void init_Address_Map(AddressMapArray *address_map);
 
 
 /*
   is_in_Address_Map:
 
-     This function check whether the address is in LBeacon_address_map.
+     This function check whether the uuid is in LBeacon_address_map.
 
   Parameters:
 
-     address: the address we decide to compare.
+     address_map - The head of the AddressMap.
+     uuid - the uuid we decide to compare.
 
   Return value:
 
      bool: If return true means in the address map, else false.
  */
-bool is_in_Address_Map(char *address);
+bool is_in_Address_Map(AddressMapArray *address_map, char *uuid);
 
 
 /*
@@ -415,7 +420,8 @@ void *Server_routine(void *_buffer_list_head);
 
   Parameters:
 
-     ID - The UUID of the LBeacon
+     address_map - The head of the AddressMap.
+     uuid - The UUID of the LBeacon
      address - The mac address of the LBeacon IP.
 
   Return value:
@@ -424,7 +430,8 @@ void *Server_routine(void *_buffer_list_head);
             false : Fail to join
 
  */
-bool beacon_join_request(char *ID, char *address);
+bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
+                         );
 
 
 /*
@@ -435,7 +442,7 @@ bool beacon_join_request(char *ID, char *address);
      LBeacon_address_map.
 
   Parameters:
-
+     address_map - The head of the AddressMap.
      msg - The pointer to the msg to be send to beacons.
      size - The size of the msg.
 
@@ -444,7 +451,7 @@ bool beacon_join_request(char *ID, char *address);
      None
 
  */
-void beacon_broadcast(char *msg, int size);
+void beacon_broadcast(AddressMapArray *address_map, char *msg, int size);
 
 void *polling_object_tracking_message();
 

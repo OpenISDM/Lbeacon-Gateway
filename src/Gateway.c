@@ -364,25 +364,25 @@ void *sort_priority(BufferListHead *list_head){
 }
 
 
-void init_Address_Map(AddressMapArray *LBeacon_map){
+void init_Address_Map(AddressMapArray *address_map){
 
-    pthread_mutex_init( &LBeacon_map -> list_lock, 0);
+    pthread_mutex_init( &address_map -> list_lock, 0);
 
-    memset(LBeacon_map -> address_map_list, 0,
-           sizeof(LBeacon_map -> address_map_list));
+    memset(address_map -> address_map_list, 0,
+           sizeof(address_map -> address_map_list));
 
     for(int n = 0; n < MAX_NUMBER_NODES; n ++)
-        LBeacon_map -> in_use[n] = false;
+        address_map -> in_use[n] = false;
 }
 
 
-bool is_in_Address_Map(char *address){
+bool is_in_Address_Map(AddressMapArray *address_map, char *uuid){
 
     for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
-        if (LBeacon_address_map.in_use[n] == true){
-            if(strcmp(LBeacon_address_map.address_map_list[n].net_address,
-                      address) == 0){
+        if (address_map -> in_use[n] == true){
+            if(strcmp(address_map -> address_map_list[n].uuid,
+                      uuid) == 0){
                 return true;
             }
         }
@@ -449,7 +449,8 @@ void* CommUnit_routine(){
                 temp[0] = (char)send_type;
 
                 /* broadcast to LBeacons */
-                beacon_broadcast(temp, MINIMUM_WIFI_MESSAGE_LENGTH);
+                beacon_broadcast(&LBeacon_address_map, temp,
+                                 MINIMUM_WIFI_MESSAGE_LENGTH);
 
                 /* Update the last_polling_object_tracking_time */
                 last_polling_object_tracking_time = current_time;
@@ -467,7 +468,8 @@ void* CommUnit_routine(){
                 temp[0] = (char)send_type;
 
                 /* broadcast to LBeacons */
-                beacon_broadcast(temp, MINIMUM_WIFI_MESSAGE_LENGTH);
+                beacon_broadcast(&LBeacon_address_map, temp,
+                                 MINIMUM_WIFI_MESSAGE_LENGTH);
 
                 /* Update the last_polling_LBeacon_for_HR_time */
                 last_polling_LBeacon_for_HR_time = get_system_time();
@@ -625,7 +627,8 @@ void *NSI_routine(void *_buffer_list_head){
 
         /* Put the address into LBeacon_address_map and set the return pkt type
          */
-        if (beacon_join_request(current_uuid, temp -> net_address) == true)
+        if (beacon_join_request(&LBeacon_address_map, current_uuid, temp ->
+                                net_address) == true)
             send_type += join_request_ack & 0x0f;
         else
             send_type += join_request_deny & 0x0f;
@@ -735,7 +738,8 @@ void *Server_routine(void *_buffer_list_head){
 
         temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
 
-        beacon_broadcast(temp -> content, temp -> content_size);
+        beacon_broadcast(&LBeacon_address_map, temp -> content, temp ->
+                         content_size);
 
         mp_free( &node_mempool, temp);
     }
@@ -746,9 +750,9 @@ void *Server_routine(void *_buffer_list_head){
 }
 
 
-bool beacon_join_request(char *ID, char *address){
+bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address){
 
-    pthread_mutex_lock( &LBeacon_address_map.list_lock);
+    pthread_mutex_lock( &address_map -> list_lock);
     /* Copy all the necessary information received from the LBeacon to the
        address map. */
 
@@ -758,12 +762,11 @@ bool beacon_join_request(char *ID, char *address){
 
     for(int n = 0 ; n < MAX_NUMBER_NODES ; n ++){
 
-        if(LBeacon_address_map.in_use[n] == true && strcmp(address,
-           LBeacon_address_map.address_map_list[n].net_address) == 0){
-            pthread_mutex_unlock( &LBeacon_address_map.list_lock);
+        if(is_in_Address_Map(address_map, uuid) == true){
+            pthread_mutex_unlock( &address_map -> list_lock);
             return true;
         }
-        else if(LBeacon_address_map.in_use[n] == false && not_in_use == -1){
+        else if(address_map -> in_use[n] == false && not_in_use == -1){
             not_in_use = n;
         }
     }
@@ -771,18 +774,17 @@ bool beacon_join_request(char *ID, char *address){
     /* If still has space for the LBeacon to register */
     if (not_in_use != -1){
 
-        AddressMap *tmp =  &LBeacon_address_map
-                           .address_map_list[not_in_use];
+        AddressMap *tmp =  &address_map -> address_map_list[not_in_use];
 
-        LBeacon_address_map.in_use[not_in_use] = true;
+        address_map -> in_use[not_in_use] = true;
 
-        strncpy(tmp -> beacon_uuid, ID, UUID_LENGTH);
+        strncpy(tmp -> uuid, uuid, UUID_LENGTH);
         strncpy(tmp -> net_address, address, NETWORK_ADDR_LENGTH);
-        pthread_mutex_unlock( &LBeacon_address_map.list_lock);
+        pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }
     else{
-        pthread_mutex_unlock( &LBeacon_address_map.list_lock);
+        pthread_mutex_unlock( &address_map -> list_lock);
         return false;
     }
 
@@ -790,22 +792,22 @@ bool beacon_join_request(char *ID, char *address){
 }
 
 
-void beacon_broadcast(char *msg, int size){
+void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
 
-    pthread_mutex_lock( &LBeacon_address_map.list_lock);
+    pthread_mutex_lock( &address_map -> list_lock);
 
     if (size <= WIFI_MESSAGE_LENGTH){
         for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
-            if (LBeacon_address_map.in_use[n] == true){
+            if (address_map -> in_use[n] == true){
                 /* Add the pkt that to be sent to the server */
-                udp_addpkt( &udp_config, LBeacon_address_map.address_map_list[n]
+                udp_addpkt( &udp_config, address_map -> address_map_list[n]
                             .net_address, msg, size);
             }
         }
     }
 
-    pthread_mutex_unlock( &LBeacon_address_map.list_lock);
+    pthread_mutex_unlock( &address_map -> list_lock);
 }
 
 
