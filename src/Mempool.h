@@ -57,13 +57,24 @@
 
 /* The structure of the memory pool */
 typedef struct {
+    /* The head of the unused slots */
     void **head;
+
+    /* An array stores the head of each malloced memory */
     void *memory[MAX_EXP_TIME];
+
+    /* Counting current malloc times */
     int alloc_time;
+
     /* A per list lock */
     pthread_mutex_t mem_lock;
+
+    /* The size of each slots in byte */
     int size;
+
+    /* The number of slots is made each time the mempool expand */
     int slots;
+
 } Memory_Pool;
 
 
