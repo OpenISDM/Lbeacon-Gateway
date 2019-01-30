@@ -111,7 +111,7 @@ typedef struct Config {
 
 /*  A struct linking network address assigned to a LBeacon to its UUID,
     coordinates, and location description. */
-typedef struct{
+typedef struct {
 
     char uuid[UUID_LENGTH];
 
@@ -124,7 +124,7 @@ typedef struct{
 }AddressMap;
 
 
-typedef struct{
+typedef struct {
 
     /* A per list lock */
     pthread_mutex_t list_lock;
@@ -138,7 +138,7 @@ typedef struct{
 
 
 /* A node of buffer to store received data and/or data to be send */
-typedef struct BufferNode{
+typedef struct {
 
     struct List_Entry buffer_entry;
 
@@ -154,7 +154,7 @@ typedef struct BufferNode{
 
 
 /* A Head of a list of msg buffer */
-typedef struct buffer_list_head{
+typedef struct {
 
     /* A per list lock */
     pthread_mutex_t list_lock;
