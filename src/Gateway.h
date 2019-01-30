@@ -289,39 +289,6 @@ void *sort_priority(BufferListHead *list_head);
 
 
 /*
-  init_Address_Map:
-
-     This function initialize the head of the AddressMap.
-
-  Parameters:
-
-     address_map - The head of the AddressMap.
-
-  Return value:
-
-     None
- */
-void init_Address_Map(AddressMapArray *address_map);
-
-
-/*
-  is_in_Address_Map:
-
-     This function check whether the uuid is in LBeacon_address_map.
-
-  Parameters:
-
-     address_map - The head of the AddressMap.
-     uuid - the uuid we decide to compare.
-
-  Return value:
-
-     bool: If return true means in the address map, else false.
- */
-bool is_in_Address_Map(AddressMapArray *address_map, char *uuid);
-
-
-/*
   CommUnit_routine:
 
      The function is executed by the main thread of the communication unit that
@@ -409,6 +376,39 @@ void *LBeacon_routine(void *_buffer_list_head);
 
  */
 void *Server_routine(void *_buffer_list_head);
+
+
+/*
+  init_Address_Map:
+
+     This function initialize the head of the AddressMap.
+
+  Parameters:
+
+     address_map - The head of the AddressMap.
+
+  Return value:
+
+     None
+ */
+void init_Address_Map(AddressMapArray *address_map);
+
+
+/*
+  is_in_Address_Map:
+
+     This function check whether the uuid is in LBeacon_address_map.
+
+  Parameters:
+
+     address_map - The head of the AddressMap.
+     uuid - the uuid we decide to compare.
+
+  Return value:
+
+     bool: If return true means in the address map, else false.
+ */
+bool is_in_Address_Map(AddressMapArray *address_map, char *uuid);
 
 
 /*

@@ -364,33 +364,6 @@ void *sort_priority(BufferListHead *list_head){
 }
 
 
-void init_Address_Map(AddressMapArray *address_map){
-
-    pthread_mutex_init( &address_map -> list_lock, 0);
-
-    memset(address_map -> address_map_list, 0,
-           sizeof(address_map -> address_map_list));
-
-    for(int n = 0; n < MAX_NUMBER_NODES; n ++)
-        address_map -> in_use[n] = false;
-}
-
-
-bool is_in_Address_Map(AddressMapArray *address_map, char *uuid){
-
-    for(int n = 0;n < MAX_NUMBER_NODES;n ++){
-
-        if (address_map -> in_use[n] == true){
-            if(strcmp(address_map -> address_map_list[n].uuid,
-                      uuid) == 0){
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
 void* CommUnit_routine(){
 
     int init_time;
@@ -750,7 +723,33 @@ void *Server_routine(void *_buffer_list_head){
 }
 
 
-bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address){
+void init_Address_Map(AddressMapArray *address_map){
+
+    pthread_mutex_init( &address_map -> list_lock, 0);
+
+    memset(address_map -> address_map_list, 0,
+           sizeof(address_map -> address_map_list));
+
+    for(int n = 0; n < MAX_NUMBER_NODES; n ++)
+        address_map -> in_use[n] = false;
+}
+
+
+bool is_in_Address_Map(AddressMapArray *address_map, char *uuid){
+
+    for(int n = 0;n < MAX_NUMBER_NODES;n ++){
+
+        if (address_map -> in_use[n] == true && strcmp(address_map ->
+            address_map_list[n].uuid, uuid) == 0){
+                return true;
+        }
+    }
+    return false;
+}
+
+
+bool beacon_join_request(AddressMapArray *address_map, char *uuid,
+                         char *address){
 
     pthread_mutex_lock( &address_map -> list_lock);
     /* Copy all the necessary information received from the LBeacon to the
@@ -760,14 +759,23 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
        joined LBeacon. */
     int not_in_use = -1;
 
-    for(int n = 0 ; n < MAX_NUMBER_NODES ; n ++){
-
-        if(is_in_Address_Map(address_map, uuid) == true){
-            pthread_mutex_unlock( &address_map -> list_lock);
-            return true;
+    if(is_in_Address_Map(address_map, uuid) == true){
+        for(int n = 0 ; n < MAX_NUMBER_NODES ; n ++){
+            if(address_map -> in_use[n] == true && strcmp(address_map ->
+               address_map_list[n].uuid, uuid) == 0){
+                address_map -> address_map_list[n].last_request_time =
+                                                              get_system_time();
+                break;
+            }
         }
-        else if(address_map -> in_use[n] == false && not_in_use == -1){
+        pthread_mutex_unlock( &address_map -> list_lock);
+        return true;
+    }
+
+    for(int n = 0 ; n < MAX_NUMBER_NODES ; n ++){
+        if(address_map -> in_use[n] == false && not_in_use == -1){
             not_in_use = n;
+            break;
         }
     }
 
