@@ -68,8 +68,6 @@ errordesc ErrorDesc [] = {
     {E_GET_BLE_SOCKET, "Error getting BLE socket options"},
     {E_START_THREAD, "Error creating thread"},
     {E_INIT_THREAD_POOL, "Error initializing thread pool"},
-    {E_INIT_ZIGBEE, "Error initializing the zigbee"},
-    {E_ZIGBEE_CONNECT, "Error zigbee connection"},
     {E_LOG_INIT, "Error initializing log file"},
     {E_LOG_GET_CATEGORY, "Error getting log category"},
     {E_EMPTY_FILE, "Empty file"},
@@ -78,8 +76,6 @@ errordesc ErrorDesc [] = {
     {MAX_ERROR_CODE, "The element is invalid"},
     {E_INITIALIZATION_FAIL, "The Network or Buffer initialization Fail."},
     {E_WIFI_INIT_FAIL, "Wi-Fi initialization Fail."},
-    {E_ZIGBEE_INIT_FAIL, "Zigbee initialization Fail."},
-    {E_XBEE_VALIDATE, "Zigbee Connection Fail."},
     {E_START_COMMUNICAT_ROUTINE_THREAD, "Start Communocation Thread Fail."},
     {E_START_BHM_ROUTINE_THREAD, "Start BHM THread Fail."},
     {E_START_TRACKING_THREAD, "Start Tracking Thread Fail."}

@@ -16,8 +16,8 @@
 
   File Description:
 
-     This file contains the program to allow memory allocation
-     for structs of identical size.
+     This file contains the program to allow memory allocation for structs of
+     identical size.
 
      Note: The code is referred to the site:
      https://codereview.stackexchange.com/questions/48919/simple-memory-pool-
@@ -122,7 +122,6 @@ int mp_expand(Memory_Pool *mp, size_t slots){
 
     mp->alloc_time = mp->alloc_time + 1;
 
-
     return MEMORY_POOL_SUCCESS;
 }
 
@@ -147,7 +146,7 @@ void *mp_alloc(Memory_Pool *mp){
 
     pthread_mutex_lock(&mp->mem_lock);
 
-    if( *mp->head == NULL){
+    if(*mp->head == NULL){
 
         /* If the next position which mp->head is pointing to is NULL,
            expand the memory pool. */
@@ -169,7 +168,6 @@ void *mp_alloc(Memory_Pool *mp){
     /* return the first address */
     return temp;
 }
-
 
 
 int mp_free(Memory_Pool *mp, void *mem){

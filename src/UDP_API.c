@@ -136,7 +136,7 @@ void *udp_send_pkt(void *udpconfig){
                 si_send.sin_port   = htons(udp_config -> send_port);
 
                 if (inet_aton(dest_address, &si_send.sin_addr) == 0)
-                    perror("inet_aton error.\n");
+                    printf("inet_aton error.\n");
 
                 if (sendto(udp_config -> send_socket, current_send_pkt.content
                   , current_send_pkt.content_size, 0,(struct sockaddr *)&si_send
@@ -183,7 +183,7 @@ void *udp_recv_pkt(void *udpconfig){
 
             printf("error recv_len %d\n", recv_len);
 
-            perror("recvfrom error.\n");
+            printf("recvfrom error.\n");
         }
         else if(recv_len > 0){
 
@@ -198,7 +198,7 @@ void *udp_recv_pkt(void *udpconfig){
                  , recv_buf, recv_len);
         }
         else
-            perror("else recvfrom error.\n");
+            printf("else recvfrom error.\n");
 
     }
     printf("Exit Receive.\n");

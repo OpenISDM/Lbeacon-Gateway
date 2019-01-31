@@ -50,11 +50,25 @@
 
 #include "BeDIS.h"
 
+/* Enable debugging mode. */
+//#define debugging
 
 /* Gateway config file location and defining of config file. */
 
-/* File path of the config file of the LBeacon */
+/* File path of the config file of the Gateway */
 #define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
+
+/* File path of the config file of the zlog */
+#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
+
+/* The category defined of log file used for health report */
+#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
+
+#ifdef debugging
+/* The category defined for the printf during debugging */
+#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
+
+#endif
 
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 32

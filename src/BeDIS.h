@@ -161,7 +161,6 @@ typedef enum _ErrorCode{
     E_START_THREAD = 18,
     E_INIT_THREAD_POOL = 19,
     E_INIT_ZIGBEE = 20,
-    E_ZIGBEE_CONNECT = 21,
     E_LOG_INIT = 22,
     E_LOG_GET_CATEGORY = 23,
     E_EMPTY_FILE = 24,
@@ -170,19 +169,15 @@ typedef enum _ErrorCode{
     MAX_ERROR_CODE = 27,
     E_INITIALIZATION_FAIL = 28,
     E_WIFI_INIT_FAIL = 29,
-    E_ZIGBEE_INIT_FAIL = 30,
-    E_XBEE_VALIDATE = 31,
     E_START_COMMUNICAT_ROUTINE_THREAD = 32,
     E_START_BHM_ROUTINE_THREAD = 33,
     E_START_TRACKING_THREAD = 34,
-    E_ZIGBEE_CALL_BACK = 35,
-    E_ZIGBEE_SHUT_DOWN = 36,
     E_REG_SIG_HANDLER = 37,
     E_JOIN_THREAD = 38,
 
 } ErrorCode;
 
-typedef struct _errordesc {
+typedef struct {
     ErrorCode code;
     char *message;
 } errordesc;
