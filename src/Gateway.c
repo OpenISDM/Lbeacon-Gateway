@@ -62,7 +62,6 @@ int main(int argc, char **argv){
             zlog_fini();
 
 #ifdef debugging
-
         category_debug = zlog_get_category(LOG_CATEGORY_DEBUG);
         if (!category_debug)
             zlog_fini();
@@ -165,9 +164,9 @@ int main(int argc, char **argv){
     if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
         /* Error handling and return */
         initialization_failed = true;
-        zlog_error(category_health_report,  "Wi-Fi initialization Fail");
+        zlog_error(category_health_report, "Wi-Fi initialization Fail");
 #ifdef debugging
-        zlog_error(category_debug,  "Wi-Fi initialization Fail");
+        zlog_error(category_debug, "Wi-Fi initialization Fail");
 #endif
         return E_WIFI_INIT_FAIL;
     }
@@ -184,7 +183,7 @@ int main(int argc, char **argv){
 
     if(return_value != WORK_SUCCESSFULLY){
         initialization_failed = true;
-        zlog_error(category_health_report,  "wifi_listener initialization Fail");
+        zlog_error(category_health_report, "wifi_listener initialization Fail");
 #ifdef debugging
         zlog_error(category_debug,  "wifi_listener initialization Fail");
 #endif
@@ -217,16 +216,76 @@ int main(int argc, char **argv){
 
         if(initialization_failed == true){
             ready_to_work = false;
-            zlog_error(category_health_report, "The Network or Buffer initialization Fail.");
+            zlog_error(category_health_report,
+                       "The Network or Buffer initialization Fail.");
 #ifdef debugging
-            zlog_error(category_debug, "The Network or Buffer initialization Fail.");
+            zlog_error(category_debug,
+                       "The Network or Buffer initialization Fail.");
 #endif
             return E_INITIALIZATION_FAIL;
         }
     }
 
+    int current_time;
+
+    current_time = get_system_time();
+    if(config.is_polled_by_server == false){
+
+        /* Start counting down the time for polling the health reports and
+           tracking object data */
+        last_polling_LBeacon_for_HR_time = current_time;
+        last_polling_object_tracking_time = current_time;
+    }
+
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
+
+        if(config.is_polled_by_server == false){
+
+            current_time = get_system_time();
+
+            /* If it is the time to poll health reports from LBeacons, get a
+               thread to do this work */
+            if(current_time - last_polling_object_tracking_time >
+               config.period_between_RFTOD){
+
+                /* Pull object tracking object data */
+                /* set the pkt type */
+                int send_type = ((from_gateway & 0x0f) << 4) +
+                                 (tracked_object_data & 0x0f);
+                char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
+                memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
+
+                temp[0] = (char)send_type;
+
+                /* broadcast to LBeacons */
+                beacon_broadcast(&LBeacon_address_map, temp,
+                                 MINIMUM_WIFI_MESSAGE_LENGTH);
+
+                /* Update the last_polling_object_tracking_time */
+                last_polling_object_tracking_time = current_time;
+            }
+            else if(current_time - last_polling_LBeacon_for_HR_time >
+                    config.period_between_RFHR){
+
+                /* Polling for health reports. */
+                /* set the pkt type */
+                int send_type = ((from_gateway & 0x0f) << 4) +
+                                 (health_report & 0x0f);
+                char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
+                memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
+
+                temp[0] = (char)send_type;
+
+                /* broadcast to LBeacons */
+                beacon_broadcast(&LBeacon_address_map, temp,
+                                 MINIMUM_WIFI_MESSAGE_LENGTH);
+
+                /* Update the last_polling_LBeacon_for_HR_time */
+                last_polling_LBeacon_for_HR_time = get_system_time();
+            }
+        }
+
         sleep(WAITING_TIME);
 
     }
@@ -447,14 +506,6 @@ void* CommUnit_routine(){
     /* Set the initial time. */
     init_time = current_time;
 
-    if(config.is_polled_by_server == false){
-
-        /* Start counting down the time for polling the health reports and
-           tracking object data */
-        last_polling_LBeacon_for_HR_time = current_time;
-        last_polling_object_tracking_time = current_time;
-    }
-
     /* After all the buffers are initialized and the thread pool initialized,
        set the flag to true. */
     CommUnit_initialization_complete = true;
@@ -463,51 +514,6 @@ void* CommUnit_routine(){
     while(ready_to_work == true){
 
         current_time = get_system_time();
-
-        if(config.is_polled_by_server == false){
-
-            /* If it is the time to poll health reports from LBeacons, get a
-               thread to do this work */
-            if(current_time - last_polling_object_tracking_time >
-                       config.period_between_RFTOD){
-
-                /* Pull object tracking object data */
-                /* set the pkt type */
-                int send_type = ((from_gateway & 0x0f) << 4) +
-                                 (tracked_object_data & 0x0f);
-                char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
-                memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
-
-                temp[0] = (char)send_type;
-
-                /* broadcast to LBeacons */
-                beacon_broadcast(&LBeacon_address_map, temp,
-                                 MINIMUM_WIFI_MESSAGE_LENGTH);
-
-                /* Update the last_polling_object_tracking_time */
-                last_polling_object_tracking_time = current_time;
-            }
-            else if(current_time - last_polling_LBeacon_for_HR_time >
-                    config.period_between_RFHR){
-
-                /* Polling for health reports. */
-                /* set the pkt type */
-                int send_type = ((from_gateway & 0x0f) << 4) +
-                                 (health_report & 0x0f);
-                char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
-                memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
-
-                temp[0] = (char)send_type;
-
-                /* broadcast to LBeacons */
-                beacon_broadcast(&LBeacon_address_map, temp,
-                                 MINIMUM_WIFI_MESSAGE_LENGTH);
-
-                /* Update the last_polling_LBeacon_for_HR_time */
-                last_polling_LBeacon_for_HR_time = get_system_time();
-            }
-
-        }
 
         List_Entry *tmp;
         BufferListHead *current_head;
