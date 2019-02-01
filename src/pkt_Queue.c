@@ -42,6 +42,7 @@
 
 /* Queue initialize and free */
 
+
 int init_Packet_Queue(pkt_ptr pkt_queue){
 
     pthread_mutex_init( &pkt_queue -> mutex, 0);
@@ -63,6 +64,7 @@ int init_Packet_Queue(pkt_ptr pkt_queue){
 
 }
 
+
 int Free_Packet_Queue(pkt_ptr pkt_queue){
 
     pthread_mutex_lock( &pkt_queue -> mutex);
@@ -80,7 +82,9 @@ int Free_Packet_Queue(pkt_ptr pkt_queue){
 
 }
 
+
 /* New : add pkts */
+
 
 int addpkt(pkt_ptr pkt_queue, unsigned int type, char *raw_addr, char *content
                                                            , int content_size) {
@@ -189,6 +193,7 @@ sPkt get_pkt(pkt_ptr pkt_queue){
 
 /* Delete : delete pkts */
 
+
 int delpkt(pkt_ptr pkt_queue) {
 
     if(is_null(pkt_queue)) {
@@ -278,6 +283,7 @@ int display_pkt(char *display_title, pkt_ptr pkt_queue, int pkt_num){
 
 /* Tools */
 
+
 char *type_to_str(int type){
 
     switch(type){
@@ -299,6 +305,7 @@ char *type_to_str(int type){
     }
 }
 
+
 int str_to_type(const char *conType){
 
     if(memcmp(conType, "Transmit Status"
@@ -311,6 +318,7 @@ int str_to_type(const char *conType){
 
 }
 
+
 void char_to_hex(char *raw, unsigned char *raw_hex, int size){
 
     for(int i = 0 ; i < (size/2) ; i ++){
@@ -322,6 +330,7 @@ void char_to_hex(char *raw, unsigned char *raw_hex, int size){
         raw_hex[i] = strtol(tmp,(void *) NULL, 16);
     }
 }
+
 
 char *hex_to_char(unsigned char *hex, int size){
 
@@ -336,6 +345,7 @@ char *hex_to_char(unsigned char *hex, int size){
     return char_addr;
 }
 
+
 void array_copy(unsigned char *src, unsigned char *dest, int size){
 
     memcpy(dest, src, size);
@@ -343,6 +353,7 @@ void array_copy(unsigned char *src, unsigned char *dest, int size){
     return;
 
 }
+
 
 bool address_compare(unsigned char *addr1,unsigned char *addr2){
 
@@ -362,6 +373,7 @@ bool is_null(pkt_ptr pkt_queue){
     return false;
 }
 
+
 bool is_full(pkt_ptr pkt_queue){
 
     if(pkt_queue -> front == pkt_queue -> rear + 1){
@@ -374,6 +386,7 @@ bool is_full(pkt_ptr pkt_queue){
         return false;
     }
 }
+
 
 int queue_len(pkt_ptr pkt_queue){
 
@@ -405,11 +418,13 @@ int queue_len(pkt_ptr pkt_queue){
     return queue_len_error;
 }
 
+
 void print_content(char *content, int size){
 
     for(int loc = 0; loc < size; loc ++)
         printf("%c", content[loc]);
 }
+
 
 void generate_identification(char *identification, int size){
 

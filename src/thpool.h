@@ -47,9 +47,9 @@ typedef struct bsem {
 
 /* Job */
 typedef struct job{
-	struct job*  prev;                   /* pointer to previous job   */
-	void   (*function)(void* arg);       /* function pointer          */
-	void*  arg;                          /* function's argument       */
+	struct job *prev;                    /* pointer to previous job   */
+	void (*function)(void *arg);         /* function pointer          */
+	void *arg;                           /* function's argument       */
 	int priority;					     /* Priority of this job  	  */
 } job;
 
@@ -74,7 +74,7 @@ typedef struct thread{
 
 /* Threadpool */
 typedef struct thpool_{
-	thread**   threads;                  /* pointer to threads        */
+	thread **threads;                    /* pointer to threads        */
 	volatile int num_threads_alive;      /* threads currently alive   */
 	volatile int num_threads_working;    /* threads currently working */
 	pthread_mutex_t  thcount_lock;       /* used for thread count etc */
@@ -86,27 +86,27 @@ typedef struct thpool_{
 /* ========================== PROTOTYPES ============================ */
 
 
-static int  thread_init(thpool_* thpool_p, struct thread** thread_p, int id);
-static void* thread_do(struct thread* thread_p);
+static int   thread_init(thpool_ *thpool_p, thread **thread_p, int id);
+static void *thread_do(thread *thread_p);
 static void  thread_hold(int sig_id);
-static void  thread_destroy(struct thread* thread_p);
+static void  thread_destroy(thread *thread_p);
 
-static int   jobqueue_init(jobqueue* jobqueue_p);
-static void  jobqueue_clear(jobqueue* jobqueue_p);
-static void  jobqueue_push(jobqueue* jobqueue_p, struct job* newjob_p);
-static struct job* jobqueue_pull(jobqueue* jobqueue_p);
-static void  jobqueue_destroy(jobqueue* jobqueue_p);
+static int   jobqueue_init(jobqueue *jobqueue_p);
+static void  jobqueue_clear(jobqueue *jobqueue_p);
+static void  jobqueue_push(jobqueue *jobqueue_p, job *newjob_p);
+static job *jobqueue_pull(jobqueue *jobqueue_p);
+static void  jobqueue_destroy(jobqueue *jobqueue_p);
 
-static void  bsem_init(struct bsem *bsem_p, int value);
-static void  bsem_reset(struct bsem *bsem_p);
-static void  bsem_post(struct bsem *bsem_p);
-static void  bsem_post_all(struct bsem *bsem_p);
-static void  bsem_wait(struct bsem *bsem_p);
+static void  bsem_init(bsem *bsem_p, int value);
+static void  bsem_reset(bsem *bsem_p);
+static void  bsem_post(bsem *bsem_p);
+static void  bsem_post_all(bsem *bsem_p);
+static void  bsem_wait(bsem *bsem_p);
 
-/* =================================== API ======================================= */
+/* ================================= API ==================================== */
 
 
-typedef struct thpool_* Threadpool;
+typedef thpool_ *Threadpool;
 
 
 /**
@@ -118,8 +118,8 @@ typedef struct thpool_* Threadpool;
  * @example
  *
  *    ..
- *    threadpool thpool;                     //First we declare a threadpool
- *    thpool = thpool_init(4);               //then we initialize it to 4 threads
+ *    threadpool thpool;                    //First we declare a threadpool
+ *    thpool = thpool_init(4);              //then we initialize it to 4 threads
  *    ..
  *
  * @param  num_threads   number of threads to be created in the threadpool
@@ -157,8 +157,8 @@ Threadpool thpool_init(int num_threads);
  * @param  priority      priority of this work
  * @return 0 on successs, -1 otherwise.
  */
-int thpool_add_work(Threadpool threadpool, void (*function_p)(void*),
-					void* arg_p, int priority);
+int thpool_add_work(Threadpool threadpool, void (*function_p)(void *),
+					void *arg_p, int priority);
 
 
 /**
@@ -169,10 +169,10 @@ int thpool_add_work(Threadpool threadpool, void (*function_p)(void*),
  * (probably the main program) will continue.
  *
  * Smart polling is used in wait. The polling is initially 0 - meaning that
- * there is virtually no polling at all. If after 1 seconds the threads
- * haven't finished, the polling interval starts growing exponentially
- * untill it reaches max_secs seconds. Then it jumps down to a maximum polling
- * interval assuming that heavy processing is being used in the threadpool.
+ * there is virtually no polling at all. If after 1 seconds the threads haven't
+ * finished, the polling interval starts growing exponentially untill it reaches
+ * max_secs seconds. Then it jumps down to a maximum polling interval assuming
+ * that heavy processing is being used in the threadpool.
  *
  * @example
  *

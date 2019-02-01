@@ -48,7 +48,8 @@
 #include <pthread.h>
 #include <sys/time.h>
 
-// If need to debug.
+
+/* If need to debug. */
 //#define debugging
 
 /* Length of address of the network */

@@ -51,7 +51,10 @@
 #define UDP_SELECT_TIMEOUT 30    //second
 #define SEND_NULL_SLEEP 30
 
-typedef struct udp_config_beacon{
+/* If need to debug. */
+//#define debugging
+
+typedef struct {
 
     char send_ipv4_addr[NETWORK_ADDR_LENGTH];
     int send_portno;
@@ -64,7 +67,7 @@ typedef struct udp_config_beacon{
 
 } sudp_config_beacon;
 
-typedef struct udp_config_{
+typedef struct {
 
     struct sockaddr_in si_server;
 
@@ -91,6 +94,7 @@ enum{File_OPEN_ERROR = -1, E_ADDPKT_OVERSIZE = -2};
 enum{socket_error = -1, send_socket_error = -2, recv_socket_error = -3,
 set_socketopt_error = -4,recv_socket_bind_error = -5,addpkt_msg_oversize = -6};
 
+
 /*
   udp_initial
 
@@ -106,6 +110,7 @@ set_socketopt_error = -4,recv_socket_bind_error = -5,addpkt_msg_oversize = -6};
            If not 0   , somthing wrong.
  */
 int udp_initial(pudp_config udp_config, int send_port, int recv_port);
+
 
 /*
   udp_addpkt
@@ -125,6 +130,7 @@ int udp_initial(pudp_config udp_config, int send_port, int recv_port);
            If not 0   , something wrong.
  */
 int udp_addpkt(pudp_config udp_config, char *raw_addr, char *content, int size);
+
 
 /*
   udp_getrecv
@@ -157,6 +163,7 @@ sPkt udp_getrecv(pudp_config udp_config);
  */
 void *udp_send_pkt(void *udpconfig);
 
+
 /*
   udp_recv_pkt
 
@@ -171,6 +178,7 @@ void *udp_send_pkt(void *udpconfig);
      None
  */
 void *udp_recv_pkt(void *udpconfig);
+
 
 /*
   udp_release
@@ -187,6 +195,7 @@ void *udp_recv_pkt(void *udpconfig);
            If not 0   , something wrong.
  */
 int udp_release(pudp_config udp_config);
+
 
 /*
   udp_address_reduce_point
@@ -218,5 +227,6 @@ char *udp_address_reduce_point(char *raw_addr);
      char : return char array of the converted address.
  */
 char *udp_hex_to_address(unsigned char *hex_addr);
+
 
 #endif

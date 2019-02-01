@@ -56,10 +56,10 @@
 /* Gateway config file location and defining of config file. */
 
 /* File path of the config file of the Gateway */
-#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
+#define CONFIG_FILE_NAME "../config/gateway.conf"
 
 /* File path of the config file of the zlog */
-#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
+#define ZLOG_CONFIG_FILE_NAME "../config/zlog.conf"
 
 /* The category defined of log file used for health report */
 #define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
@@ -81,7 +81,7 @@
 #define MAX_STARVATION_TIME 600
 
 /* The configuration file structure */
-typedef struct Config {
+typedef struct {
 
     /* If polling from gateway set false(0) else from the server set true(1) */
     bool is_polled_by_server;
@@ -135,7 +135,7 @@ typedef struct {
     /* The last request join time */
     int last_request_time;
 
-}AddressMap;
+} AddressMap;
 
 
 typedef struct {
@@ -148,8 +148,7 @@ typedef struct {
 
     AddressMap address_map_list[MAX_NUMBER_NODES];
 
-}AddressMapArray;
-
+} AddressMapArray;
 
 /* A node of buffer to store received data and/or data to be send */
 typedef struct {
@@ -165,7 +164,6 @@ typedef struct {
     int content_size;
 
 } BufferNode;
-
 
 /* A Head of a list of msg buffer */
 typedef struct {
@@ -466,10 +464,6 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
 
  */
 void beacon_broadcast(AddressMapArray *address_map, char *msg, int size);
-
-void *polling_object_tracking_message();
-
-void *polling_health_report();
 
 
 /*

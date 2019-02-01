@@ -908,7 +908,7 @@ void Wifi_free(){
 }
 
 
-void* process_wifi_send(void *_buffer_list_head){
+void *process_wifi_send(void *_buffer_list_head){
 
     BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
@@ -1069,7 +1069,7 @@ void *process_wifi_receive(){
                         break;
 
                     default:
-                        mp_free(&node_mempool, new_node);
+                        mp_free( &node_mempool, new_node);
                         break;
                 }
             }
