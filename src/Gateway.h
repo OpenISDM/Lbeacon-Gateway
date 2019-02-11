@@ -75,6 +75,10 @@
 
 #define test_malloc_max_number_times 5
 
+#define join_request_timeout 120
+
+#define join_request_max_retry_time 5
+
 /*
   Maximum length of time in seconds low priority message lists are starved
   of attention. */
@@ -99,6 +103,10 @@ typedef struct {
     /* The time interval in seconds for gateway sending request for tracked
        object data to LBeacon */
     int period_between_RFTOD;
+
+    /* The time interval in seconds for gateway sending request for join request
+       to Server */
+    int period_between_join_request;
 
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
@@ -136,7 +144,6 @@ typedef struct {
     int last_request_time;
 
 } AddressMap;
-
 
 typedef struct {
 
@@ -186,6 +193,12 @@ typedef struct {
     void *arg;
 
 } BufferListHead;
+
+typedef enum {
+    unjoined=0,
+    joining=1,
+    joined=2
+} JoinStatus;
 
 
 /* Global variables */
@@ -239,9 +252,13 @@ bool BHM_initialization_complete;
 
 bool initialization_failed;
 
+JoinStatus join_status;
+
 /* Store last polling time in second*/
 int last_polling_LBeacon_for_HR_time;
 int last_polling_object_tracking_time;
+int last_polling_join_request_time;
+
 
 /*
   get_config:
@@ -319,6 +336,7 @@ void *sort_priority(BufferListHead *list_head);
  */
 void *CommUnit_routine();
 
+
 /*
   NSI_routine:
 
@@ -335,6 +353,7 @@ void *CommUnit_routine();
 
  */
 void *NSI_routine(void *_buffer_list_head);
+
 
 /*
   BHM_routine:
@@ -532,5 +551,6 @@ void *process_wifi_send(void *_buffer_list_head);
      None
  */
 void *process_wifi_receive();
+
 
 #endif

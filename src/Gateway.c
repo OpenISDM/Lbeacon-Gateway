@@ -89,6 +89,7 @@ int main(int argc, char **argv){
 
     ready_to_work = true;
 
+    join_status = unjoined;
 
     /* Reading the config */
 
@@ -235,14 +236,18 @@ int main(int argc, char **argv){
            tracking object data */
         last_polling_LBeacon_for_HR_time = current_time;
         last_polling_object_tracking_time = current_time;
+    }else{
+        last_polling_join_request_time = get_system_time();
     }
+
+    int join_retry_time = 0;
 
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
 
-        if(config.is_polled_by_server == false){
+        current_time = get_system_time();
 
-            current_time = get_system_time();
+        if(config.is_polled_by_server == false){
 
             /* If it is the time to poll health reports from LBeacons, get a
                thread to do this work */
@@ -284,6 +289,41 @@ int main(int argc, char **argv){
                 /* Update the last_polling_LBeacon_for_HR_time */
                 last_polling_LBeacon_for_HR_time = get_system_time();
             }
+        }
+        else{
+            if(join_status == unjoined || (join_status == joining &&
+               current_time - last_polling_join_request_time >
+               join_request_timeout) || (join_status == joined && current_time -
+               last_polling_join_request_time > config.
+               period_between_join_request)){
+
+                if(join_retry_time == join_request_max_retry_time){
+                    join_status = unjoined;
+                    sleep(WAITING_TIME);
+                    join_retry_time = 0;
+                }
+                if(join_status == unjoined)
+                    join_status = joining;
+
+                /* Join Request */
+                /* set the pkt type */
+                int send_type = ((from_gateway & 0x0f) << 4) +
+                                 (request_to_join & 0x0f);
+                char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
+                memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
+
+                temp[0] = (char)send_type;
+
+                /* broadcast to LBeacons */
+                udp_addpkt( &udp_config, config.server_ip, temp,
+                            MINIMUM_WIFI_MESSAGE_LENGTH);
+
+                join_retry_time ++;
+
+                /* Update the last_polling_LBeacon_for_HR_time */
+                last_polling_join_request_time = current_time;
+            }
+
         }
 
         sleep(WAITING_TIME);
@@ -351,6 +391,12 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
         config->period_between_RFTOD = atoi(config_message);
+
+        fgets(config_setting, sizeof(config_setting), file);
+        config_message = strstr((char *)config_setting, DELIMITER);
+        config_message = config_message + strlen(DELIMITER);
+        trim_string_tail(config_message);
+        config->period_between_join_request = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -574,6 +620,8 @@ void* CommUnit_routine(){
                                                      current_head ->
                                                      priority_nice);
 
+            }else{
+                sleep(WAITING_TIME);
             }
 
             current_time = get_system_time();
@@ -1019,6 +1067,11 @@ void *process_wifi_receive(){
                                        &command_msg_buffer_list_head.list_lock);
                                 break;
 
+                            case join_request_ack:
+                                join_status = joined;
+                                last_polling_join_request_time =
+                                                              get_system_time();
+                                break;
                             case data_for_LBeacon:
                                 mp_free(&node_mempool, new_node);
                                 break;

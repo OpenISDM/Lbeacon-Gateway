@@ -173,7 +173,7 @@ typedef enum _ErrorCode{
     E_START_BHM_ROUTINE_THREAD = 33,
     E_START_TRACKING_THREAD = 34,
     E_REG_SIG_HANDLER = 37,
-    E_JOIN_THREAD = 38,
+    E_JOIN_THREAD = 38
 
 } ErrorCode;
 
@@ -212,11 +212,6 @@ typedef enum pkt_types {
     health_report = 5,
     /* A pkt for LBeacon */
     data_for_LBeacon = 6,
-
-    /* For Gayeway */
-
-    /* For the Gateway polling health reports from LBeacons */
-    RFHR_from_gateway = 8,
 
     /* For server */
 
