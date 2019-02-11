@@ -83,7 +83,7 @@ int main(int argc, char **argv){
     /* Reset all flags */
     NSI_initialization_complete      = false;
     CommUnit_initialization_complete = false;
-    BHM_initialization_complete      = false;
+    BHM_initialization_complete      = true; /* TEMP true for skip BHM check*/
 
     initialization_failed = false;
 
@@ -711,8 +711,7 @@ void *BHM_routine(void *_buffer_list_head){
 
         /* TODO Make a buffer to merge all the HR pkt and wait for polling. */
 
-        insert_list_tail( &temp -> buffer_entry,
-                          &BHM_send_buffer_list_head.list_head);
+        mp_free( &node_mempool, temp);
     }
     else
         pthread_mutex_unlock( &buffer_list_head -> list_lock);
