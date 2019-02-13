@@ -622,7 +622,8 @@ void* CommUnit_routine(){
                                                      current_head ->
                                                      priority_nice);
 
-            }else{
+            }
+            else{
                 sleep(WAITING_TIME);
             }
 
@@ -632,7 +633,6 @@ void* CommUnit_routine(){
         while(thpool -> num_threads_working == thpool -> num_threads_alive){
             sleep(WAITING_TIME);
         }
-
         /* Scan the priority list in reverse order to prevent starving the
            lowest priority buffer list. */
 
@@ -673,6 +673,9 @@ void* CommUnit_routine(){
                                                  current_head,
                                                  current_head ->
                                                  priority_nice);
+        }
+        else{
+            sleep(WAITING_TIME);
         }
 
         /* Update the init_time */
