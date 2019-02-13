@@ -46,6 +46,8 @@
      Chun Yu Lai    , chunyu1202@gmail.com
  */
 
+/* TODO
+     When Gateway not join Server */
 
 #include "Gateway.h"
 
