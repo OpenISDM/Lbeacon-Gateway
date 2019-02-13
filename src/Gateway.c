@@ -311,14 +311,69 @@ int main(int argc, char **argv){
                 /* set the pkt type */
                 int send_type = ((from_gateway & 0x0f) << 4) +
                                  (request_to_join & 0x0f);
-                char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
-                memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
+                char content_temp[WIFI_MESSAGE_LENGTH];
+                memset(content_temp, 0, WIFI_MESSAGE_LENGTH);
 
-                temp[0] = (char)send_type;
+                int content_temp_size = MINIMUM_WIFI_MESSAGE_LENGTH;
 
-                /* broadcast to LBeacons */
-                udp_addpkt( &udp_config, config.server_ip, temp,
-                            MINIMUM_WIFI_MESSAGE_LENGTH);
+                content_temp[0] = (char)send_type;
+
+                content_temp[1] = ';';
+
+                memcpy(&content_temp[2], config.IPaddress,
+                       sizeof(config.IPaddress));
+
+                content_temp_size += strlen(config.IPaddress);
+
+                content_temp[content_temp_size] = ';';
+
+                content_temp_size += 1;
+
+                pthread_mutex_lock(&LBeacon_address_map.list_lock);
+
+                char content_LBeacon_status[WIFI_MESSAGE_LENGTH];
+                memset(content_LBeacon_status, 0, WIFI_MESSAGE_LENGTH);
+
+                int content_LBeacon_status_size = 0;
+                int counter = 0;
+
+                for(int n = 0; n < MAX_NUMBER_NODES; n ++){
+                    if (LBeacon_address_map.in_use[n] == true){
+
+                        char tmp[WIFI_MESSAGE_LENGTH];
+                        memset(tmp, 0, WIFI_MESSAGE_LENGTH);
+
+                        char uuid[UUID_LENGTH + 1];
+                        memset(uuid, 0, UUID_LENGTH + 1);
+
+                        memcpy(uuid, LBeacon_address_map.address_map_list[n].
+                               uuid, UUID_LENGTH);
+                        sprintf(tmp, "%s;%d;", uuid, LBeacon_address_map.
+                                address_map_list[n].last_request_time);
+
+                        memcpy(&content_LBeacon_status
+                               [content_LBeacon_status_size], tmp, sizeof(tmp));
+                        content_LBeacon_status_size += strlen(tmp);
+
+                        counter ++;
+                    }
+                }
+
+                sprintf(&content_temp[content_temp_size], "%d;%s", counter,
+                        content_LBeacon_status);
+
+                content_temp_size += content_LBeacon_status_size;
+
+#ifdef debugging
+                printf("== Current Joined LBeacon ==\nContent_temp [%s]\n"
+                "Content_temp_size[%d]\n", content_temp, content_temp_size);
+#endif
+                pthread_mutex_unlock(&LBeacon_address_map.list_lock);
+
+                if(content_temp_size < WIFI_MESSAGE_LENGTH)
+                    /* broadcast to LBeacons */
+                    udp_addpkt( &udp_config, config.server_ip, content_temp,
+                                content_temp_size);
 
                 join_retry_time ++;
 
@@ -905,6 +960,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
 
         strncpy(tmp -> uuid, uuid, UUID_LENGTH);
         strncpy(tmp -> net_address, address, NETWORK_ADDR_LENGTH);
+        tmp -> last_request_time = get_system_time();
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }
