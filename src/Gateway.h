@@ -73,11 +73,11 @@
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 32
 
-#define test_malloc_max_number_times 5
+#define TEST_MALLOC_MAX_NUMBER_TIMES 5
 
-#define join_request_timeout 120
+#define JOIN_REQUEST_TIMEOUT 120
 
-#define join_request_max_retry_time 5
+#define JOIN_REQUEST_MAX_RETRY_TIME 5
 
 /*
   Maximum length of time in seconds low priority message lists are starved

@@ -295,11 +295,11 @@ int main(int argc, char **argv){
         else{
             if(join_status == unjoined || (join_status == joining &&
                current_time - last_polling_join_request_time >
-               join_request_timeout) || (join_status == joined && current_time -
+               JOIN_REQUEST_TIMEOUT) || (join_status == joined && current_time -
                last_polling_join_request_time > config.
                period_between_join_request)){
 
-                if(join_retry_time == join_request_max_retry_time){
+                if(join_retry_time == JOIN_REQUEST_MAX_RETRY_TIME){
                     join_status = unjoined;
                     sleep(WAITING_TIME);
                     join_retry_time = 0;
@@ -311,6 +311,7 @@ int main(int argc, char **argv){
                 /* set the pkt type */
                 int send_type = ((from_gateway & 0x0f) << 4) +
                                  (request_to_join & 0x0f);
+
                 char content_temp[WIFI_MESSAGE_LENGTH];
                 memset(content_temp, 0, WIFI_MESSAGE_LENGTH);
 
@@ -319,15 +320,6 @@ int main(int argc, char **argv){
                 content_temp[0] = (char)send_type;
 
                 content_temp[1] = ';';
-
-                memcpy(&content_temp[2], config.IPaddress,
-                       sizeof(config.IPaddress));
-
-                content_temp_size += strlen(config.IPaddress);
-
-                content_temp[content_temp_size] = ';';
-
-                content_temp_size += 1;
 
                 pthread_mutex_lock(&LBeacon_address_map.list_lock);
 
@@ -352,15 +344,25 @@ int main(int argc, char **argv){
                                 address_map_list[n].last_request_time);
 
                         memcpy(&content_LBeacon_status
-                               [content_LBeacon_status_size], tmp, sizeof(tmp));
+                               [content_LBeacon_status_size], tmp, strlen(tmp) * sizeof(char));
+                        printf("sizeof(tmp) [%d]\n", strlen(tmp) * sizeof(char));
                         content_LBeacon_status_size += strlen(tmp);
 
                         counter ++;
                     }
                 }
 
-                sprintf(&content_temp[content_temp_size], "%d;%s", counter,
-                        content_LBeacon_status);
+                char tmp[WIFI_MESSAGE_LENGTH];
+                memset(tmp, 0, WIFI_MESSAGE_LENGTH);
+
+                sprintf(tmp, "%d;%s;", counter, config.IPaddress);
+
+                memcpy(&content_temp[content_temp_size], tmp, strlen(tmp) * sizeof(char));
+
+                content_temp_size += strlen(tmp);
+                printf("content_LBeacon_status [%s]\ncontent_LBeacon_status_size [%d]\n", content_LBeacon_status, content_LBeacon_status_size);
+                memcpy(&content_temp[content_temp_size], content_LBeacon_status,
+                       content_LBeacon_status_size * sizeof(char));
 
                 content_temp_size += content_LBeacon_status_size;
 
@@ -1067,7 +1069,7 @@ void *process_wifi_receive(){
             /* Allocate memory from node_mempool a buffer node for received data
                and copy the data from Wi-Fi receive queue to the node. */
             do{
-                if(test_times == test_malloc_max_number_times)
+                if(test_times == TEST_MALLOC_MAX_NUMBER_TIMES)
                     break;
                 else if(test_times != 0)
                     sleep(1);
