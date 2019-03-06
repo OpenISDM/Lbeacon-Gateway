@@ -24,7 +24,7 @@
 
   Version:
 
-     1.0, 20190201
+     1.0, 20190306
 
   Abstract:
 
@@ -345,7 +345,7 @@ int main(int argc, char **argv){
 
                         memcpy(&content_LBeacon_status
                                [content_LBeacon_status_size], tmp, strlen(tmp) * sizeof(char));
-                        printf("sizeof(tmp) [%d]\n", strlen(tmp) * sizeof(char));
+                        printf("msg [%s]\nsizeof(tmp): [%d]\n", tmp, strlen(tmp) * sizeof(char));
                         content_LBeacon_status_size += strlen(tmp);
 
                         counter ++;
@@ -643,7 +643,7 @@ void* CommUnit_routine(){
 
                 is_empty_list_head = true;
 
-                current_head= ListEntry(tmp, BufferListHead,
+                current_head = ListEntry(tmp, BufferListHead,
                                         priority_list_entry);
 
                 pthread_mutex_lock( &current_head -> list_lock);
@@ -769,7 +769,7 @@ void *NSI_routine(void *_buffer_list_head){
 
         char current_uuid[UUID_LENGTH];
 
-        memcpy(current_uuid, &temp->content[2], UUID_LENGTH);
+        memcpy(current_uuid, &temp->content[1], UUID_LENGTH);
 
         int send_type = (from_gateway & 0x0f)<<4;
 
