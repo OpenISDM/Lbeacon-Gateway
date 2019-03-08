@@ -204,7 +204,7 @@ typedef enum pkt_types {
     /* When Gateway deny Beacon join request */
     join_request_deny = 3,
 
-    /* For LBeacon send pkt type */
+    /* For LBeacon pkt type */
 
     /* A pkt containing tracked object data */
     tracked_object_data = 4,
@@ -247,7 +247,7 @@ typedef enum DeviceType {
 /* A global flag that is initially set to true by the main thread. It is set
    to false by any thread when the thread encounters a fatal error,
    indicating that it is about to exit. In addition, if user presses Ctrl+C,
-   the ready_to_work will be set as false to stop all threadts. */
+   the ready_to_work flag will be set as false to stop all threads. */
 bool ready_to_work;
 
 /* The pointer to the category of the log file */
@@ -259,7 +259,7 @@ zlog_category_t *category_health_report, *category_debug;
 /*
   uuid_str_to_data:
 
-     Convert uuid from string to unsigned integer.
+     Converts uuid from string to unsigned integer.
 
   Parameters:
 
@@ -292,12 +292,13 @@ unsigned int twoc(int in, int t);
 /*
   trim_string_tail:
 
-     Trim the whitespace, newline and carry-return at the end of string when
-     reading config messages.
+     This function trim whitespace, newline and carry-return at the end of
+     the string when reading config messages.
 
   Parameters:
 
-     message - the character array of input string
+     message - The pointer points to the character array containing the input
+               string
 
   Return value:
 
@@ -309,8 +310,8 @@ void trim_string_tail(char *message);
 /*
   ctrlc_handler:
 
-     If the user presses CTRL-C, the global variable ready_to_work will be set
-     to false, and a signal will be thrown to stop running the program.
+     When the user presses CTRL-C, the function sets the global variable
+     ready_to_work to false, and throw a signal to stop running the program.
 
   Parameters:
 

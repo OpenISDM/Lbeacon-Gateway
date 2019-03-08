@@ -16,11 +16,11 @@
 
   File Description:
 
-     This file contains programs to transmit and receive data to and from
-     LBeacon and the sever through Wi-Fi network from and to the Gateway, and
-     programs executed by network setup and initialization, Beacon health
-     monitor and comminication unit. Each gateway is the root of a star network
-     of LBeacons.
+     Each gateway is the root of a star network of LBeacons and a leaf in the
+     star network with the server at the root. This file contains programs to
+     transmit and receive data to and from LBeacon and the sever through Wi-Fi
+     network from and to the Gateway, and programs executed by network setup and
+     initialization, Beacon health monitor and comminication unit.
 
   Version:
 
@@ -76,13 +76,13 @@ int main(int argc, char **argv){
 
     int return_value;
 
-    /* The main thread do the communication Unit */
+    /* The main thread of the communication Unit */
     pthread_t CommUnit_thread;
 
-    /* The thread to listen for messages from Wi-Fi */
+    /* The thread to listen for messages from Wi-Fi interface */
     pthread_t wifi_listener;
 
-    /* Reset all flags */
+    /* All global flags */
     NSI_initialization_complete      = false;
     CommUnit_initialization_complete = false;
     BHM_initialization_complete      = true; /* TEMP true for skip BHM check*/
@@ -93,7 +93,7 @@ int main(int argc, char **argv){
 
     join_status = unjoined;
 
-    /* Reading the config */
+    /* Create the config from input config file */
 
     if(get_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
         zlog_error(category_health_report, "Opening config file Fail");
@@ -113,10 +113,11 @@ int main(int argc, char **argv){
         return E_MALLOC;
     }
 
+    /* Initialize the address map*/
+    init_Address_Map( &LBeacon_address_map);
+
     /* Initialize buffer_list_heads and add to the head in to the priority list.
      */
-
-    init_Address_Map( &LBeacon_address_map);
 
     init_buffer( &priority_list_head, (void *) sort_priority,
                 config.high_priority);
@@ -161,7 +162,7 @@ int main(int argc, char **argv){
     zlog_info(category_debug, "Buffers initialize Success");
 #endif
 
-    sort_priority( &priority_list_head);
+    sort_priority_list( &priority_list_head);
 
     /* Initialize the Wifi connection */
     if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
@@ -199,7 +200,7 @@ int main(int argc, char **argv){
 
     NSI_initialization_complete = true;
 
-    /* Create the thread of Communication Unit  */
+    /* Create the main thread of Communication Unit  */
     return_value = startThread( &CommUnit_thread, CommUnit_routine, NULL);
 
     if(return_value != WORK_SUCCESSFULLY){
@@ -234,7 +235,7 @@ int main(int argc, char **argv){
     current_time = get_system_time();
     if(config.is_polled_by_server == false){
 
-        /* Start counting down the time for polling the health reports and
+        /* Start counting down to the time for polling health reports and
            tracking object data */
         last_polling_LBeacon_for_HR_time = current_time;
         last_polling_object_tracking_time = current_time;
@@ -251,19 +252,19 @@ int main(int argc, char **argv){
 
         if(config.is_polled_by_server == false){
 
-            /* If it is the time to poll health reports from LBeacons, get a
+            /* If it is the time to poll LBeacons for tracked object data, get a
                thread to do this work */
             if(current_time - last_polling_object_tracking_time >
                config.period_between_RFTOD){
 
-                /* Pull object tracking object data */
-                /* set the pkt type */
-                int send_type = ((from_gateway & 0x0f) << 4) +
+                /* Poll object tracking object data */
+                /* set the pkt content */
+                int send_msg_type = ((from_gateway & 0x0f) << 4) +
                                  (tracked_object_data & 0x0f);
                 char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
                 memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
 
-                temp[0] = (char)send_type;
+                temp[0] = (char)send_msg_type;
 
                 /* broadcast to LBeacons */
                 beacon_broadcast(&LBeacon_address_map, temp,
@@ -277,12 +278,12 @@ int main(int argc, char **argv){
 
                 /* Polling for health reports. */
                 /* set the pkt type */
-                int send_type = ((from_gateway & 0x0f) << 4) +
-                                 (health_report & 0x0f);
+                int send_msg_type = ((from_gateway & 0x0f) << 4) +
+                                     (health_report & 0x0f);
                 char temp[MINIMUM_WIFI_MESSAGE_LENGTH];
                 memset(temp, 0, MINIMUM_WIFI_MESSAGE_LENGTH);
 
-                temp[0] = (char)send_type;
+                temp[0] = (char)send_msg_type;
 
                 /* broadcast to LBeacons */
                 beacon_broadcast(&LBeacon_address_map, temp,
@@ -538,7 +539,7 @@ void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
 }
 
 
-void *sort_priority(BufferListHead *list_head){
+void *sort_priority_list(BufferListHead *list_head){
 
     List_Entry *list_pointers,
                *list_pointers_in_bubble,
@@ -592,7 +593,7 @@ void *sort_priority(BufferListHead *list_head){
 }
 
 
-void* CommUnit_routine(){
+void *CommUnit_routine(){
 
     int init_time;
     int current_time;
@@ -616,8 +617,8 @@ void* CommUnit_routine(){
     /* Set the initial time. */
     init_time = current_time;
 
-    /* After all the buffers are initialized and the thread pool initialized,
-       set the flag to true. */
+    /* All the buffers lists have been are initialized and the thread pool
+       initialized. Set the flag to true. */
     CommUnit_initialization_complete = true;
 
     /* When there is no dead thead, do the work. */
@@ -629,7 +630,7 @@ void* CommUnit_routine(){
         BufferListHead *current_head;
 
         /* In the normal situation, the scanning starts from the high priority
-           to lower priority. If the timer expired for MAX_STARVATION_TIME,
+           to lower priority. When the timer expired for MAX_STARVATION_TIME,
            reverse the scanning process */
         while(current_time - init_time < MAX_STARVATION_TIME){
 
@@ -663,11 +664,7 @@ void* CommUnit_routine(){
                                                 current_head,
                                                 current_head -> priority_nice);
 
-                    /* Currently, a work thread is processing this buffer list.
-                     */
                     pthread_mutex_unlock( &current_head -> list_lock);
-                    /* Go to check the next buffer list in the priority
-                        list */
                     break;
                 }
             }
@@ -706,9 +703,7 @@ void* CommUnit_routine(){
                                             current_head,
                                             current_head -> priority_nice);
 
-                /* Currently, a work thread is processing this buffer list. */
                 pthread_mutex_unlock( &current_head -> list_lock);
-                /* Go to check the next buffer list in the priority list */
                 break;
             }
         }
@@ -831,7 +826,7 @@ void *LBeacon_routine(void *_buffer_list_head){
 
         temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
 
-        /* Add the content that to be sent to the server */
+        /* Add the content of tje buffer node to the UDP to be sent to the server */
         udp_addpkt( &udp_config, config.server_ip, temp -> content,
                     temp -> content_size);
 
@@ -889,16 +884,16 @@ void init_Address_Map(AddressMapArray *address_map){
 }
 
 
-bool is_in_Address_Map(AddressMapArray *address_map, char *uuid){
+inline int is_in_Address_Map(AddressMapArray *address_map, char *uuid){
 
     for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
         if (address_map -> in_use[n] == true && strncmp(address_map ->
             address_map_list[n].uuid, uuid, UUID_LENGTH) == 0){
-                return true;
+                return n;
         }
     }
-    return false;
+    return -1;
 }
 
 
@@ -909,19 +904,14 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     /* Copy all the necessary information received from the LBeacon to the
        address map. */
 
-    /* Record the first unused address map location in order to store the new
-       joined LBeacon. */
+    /* Find the first unused address map location and use the location to store
+       the new joined LBeacon. */
     int not_in_use = -1;
+    int answer;
 
-    if(is_in_Address_Map(address_map, uuid) == true){
-        for(int n = 0 ; n < MAX_NUMBER_NODES ; n ++){
-            if(address_map -> in_use[n] == true && strncmp(address_map ->
-               address_map_list[n].uuid, uuid, UUID_LENGTH) == 0){
-                address_map -> address_map_list[n].last_request_time =
+    if(answer = is_in_Address_Map(address_map, uuid) >=0){
+        address_map -> address_map_list[answer].last_request_time =
                                                               get_system_time();
-                break;
-            }
-        }
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }

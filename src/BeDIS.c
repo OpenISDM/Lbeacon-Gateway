@@ -61,13 +61,11 @@ unsigned int *uuid_str_to_data(char *uuid) {
     unsigned int *data_pointer = data;
     char *uuid_counter = uuid;
 
-    for (; uuid_counter < uuid + uuid_length;
-
-         data_pointer++, uuid_counter += 2) {
+    for (uuid_counter = uuid; uuid_counter < uuid + uuid_length;data_pointer++,
+         uuid_counter += 2) {
         *data_pointer =
             ((strchr(conversion, toupper(*uuid_counter)) - conversion) * 16) +
             (strchr(conversion, toupper(*(uuid_counter + 1))) - conversion);
-
     }
 
     return data;
