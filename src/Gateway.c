@@ -344,8 +344,10 @@ int main(int argc, char **argv){
                                 address_map_list[n].last_request_time);
 
                         memcpy(&content_LBeacon_status
-                               [content_LBeacon_status_size], tmp, strlen(tmp) * sizeof(char));
-                        printf("msg [%s]\nsizeof(tmp): [%d]\n", tmp, strlen(tmp) * sizeof(char));
+                               [content_LBeacon_status_size], tmp, strlen(tmp) *
+                               sizeof(char));
+                        printf("msg [%s]\nsizeof(tmp): [%d]\n", tmp, strlen(tmp)
+                               * sizeof(char));
                         content_LBeacon_status_size += strlen(tmp);
 
                         counter ++;
@@ -357,10 +359,13 @@ int main(int argc, char **argv){
 
                 sprintf(tmp, "%d;%s;", counter, config.IPaddress);
 
-                memcpy(&content_temp[content_temp_size], tmp, strlen(tmp) * sizeof(char));
+                memcpy(&content_temp[content_temp_size], tmp, strlen(tmp) *
+                                                              sizeof(char));
 
                 content_temp_size += strlen(tmp);
-                printf("content_LBeacon_status [%s]\ncontent_LBeacon_status_size [%d]\n", content_LBeacon_status, content_LBeacon_status_size);
+                printf("content_LBeacon_status [%s]\n", content_LBeacon_status);
+                printf("content_LBeacon_status_size [%d]\n"
+                       , content_LBeacon_status_size);
                 memcpy(&content_temp[content_temp_size], content_LBeacon_status,
                        content_LBeacon_status_size * sizeof(char));
 
@@ -622,8 +627,6 @@ void* CommUnit_routine(){
 
         List_Entry *tmp;
         BufferListHead *current_head;
-        bool is_empty_list_head;
-
 
         /* In the normal situation, the scanning starts from the high priority
            to lower priority. If the timer expired for MAX_STARVATION_TIME,
@@ -641,8 +644,6 @@ void* CommUnit_routine(){
 
             list_for_each(tmp, &priority_list_head.priority_list_entry){
 
-                is_empty_list_head = true;
-
                 current_head = ListEntry(tmp, BufferListHead,
                                         priority_list_entry);
 
@@ -655,8 +656,12 @@ void* CommUnit_routine(){
                     continue;
                 }
                 else {
-
-                    is_empty_list_head = false;
+                    /* If there is a node in the buffer and the buffer is not be
+                       occupied, do the work according to the function pointer */
+                    return_error_value = thpool_add_work(thpool,
+                                                current_head -> function,
+                                                current_head,
+                                                current_head -> priority_nice);
 
                     /* Currently, a work thread is processing this buffer list.
                      */
@@ -668,21 +673,6 @@ void* CommUnit_routine(){
             }
 
             pthread_mutex_unlock( &priority_list_head.list_lock);
-
-            if (is_empty_list_head == false){
-
-                /* If there is a node in the buffer and the buffer is not be
-                   occupied, do the work according to the function pointer */
-                return_error_value = thpool_add_work(thpool,
-                                                     current_head -> function,
-                                                     current_head,
-                                                     current_head ->
-                                                     priority_nice);
-
-            }
-            else{
-                sleep(WAITING_TIME);
-            }
 
             current_time = get_system_time();
         }
@@ -697,8 +687,6 @@ void* CommUnit_routine(){
 
         list_for_each_reverse(tmp, &priority_list_head.priority_list_entry){
 
-            is_empty_list_head = true;
-
             current_head= ListEntry(tmp, BufferListHead, priority_list_entry);
 
             pthread_mutex_lock( &current_head -> list_lock);
@@ -711,7 +699,12 @@ void* CommUnit_routine(){
             }
             else {
 
-                is_empty_list_head = false;
+                /* If there is a node in the buffer and the buffer is not be
+                   occupied, do the work according to the function pointer */
+                return_error_value = thpool_add_work(thpool,
+                                            current_head -> function,
+                                            current_head,
+                                            current_head -> priority_nice);
 
                 /* Currently, a work thread is processing this buffer list. */
                 pthread_mutex_unlock( &current_head -> list_lock);
@@ -721,19 +714,6 @@ void* CommUnit_routine(){
         }
 
         pthread_mutex_unlock( &priority_list_head.list_lock);
-
-        if (is_empty_list_head == false){
-            /* If there is a node in the buffer and the buffer is not be
-               occupied, do the work according to the function pointer */
-            return_error_value = thpool_add_work(thpool,
-                                                 current_head -> function,
-                                                 current_head,
-                                                 current_head ->
-                                                 priority_nice);
-        }
-        else{
-            sleep(WAITING_TIME);
-        }
 
         /* Update the init_time */
         init_time = get_system_time();
