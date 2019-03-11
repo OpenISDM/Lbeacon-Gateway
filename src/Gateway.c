@@ -119,7 +119,7 @@ int main(int argc, char **argv){
     /* Initialize buffer_list_heads and add to the head in to the priority list.
      */
 
-    init_buffer( &priority_list_head, (void *) sort_priority,
+    init_buffer( &priority_list_head, (void *) sort_priority_list,
                 config.high_priority);
 
     init_buffer( &time_critical_LBeacon_receive_buffer_list_head,
@@ -841,6 +841,8 @@ void *LBeacon_routine(void *_buffer_list_head){
 
 void *Server_routine(void *_buffer_list_head){
 
+    printf("Start Broadcast to LBeacon\n");
+
     BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
     /* Create a temporary node and set as the head */
@@ -884,7 +886,7 @@ void init_Address_Map(AddressMapArray *address_map){
 }
 
 
-inline int is_in_Address_Map(AddressMapArray *address_map, char *uuid){
+int is_in_Address_Map(AddressMapArray *address_map, char *uuid){
 
     for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
@@ -949,10 +951,14 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
 
     pthread_mutex_lock( &address_map -> list_lock);
 
+    printf("==Current in Brocast==\n");
+
     if (size <= WIFI_MESSAGE_LENGTH){
         for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
             if (address_map -> in_use[n] == true){
+                printf("Brocast IP: %s\n", address_map -> address_map_list[n].net_address);
+
                 /* Add the pkt that to be sent to the server */
                 udp_addpkt( &udp_config, address_map -> address_map_list[n]
                             .net_address, msg, size);
@@ -960,6 +966,7 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
         }
     }
 
+    printf("END Brocast\n");
     pthread_mutex_unlock( &address_map -> list_lock);
 }
 
@@ -1079,6 +1086,8 @@ void *process_wifi_receive(){
                         switch (pkt_type) {
 
                             case RFHR_from_server:
+                            case health_report:
+                                printf("Get Health Report from the Server\n");
                                 last_polling_LBeacon_for_HR_time = current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
                                                    .list_lock);
@@ -1091,6 +1100,8 @@ void *process_wifi_receive(){
                                 break;
 
                             case poll_for_tracked_object_data_from_server:
+                            case tracked_object_data:
+                                printf("Get Tracked Object Data from the Server\n");
                                 last_polling_object_tracking_time= current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
                                                    .list_lock);
@@ -1101,11 +1112,13 @@ void *process_wifi_receive(){
                                 break;
 
                             case join_request_ack:
+                                printf("Get Join Request Result from the Server\n");
                                 join_status = joined;
                                 last_polling_join_request_time =
                                                               get_system_time();
                                 break;
                             case data_for_LBeacon:
+                                printf("Get Data_for_LBeacon\n");
                                 mp_free(&node_mempool, new_node);
                                 break;
 
@@ -1120,6 +1133,7 @@ void *process_wifi_receive(){
                         switch (pkt_type) {
 
                             case request_to_join:
+                                printf("Get Join Request from LBeacon\n");
                                 pthread_mutex_lock(&NSI_receive_buffer_list_head
                                                    .list_lock);
                                 insert_list_tail(&new_node -> buffer_entry,
@@ -1130,6 +1144,7 @@ void *process_wifi_receive(){
                                 break;
 
                             case tracked_object_data:
+                                printf("Get Tracked Object Data from LBeacon\n");
                                 pthread_mutex_lock(
                                    &LBeacon_receive_buffer_list_head.list_lock);
                                 insert_list_tail( &new_node -> buffer_entry,
@@ -1139,6 +1154,7 @@ void *process_wifi_receive(){
                                 break;
 
                             case health_report:
+                                printf("Get Health Report from LBeacon\n");
                                 pthread_mutex_lock(&BHM_receive_buffer_list_head
                                                    .list_lock);
                                 insert_list_tail( &new_node -> buffer_entry,

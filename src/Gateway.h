@@ -448,7 +448,7 @@ void init_Address_Map(AddressMapArray *address_map);
 
      bool: If return true means in the address map, else false.
  */
-bool is_in_Address_Map(AddressMapArray *address_map, char *uuid);
+int is_in_Address_Map(AddressMapArray *address_map, char *uuid);
 
 
 /*
