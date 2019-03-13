@@ -1,8 +1,49 @@
-/**********************************
- * @author      Johan Hanssen Seferidis
- * License:     MIT
- *
- **********************************/
+/*
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
+
+  License:
+
+     GPL 3.0 : The content of this file is subject to the terms and cnditions
+     defined in file 'COPYING.txt', which is part of this source code package.
+
+  Project Name:
+
+     BeDIS
+
+  File Name:
+
+     thpool.h
+
+  File Description:
+
+     This file the definitions and declarations of constants, structures, and
+     functions used in the thpool.c file.
+
+     Note: This code is forked from https://github.com/Pithikos/C-Thread-Pool
+           Author: Johan Hanssen Seferidis
+       	   License: MIT
+
+  Version:
+
+     2.0, 20190213
+
+  Abstract:
+
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
+     area.
+
+  Authors:
+
+     Gary Xiao     , garyh0205@hotmail.com
+     Holly Wang    , hollywang@iis.sinica.edu.tw
+
+ */
 
 #ifndef THPOOL_H
 #define THPOOL_H
@@ -24,21 +65,17 @@
 /* The number of slots for the memory pool */
 #define SLOTS_FOR_MEM_POOL 100
 
-/* The number of slots for the memory pool */
-#define SIZE_FOR_MEM_POOL 256
+/* The size of a slot for the memory pool */
+#define SIZE_FOR_MEM_POOL 100
 
 #define err(str) fprintf(stderr, str)
-
-
-static volatile int threads_keepalive;
-static volatile int threads_on_hold;
 
 
 /* ========================== STRUCTURES ============================ */
 
 
 /* Binary semaphore */
-typedef struct bsem {
+typedef struct {
 	pthread_mutex_t mutex;
 	pthread_cond_t   cond;
 	int v;
@@ -80,22 +117,28 @@ typedef struct thpool_{
 	pthread_mutex_t  thcount_lock;       /* used for thread count etc */
 	pthread_cond_t  threads_all_idle;    /* signal to thpool_wait     */
 	jobqueue  jobqueue;                  /* job queue                 */
+	volatile int threads_keepalive;
+
+	/* The memory pool for the allocation of all nodes in scanned_device_list
+	   and tracked_object_list */
+	Memory_Pool th_mempool;
+
 } thpool_;
 
+typedef thpool_ *Threadpool;
 
 /* ========================== PROTOTYPES ============================ */
 
 
 static int   thread_init(thpool_ *thpool_p, thread **thread_p, int id);
 static void *thread_do(thread *thread_p);
-static void  thread_hold(int sig_id);
 static void  thread_destroy(thread *thread_p);
 
-static int   jobqueue_init(jobqueue *jobqueue_p);
-static void  jobqueue_clear(jobqueue *jobqueue_p);
+static int   jobqueue_init(Threadpool thpool_p, jobqueue *jobqueue_p);
+static void  jobqueue_clear(Threadpool thpool_p, jobqueue *jobqueue_p);
 static void  jobqueue_push(jobqueue *jobqueue_p, job *newjob_p);
-static job *jobqueue_pull(jobqueue *jobqueue_p);
-static void  jobqueue_destroy(jobqueue *jobqueue_p);
+static job  *jobqueue_pull(jobqueue *jobqueue_p);
+static void  jobqueue_destroy(Threadpool thpool_p, jobqueue *jobqueue_p);
 
 static void  bsem_init(bsem *bsem_p, int value);
 static void  bsem_reset(bsem *bsem_p);
@@ -104,10 +147,6 @@ static void  bsem_post_all(bsem *bsem_p);
 static void  bsem_wait(bsem *bsem_p);
 
 /* ================================= API ==================================== */
-
-
-typedef thpool_ *Threadpool;
-
 
 /**
  * @brief  Initialize threadpool
@@ -188,47 +227,7 @@ int thpool_add_work(Threadpool threadpool, void (*function_p)(void *),
  * @param threadpool     the threadpool to wait for
  * @return nothing
  */
-void thpool_wait(Threadpool);
-
-
-/**
- * @brief Pauses all threads immediately
- *
- * The threads will be paused no matter if they are idle or working.
- * The threads return to their previous states once thpool_resume
- * is called.
- *
- * While the thread is being paused, new work can be added.
- *
- * @example
- *
- *    threadpool thpool = thpool_init(4);
- *    thpool_pause(thpool);
- *    ..
- *    // Add a bunch of work
- *    ..
- *    thpool_resume(thpool); // Let the threads start their magic
- *
- * @param threadpool    the threadpool where the threads should be paused
- * @return nothing
- */
-void thpool_pause(Threadpool);
-
-
-/**
- * @brief Unpauses all threads if they are paused
- *
- * @example
- *    ..
- *    thpool_pause(thpool);
- *    sleep(10);              // Delay execution 10 seconds
- *    thpool_resume(thpool);
- *    ..
- *
- * @param threadpool     the threadpool where the threads should be unpaused
- * @return nothing
- */
-void thpool_resume(Threadpool threadpool);
+void thpool_wait(Threadpool thpool_p);
 
 
 /**
@@ -250,7 +249,7 @@ void thpool_resume(Threadpool threadpool);
  * @param threadpool     the threadpool to destroy
  * @return nothing
  */
-void thpool_destroy(Threadpool);
+void thpool_destroy(Threadpool thpool_p);
 
 
 /**
@@ -271,6 +270,7 @@ void thpool_destroy(Threadpool);
  * @param threadpool     the threadpool of interest
  * @return integer       number of threads working
  */
-int thpool_num_threads_working(Threadpool);
+int thpool_num_threads_working(Threadpool thpool_p);
+
 
 #endif
