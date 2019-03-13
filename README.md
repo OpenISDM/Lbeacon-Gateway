@@ -30,7 +30,9 @@ sudo make all
 ```
 ## Configuration
 
-In file `./Lbacon-Gateway/config/gateway.conf` change `IP address` to current pi wlan0 IP address and `server_ip` to current Server IP.
+In file `./Lbacon-Gateway/config/gateway.conf` change the following configuration.
+* `IP address` to current pi wlan0 IP address
+* `server_ip` to current Server IP.
 
 After finishing all step, add the following line to `/etc/rc.local`.
 ```sh
