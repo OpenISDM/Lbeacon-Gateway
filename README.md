@@ -20,6 +20,7 @@ sudo apt-get install git make build-essential
 Clone code from Github
 ```sh
 git clone https://github.com/OpenISDM/Lbeacon-Gateway.git
+git checkout "wifi"
 ```
 
 Entering to Lbeacon-Gateway and use make to start installation
