@@ -28,3 +28,22 @@ Entering to Lbeacon-Gateway and use make to start installation
 cd ./Lbeacon-Gateway
 sudo make all
 ```
+## Configuration
+
+In file `./Lbacon-Gateway/config/gateway.conf` change `IP address` to current pi wlan0 IP address and `server_ip` to current Server IP.
+
+After finishing all step, add the following line to `/etc/rc.local`.
+```sh
+/home/pi/Lbeacon-Gateway/bin/Gateway.out > /dev/null 2>&1 &
+```
+
+## How to check whether Gateway is running
+
+When need to know Gateway is runnging or not, use the following command to check.
+```sh
+ps -aux | grep Gateway
+```
+If Gateway is running, the result looks like the following.
+```sh
+root      1286 99.2  4.3 217532 19364 ?        Sl   Mar1 1169:28 /home/pi/Lbeacon-Gateway/bin/Gateway.out
+```
