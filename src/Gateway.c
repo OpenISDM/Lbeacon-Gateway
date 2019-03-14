@@ -658,7 +658,8 @@ void *CommUnit_routine(){
                 }
                 else {
                     /* If there is a node in the buffer and the buffer is not be
-                       occupied, do the work according to the function pointer */
+                       occupied, do the work according to the function pointer
+                     */
                     return_error_value = thpool_add_work(thpool,
                                                 current_head -> function,
                                                 current_head,
@@ -816,7 +817,8 @@ void *LBeacon_routine(void *_buffer_list_head){
 
     pthread_mutex_lock( &buffer_list_head -> list_lock);
 
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false &&
+       join_status == joined){
 
         temp_list_entry_pointers = buffer_list_head -> list_head.next;
 
@@ -826,7 +828,8 @@ void *LBeacon_routine(void *_buffer_list_head){
 
         temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
 
-        /* Add the content of tje buffer node to the UDP to be sent to the server */
+        /* Add the content of tje buffer node to the UDP to be sent to the
+           Server */
         udp_addpkt( &udp_config, config.server_ip, temp -> content,
                     temp -> content_size);
 
@@ -1005,7 +1008,8 @@ void *process_wifi_send(void *_buffer_list_head){
 
     pthread_mutex_lock( &buffer_list_head -> list_lock);
 
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false &&
+                           join_status == joined){
 
         temp_list_entry_pointers = buffer_list_head -> list_head.next;
 
@@ -1101,7 +1105,8 @@ void *process_wifi_receive(){
 
                             case poll_for_tracked_object_data_from_server:
                             case tracked_object_data:
-                                printf("Get Tracked Object Data from the Server\n");
+                                printf("Get Tracked Object Data from the Server"
+                                       "\n");
                                 last_polling_object_tracking_time= current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
                                                    .list_lock);
@@ -1112,7 +1117,8 @@ void *process_wifi_receive(){
                                 break;
 
                             case join_request_ack:
-                                printf("Get Join Request Result from the Server\n");
+                                printf("Get Join Request Result from the Server"
+                                       "\n");
                                 join_status = joined;
                                 last_polling_join_request_time =
                                                               get_system_time();
@@ -1144,7 +1150,8 @@ void *process_wifi_receive(){
                                 break;
 
                             case tracked_object_data:
-                                printf("Get Tracked Object Data from LBeacon\n");
+                                printf("Get Tracked Object Data from LBeacon\n")
+                                       ;
                                 pthread_mutex_lock(
                                    &LBeacon_receive_buffer_list_head.list_lock);
                                 insert_list_tail( &new_node -> buffer_entry,
