@@ -94,6 +94,7 @@ int udp_initial(pudp_config udp_config, int send_port, int recv_port){
     return 0;
 }
 
+
 int udp_addpkt(pudp_config udp_config, char *raw_addr, char *content, int size){
 
     if(size > MESSAGE_LENGTH)
@@ -159,6 +160,7 @@ void *udp_send_pkt(void *udpconfig){
     return (void *)NULL;
 }
 
+
 void *udp_recv_pkt(void *udpconfig){
 
     pudp_config udp_config = (pudp_config) udpconfig;
@@ -214,6 +216,7 @@ void *udp_recv_pkt(void *udpconfig){
 #endif
     return (void *)NULL;
 }
+
 
 int udp_release(pudp_config udp_config){
 
