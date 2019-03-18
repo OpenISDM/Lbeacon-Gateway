@@ -817,8 +817,7 @@ void *LBeacon_routine(void *_buffer_list_head){
 
     pthread_mutex_lock( &buffer_list_head -> list_lock);
 
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false &&
-       join_status == joined){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
         temp_list_entry_pointers = buffer_list_head -> list_head.next;
 
@@ -1008,8 +1007,7 @@ void *process_wifi_send(void *_buffer_list_head){
 
     pthread_mutex_lock( &buffer_list_head -> list_lock);
 
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false &&
-                           join_status == joined){
+    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
 
         temp_list_entry_pointers = buffer_list_head -> list_head.next;
 

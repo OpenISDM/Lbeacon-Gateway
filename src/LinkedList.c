@@ -60,7 +60,7 @@ inline void init_entry(List_Entry *entry) {
 
 inline bool is_entry_list_empty(List_Entry *entry) {
 
-	return is_isolated_node(entry);
+    return is_isolated_node(entry);
 }
 
 
