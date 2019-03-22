@@ -140,7 +140,7 @@
 #define MINIMUM_WAITING_TIME 1
 
 /* Maximum Timeout interval in seconds */
-#define MAXIMUM_WAITING_TIME 10
+#define MAXIMUM_WAITING_TIME 5
 
 
 typedef enum _ErrorCode{

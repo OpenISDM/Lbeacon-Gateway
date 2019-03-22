@@ -255,7 +255,6 @@ BufferListHead priority_list_head;
  */
 bool NSI_initialization_complete;
 bool CommUnit_initialization_complete;
-bool BHM_initialization_complete;
 
 bool initialization_failed;
 

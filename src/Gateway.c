@@ -85,7 +85,6 @@ int main(int argc, char **argv){
     /* All global flags */
     NSI_initialization_complete      = false;
     CommUnit_initialization_complete = false;
-    BHM_initialization_complete      = true; /* TEMP true for skip BHM check*/
 
     initialization_failed = false;
 
@@ -213,8 +212,7 @@ int main(int argc, char **argv){
 
     /* The while loop waiting for NSI, BHM and CommUnit to be ready */
     while(NSI_initialization_complete == false ||
-          CommUnit_initialization_complete == false ||
-          BHM_initialization_complete == false){
+          CommUnit_initialization_complete == false){
 
         sleep(MINIMUM_WAITING_TIME);
 
@@ -820,7 +818,11 @@ void *BHM_routine(void *_buffer_list_head){
 
         temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
 
-        /* TODO Make a buffer to merge all the HR pkt and wait for polling. */
+        /* Add the content of tje buffer node to the UDP to be sent to the
+           Server */
+        udp_addpkt( &udp_config, config.server_ip, temp -> content,
+                    temp -> content_size);
+
 
         mp_free( &node_mempool, temp);
     }
@@ -1211,6 +1213,13 @@ void *process_wifi_receive(){
             idle_sleep_time = MINIMUM_WAITING_TIME;
         }
         else if(temppkt.type == NONE){
+            /* If there is no packet received, sleep a short time */
+            if (idle_sleep_time < MAXIMUM_WAITING_TIME)
+                sleep(idle_sleep_time++);
+            else
+                sleep(idle_sleep_time);
+        }
+        else {
             /* If there is no packet received, sleep a short time */
             if (idle_sleep_time < MAXIMUM_WAITING_TIME)
                 sleep(idle_sleep_time++);
