@@ -216,7 +216,7 @@ int main(int argc, char **argv){
           CommUnit_initialization_complete == false ||
           BHM_initialization_complete == false){
 
-        sleep(WAITING_TIME);
+        sleep(MINIMUM_WAITING_TIME);
 
         if(initialization_failed == true){
             ready_to_work = false;
@@ -293,105 +293,103 @@ int main(int argc, char **argv){
                 last_polling_LBeacon_for_HR_time = get_system_time();
             }
         }
-        else{
-            if(join_status == unjoined || (join_status == joining &&
-               current_time - last_polling_join_request_time >
-               JOIN_REQUEST_TIMEOUT) || (join_status == joined && current_time -
-               last_polling_join_request_time > config.
-               period_between_join_request)){
 
-                if(join_retry_time == JOIN_REQUEST_MAX_RETRY_TIME){
-                    join_status = unjoined;
-                    sleep(WAITING_TIME);
-                    join_retry_time = 0;
+        if(join_status == unjoined || (join_status == joining &&
+           current_time - last_polling_join_request_time >
+           JOIN_REQUEST_TIMEOUT) || (join_status == joined && current_time -
+           last_polling_join_request_time > config.
+           period_between_join_request)){
+
+            if(join_retry_time == JOIN_REQUEST_MAX_RETRY_TIME){
+                join_status = unjoined;
+                sleep(MINIMUM_WAITING_TIME);
+                join_retry_time = 0;
+            }
+            if(join_status == unjoined)
+                join_status = joining;
+
+            /* Join Request */
+            /* set the pkt type */
+            int send_type = ((from_gateway & 0x0f) << 4) +
+                             (request_to_join & 0x0f);
+
+            char content_temp[WIFI_MESSAGE_LENGTH];
+            memset(content_temp, 0, WIFI_MESSAGE_LENGTH);
+
+            int content_temp_size = MINIMUM_WIFI_MESSAGE_LENGTH;
+
+            content_temp[0] = (char)send_type;
+
+            content_temp[1] = ';';
+
+            pthread_mutex_lock(&LBeacon_address_map.list_lock);
+
+            char content_LBeacon_status[WIFI_MESSAGE_LENGTH];
+            memset(content_LBeacon_status, 0, WIFI_MESSAGE_LENGTH);
+
+            int content_LBeacon_status_size = 0;
+            int counter = 0;
+
+            for(int n = 0; n < MAX_NUMBER_NODES; n ++){
+                if (LBeacon_address_map.in_use[n] == true){
+
+                    char tmp[WIFI_MESSAGE_LENGTH];
+                    memset(tmp, 0, WIFI_MESSAGE_LENGTH);
+
+                    char uuid[UUID_LENGTH + 1];
+                    memset(uuid, 0, UUID_LENGTH + 1);
+
+                    memcpy(uuid, LBeacon_address_map.address_map_list[n].
+                           uuid, UUID_LENGTH);
+                    sprintf(tmp, "%s;%d;", uuid, LBeacon_address_map.
+                            address_map_list[n].last_request_time);
+
+                    memcpy(&content_LBeacon_status
+                           [content_LBeacon_status_size], tmp, strlen(tmp) *
+                           sizeof(char));
+                    printf("msg [%s]\nsizeof(tmp): [%d]\n", tmp, strlen(tmp)
+                           * sizeof(char));
+                    content_LBeacon_status_size += strlen(tmp);
+
+                    counter ++;
                 }
-                if(join_status == unjoined)
-                    join_status = joining;
-
-                /* Join Request */
-                /* set the pkt type */
-                int send_type = ((from_gateway & 0x0f) << 4) +
-                                 (request_to_join & 0x0f);
-
-                char content_temp[WIFI_MESSAGE_LENGTH];
-                memset(content_temp, 0, WIFI_MESSAGE_LENGTH);
-
-                int content_temp_size = MINIMUM_WIFI_MESSAGE_LENGTH;
-
-                content_temp[0] = (char)send_type;
-
-                content_temp[1] = ';';
-
-                pthread_mutex_lock(&LBeacon_address_map.list_lock);
-
-                char content_LBeacon_status[WIFI_MESSAGE_LENGTH];
-                memset(content_LBeacon_status, 0, WIFI_MESSAGE_LENGTH);
-
-                int content_LBeacon_status_size = 0;
-                int counter = 0;
-
-                for(int n = 0; n < MAX_NUMBER_NODES; n ++){
-                    if (LBeacon_address_map.in_use[n] == true){
-
-                        char tmp[WIFI_MESSAGE_LENGTH];
-                        memset(tmp, 0, WIFI_MESSAGE_LENGTH);
-
-                        char uuid[UUID_LENGTH + 1];
-                        memset(uuid, 0, UUID_LENGTH + 1);
-
-                        memcpy(uuid, LBeacon_address_map.address_map_list[n].
-                               uuid, UUID_LENGTH);
-                        sprintf(tmp, "%s;%d;", uuid, LBeacon_address_map.
-                                address_map_list[n].last_request_time);
-
-                        memcpy(&content_LBeacon_status
-                               [content_LBeacon_status_size], tmp, strlen(tmp) *
-                               sizeof(char));
-                        printf("msg [%s]\nsizeof(tmp): [%d]\n", tmp, strlen(tmp)
-                               * sizeof(char));
-                        content_LBeacon_status_size += strlen(tmp);
-
-                        counter ++;
-                    }
-                }
-
-                char tmp[WIFI_MESSAGE_LENGTH];
-                memset(tmp, 0, WIFI_MESSAGE_LENGTH);
-
-                sprintf(tmp, "%d;%s;", counter, config.IPaddress);
-
-                memcpy(&content_temp[content_temp_size], tmp, strlen(tmp) *
-                                                              sizeof(char));
-
-                content_temp_size += strlen(tmp);
-                printf("content_LBeacon_status [%s]\n", content_LBeacon_status);
-                printf("content_LBeacon_status_size [%d]\n"
-                       , content_LBeacon_status_size);
-                memcpy(&content_temp[content_temp_size], content_LBeacon_status,
-                       content_LBeacon_status_size * sizeof(char));
-
-                content_temp_size += content_LBeacon_status_size;
-
-#ifdef debugging
-                printf("== Current Joined LBeacon ==\nContent_temp [%s]\n"
-                "Content_temp_size[%d]\n", content_temp, content_temp_size);
-#endif
-                pthread_mutex_unlock(&LBeacon_address_map.list_lock);
-
-                if(content_temp_size < WIFI_MESSAGE_LENGTH)
-                    /* broadcast to LBeacons */
-                    udp_addpkt( &udp_config, config.server_ip, content_temp,
-                                content_temp_size);
-
-                join_retry_time ++;
-
-                /* Update the last_polling_LBeacon_for_HR_time */
-                last_polling_join_request_time = current_time;
             }
 
-        }
+            char tmp[WIFI_MESSAGE_LENGTH];
+            memset(tmp, 0, WIFI_MESSAGE_LENGTH);
 
-        sleep(WAITING_TIME);
+            sprintf(tmp, "%d;%s;", counter, config.IPaddress);
+
+            memcpy(&content_temp[content_temp_size], tmp, strlen(tmp) *
+                                                          sizeof(char));
+
+            content_temp_size += strlen(tmp);
+            printf("content_LBeacon_status [%s]\n", content_LBeacon_status);
+            printf("content_LBeacon_status_size [%d]\n"
+                   , content_LBeacon_status_size);
+            memcpy(&content_temp[content_temp_size], content_LBeacon_status,
+                   content_LBeacon_status_size * sizeof(char));
+
+            content_temp_size += content_LBeacon_status_size;
+
+#ifdef debugging
+            printf("== Current Joined LBeacon ==\nContent_temp [%s]\n"
+            "Content_temp_size[%d]\n", content_temp, content_temp_size);
+#endif
+            pthread_mutex_unlock(&LBeacon_address_map.list_lock);
+
+            if(content_temp_size < WIFI_MESSAGE_LENGTH)
+                /* broadcast to LBeacons */
+                udp_addpkt( &udp_config, config.server_ip, content_temp,
+                            content_temp_size);
+
+            join_retry_time ++;
+
+            /* Update the last_polling_LBeacon_for_HR_time */
+            last_polling_join_request_time = current_time;
+        }else{
+            sleep(MINIMUM_WAITING_TIME);
+        }
 
     }
 
@@ -599,10 +597,11 @@ void *CommUnit_routine(){
     int current_time;
     Threadpool thpool;
     int return_error_value;
+    int idle_sleep_time = MINIMUM_WAITING_TIME;
 
     /* wait for NSI get ready */
     while(NSI_initialization_complete == false){
-        sleep(WAITING_TIME);
+        sleep(MINIMUM_WAITING_TIME);
         if(initialization_failed == true){
             return (void *)NULL;
         }
@@ -635,7 +634,7 @@ void *CommUnit_routine(){
         while(current_time - init_time < MAX_STARVATION_TIME){
 
             while(thpool -> num_threads_working == thpool -> num_threads_alive){
-                sleep(WAITING_TIME);
+                sleep(MINIMUM_WAITING_TIME);
             }
 
             /* Scan the priority_list to get the buffer list with the highest
@@ -654,6 +653,13 @@ void *CommUnit_routine(){
 
                     pthread_mutex_unlock( &current_head -> list_lock);
                     /* Go to check the next buffer list in the priority list */
+
+                    if(idle_sleep_time < MAXIMUM_WAITING_TIME)
+                        sleep(idle_sleep_time++);
+                    else{
+                        sleep(idle_sleep_time);
+                    }
+
                     continue;
                 }
                 else {
@@ -666,6 +672,8 @@ void *CommUnit_routine(){
                                                 current_head -> priority_nice);
 
                     pthread_mutex_unlock( &current_head -> list_lock);
+
+                    idle_sleep_time = MINIMUM_WAITING_TIME;
                     break;
                 }
             }
@@ -676,7 +684,7 @@ void *CommUnit_routine(){
         }
 
         while(thpool -> num_threads_working == thpool -> num_threads_alive){
-            sleep(WAITING_TIME);
+            sleep(MINIMUM_WAITING_TIME);
         }
         /* Scan the priority list in reverse order to prevent starving the
            lowest priority buffer list. */
@@ -693,6 +701,13 @@ void *CommUnit_routine(){
 
                 pthread_mutex_unlock( &current_head -> list_lock);
                 /* Go to check the next buffer list in the priority list */
+
+                if(idle_sleep_time < MAXIMUM_WAITING_TIME)
+                    sleep(idle_sleep_time++);
+                else{
+                    sleep(idle_sleep_time);
+                }
+
                 continue;
             }
             else {
@@ -705,6 +720,9 @@ void *CommUnit_routine(){
                                             current_head -> priority_nice);
 
                 pthread_mutex_unlock( &current_head -> list_lock);
+
+                idle_sleep_time = MINIMUM_WAITING_TIME;
+
                 break;
             }
         }
@@ -713,6 +731,13 @@ void *CommUnit_routine(){
 
         /* Update the init_time */
         init_time = get_system_time();
+
+        if(idle_sleep_time < MAXIMUM_WAITING_TIME)
+            sleep(idle_sleep_time++);
+        else{
+            sleep(idle_sleep_time);
+        }
+
     } /* End while(ready_to_work == true) */
 
 
@@ -959,7 +984,8 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
         for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
             if (address_map -> in_use[n] == true){
-                printf("Brocast IP: %s\n", address_map -> address_map_list[n].net_address);
+                printf("Brocast IP: %s\n", address_map -> address_map_list[n].
+                                           net_address);
 
                 /* Add the pkt that to be sent to the server */
                 udp_addpkt( &udp_config, address_map -> address_map_list[n]
@@ -1038,6 +1064,8 @@ void *process_wifi_receive(){
 
         sPkt temppkt = udp_getrecv( &udp_config);
 
+        int idle_sleep_time = MINIMUM_WAITING_TIME;
+
         if(temppkt.type == UDP){
 
             /* counting test time for mp_alloc(). */
@@ -1051,7 +1079,7 @@ void *process_wifi_receive(){
                 if(test_times == TEST_MALLOC_MAX_NUMBER_TIMES)
                     break;
                 else if(test_times != 0)
-                    sleep(1);
+                    sleep(MINIMUM_WAITING_TIME);
 
                 new_node = mp_alloc( &node_mempool);
                 test_times ++;
@@ -1120,6 +1148,7 @@ void *process_wifi_receive(){
                                 join_status = joined;
                                 last_polling_join_request_time =
                                                               get_system_time();
+                                mp_free(&node_mempool, new_node);
                                 break;
                             case data_for_LBeacon:
                                 printf("Get Data_for_LBeacon\n");
@@ -1179,10 +1208,14 @@ void *process_wifi_receive(){
                         break;
                 }
             }
+            idle_sleep_time = MINIMUM_WAITING_TIME;
         }
         else if(temppkt.type == NONE){
             /* If there is no packet received, sleep a short time */
-            sleep(WAITING_TIME);
+            if (idle_sleep_time < MAXIMUM_WAITING_TIME)
+                sleep(idle_sleep_time++);
+            else
+                sleep(idle_sleep_time);
         }
     }
     return (void *)NULL;
