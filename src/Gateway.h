@@ -304,7 +304,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name);
      None
  */
 void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
-								int priority_nice);
+                 int priority_nice);
 
 
 /*

@@ -32,7 +32,7 @@
 
   Authors:
 
-     Gary Xiao		, garyh0205@hotmail.com
+     Gary Xiao      , garyh0205@hotmail.com
  */
 #ifndef UDP_API_H
 #define UDP_API_H
@@ -49,7 +49,7 @@
 
 
 #define UDP_SELECT_TIMEOUT 30    //second
-#define SEND_NULL_SLEEP 30
+#define SEND_NULL_SLEEP 5
 
 /* If need to debug. */
 //#define debugging

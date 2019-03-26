@@ -31,7 +31,7 @@
      area.
 
   Authors:
-     Gary Xiao		, garyh0205@hotmail.com
+     Gary Xiao      , garyh0205@hotmail.com
  */
 #include "UDP_API.h"
 
@@ -145,6 +145,12 @@ void *udp_send_pkt(void *udpconfig){
 #endif
                 }
 
+#ifdef debugging
+                printf("Start Send pkts\n(sendto [%s] msg [", dest_address);
+                print_content(current_send_pkt.content, current_send_pkt.content_size);
+                printf("])\n");
+#endif
+
                 if (sendto(udp_config -> send_socket, current_send_pkt.content
                   , current_send_pkt.content_size, 0,(struct sockaddr *)&si_send
                   , sizeof(struct sockaddr)) == -1){
@@ -212,7 +218,9 @@ void *udp_recv_pkt(void *udpconfig){
             /* print details of the client/peer and the data received */
             printf("Received packet from %s:%d\n", inet_ntoa(si_recv.sin_addr),
                                                    ntohs(si_recv.sin_port));
-            printf("Data: %s\n" , recv_buf);
+            printf("Data: [");
+            print_content(recv_buf, recv_len);
+            printf("]\n");
             printf("Data Length %d\n", recv_len);
 #endif
             addpkt(&udp_config -> Received_Queue, UDP
