@@ -122,7 +122,7 @@ int main(int argc, char **argv){
                 config.high_priority);
 
     init_buffer( &time_critical_LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_routine, config.high_priority);
+                (void *) LBeacon_routine, config.normal_priority);
     insert_list_tail( &time_critical_LBeacon_receive_buffer_list_head
                      .priority_list_entry,
                       &priority_list_head.priority_list_entry);
@@ -133,17 +133,17 @@ int main(int argc, char **argv){
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_routine, config.high_priority);
+                (void *) LBeacon_routine, config.normal_priority);
     insert_list_tail( &LBeacon_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_send_buffer_list_head,
-                (void *) process_wifi_send, config.normal_priority);
+                (void *) process_wifi_send, config.low_priority);
     insert_list_tail( &NSI_send_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_receive_buffer_list_head,
-                (void *) NSI_routine, config.normal_priority);
+                (void *) NSI_routine, config.low_priority);
     insert_list_tail( &NSI_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
@@ -624,6 +624,8 @@ void *CommUnit_routine(){
     /* When there is no dead thead, do the work. */
     while(ready_to_work == true){
 
+        zlog_debug(category_debug, "Processing Data in CommUnit");
+
         current_time = get_system_time();
 
         List_Entry *tmp;
@@ -634,8 +636,11 @@ void *CommUnit_routine(){
            reverse the scanning process */
         while(current_time - init_time < MAX_STARVATION_TIME){
 
+            zlog_debug(category_debug, "Check buffer list in CommUnit");
+
             while(thpool -> num_threads_working == thpool -> num_threads_alive){
                 sleep(MINIMUM_WAITING_TIME);
+                zlog_debug(category_debug, "No worker in CommUnit");
             }
 
             /* Scan the priority_list to get the buffer list with the highest
@@ -655,11 +660,8 @@ void *CommUnit_routine(){
                     pthread_mutex_unlock( &current_head -> list_lock);
                     /* Go to check the next buffer list in the priority list */
 
-                    if(idle_sleep_time < MAXIMUM_WAITING_TIME)
-                        sleep(idle_sleep_time++);
-                    else{
-                        sleep(idle_sleep_time);
-                    }
+                    sleep(idle_sleep_time);
+                    zlog_debug(category_debug, "No work in CommUnit");
 
                     continue;
                 }
@@ -674,6 +676,8 @@ void *CommUnit_routine(){
 
                     pthread_mutex_unlock( &current_head -> list_lock);
 
+                    zlog_debug(category_debug, "Assign work in CommUnit");
+
                     idle_sleep_time = MINIMUM_WAITING_TIME;
                     break;
                 }
@@ -686,6 +690,7 @@ void *CommUnit_routine(){
 
         while(thpool -> num_threads_working == thpool -> num_threads_alive){
             sleep(MINIMUM_WAITING_TIME);
+            zlog_debug(category_debug, "No worker in CommUnit[STARVATION]");
         }
         /* Scan the priority list in reverse order to prevent starving the
            lowest priority buffer list. */
@@ -693,6 +698,9 @@ void *CommUnit_routine(){
         pthread_mutex_lock( &priority_list_head.list_lock);
 
         list_for_each_reverse(tmp, &priority_list_head.priority_list_entry){
+
+            zlog_debug(category_debug,
+                       "Check buffer list in CommUnit[STARVATION]");
 
             current_head= ListEntry(tmp, BufferListHead, priority_list_entry);
 
@@ -703,11 +711,8 @@ void *CommUnit_routine(){
                 pthread_mutex_unlock( &current_head -> list_lock);
                 /* Go to check the next buffer list in the priority list */
 
-                if(idle_sleep_time < MAXIMUM_WAITING_TIME)
-                    sleep(idle_sleep_time++);
-                else{
-                    sleep(idle_sleep_time);
-                }
+                sleep(idle_sleep_time);
+                zlog_debug(category_debug, "No work in CommUnit");
 
                 continue;
             }
@@ -722,6 +727,9 @@ void *CommUnit_routine(){
 
                 pthread_mutex_unlock( &current_head -> list_lock);
 
+                zlog_info(category_debug,
+                          "Assign work in CommUnit()[STARVATION]");
+
                 idle_sleep_time = MINIMUM_WAITING_TIME;
 
                 break;
@@ -733,11 +741,8 @@ void *CommUnit_routine(){
         /* Update the init_time */
         init_time = get_system_time();
 
-        if(idle_sleep_time < MAXIMUM_WAITING_TIME)
-            sleep(idle_sleep_time++);
-        else{
-            sleep(idle_sleep_time);
-        }
+        sleep(idle_sleep_time);
+        zlog_debug(category_debug, "No work in CommUnit");
 
     } /* End while(ready_to_work == true) */
 
