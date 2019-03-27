@@ -51,7 +51,7 @@
 #include "BeDIS.h"
 
 /* Enable debugging mode. */
-//#define debugging
+#define debugging
 
 /* Gateway config file location and the config file definition. */
 

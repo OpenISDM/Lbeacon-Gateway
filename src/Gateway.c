@@ -268,6 +268,9 @@ int main(int argc, char **argv){
                 beacon_broadcast(&LBeacon_address_map, temp,
                                  MINIMUM_WIFI_MESSAGE_LENGTH);
 
+                zlog_info(category_debug,
+                          "Polling Tracked Object Data from Gateway");
+
                 /* Update the last_polling_object_tracking_time */
                 last_polling_object_tracking_time = current_time;
             }
@@ -286,6 +289,9 @@ int main(int argc, char **argv){
                 /* broadcast to LBeacons */
                 beacon_broadcast(&LBeacon_address_map, temp,
                                  MINIMUM_WIFI_MESSAGE_LENGTH);
+
+                zlog_info(category_debug, "Polling Health Report from Gateway");
+
 
                 /* Update the last_polling_LBeacon_for_HR_time */
                 last_polling_LBeacon_for_HR_time = get_system_time();
@@ -345,8 +351,7 @@ int main(int argc, char **argv){
                     memcpy(&content_LBeacon_status
                            [content_LBeacon_status_size], tmp, strlen(tmp) *
                            sizeof(char));
-                    printf("msg [%s]\nsizeof(tmp): [%d]\n", tmp, strlen(tmp)
-                           * sizeof(char));
+
                     content_LBeacon_status_size += strlen(tmp);
 
                     counter ++;
@@ -362,17 +367,15 @@ int main(int argc, char **argv){
                                                           sizeof(char));
 
             content_temp_size += strlen(tmp);
-            printf("content_LBeacon_status [%s]\n", content_LBeacon_status);
-            printf("content_LBeacon_status_size [%d]\n"
-                   , content_LBeacon_status_size);
+
             memcpy(&content_temp[content_temp_size], content_LBeacon_status,
                    content_LBeacon_status_size * sizeof(char));
 
             content_temp_size += content_LBeacon_status_size;
 
 #ifdef debugging
-            printf("== Current Joined LBeacon ==\nContent_temp [%s]\n"
-            "Content_temp_size[%d]\n", content_temp, content_temp_size);
+            zlog_info(category_debug, "Current Joined LBeacon:"
+                      "Content_temp [%s]", &content_temp[1]);
 #endif
             pthread_mutex_unlock(&LBeacon_address_map.list_lock);
 
@@ -870,7 +873,7 @@ void *LBeacon_routine(void *_buffer_list_head){
 
 void *Server_routine(void *_buffer_list_head){
 
-    printf("Start Broadcast to LBeacon\n");
+    zlog_info(category_debug, "Start Broadcast to LBeacon");
 
     BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
 
@@ -893,6 +896,8 @@ void *Server_routine(void *_buffer_list_head){
 
         beacon_broadcast(&LBeacon_address_map, temp -> content, temp ->
                          content_size);
+
+        zlog_info(category_debug, "Polling Data from Server");
 
         mp_free( &node_mempool, temp);
     }
@@ -980,14 +985,14 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
 
     pthread_mutex_lock( &address_map -> list_lock);
 
-    printf("==Current in Brocast==\n");
+    zlog_info(category_debug, "==Current in Brocast==");
 
     if (size <= WIFI_MESSAGE_LENGTH){
         for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
             if (address_map -> in_use[n] == true){
-                printf("Brocast IP: %s\n", address_map -> address_map_list[n].
-                                           net_address);
+                zlog_info(category_debug, "Brocast IP: %s", address_map ->
+                                          address_map_list[n].net_address);
 
                 /* Add the pkt that to be sent to the server */
                 udp_addpkt( &udp_config, address_map -> address_map_list[n]
@@ -996,7 +1001,7 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
         }
     }
 
-    printf("END Brocast\n");
+    zlog_info(category_debug, "END Brocast");
     pthread_mutex_unlock( &address_map -> list_lock);
 }
 
@@ -1119,7 +1124,8 @@ void *process_wifi_receive(){
 
                             case RFHR_from_server:
                             case health_report:
-                                printf("Get Health Report from the Server\n");
+                                zlog_info(category_debug,
+                                         "Get Health Report from the Server");
                                 last_polling_LBeacon_for_HR_time = current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
                                                    .list_lock);
@@ -1133,8 +1139,8 @@ void *process_wifi_receive(){
 
                             case poll_for_tracked_object_data_from_server:
                             case tracked_object_data:
-                                printf("Get Tracked Object Data from the Server"
-                                       "\n");
+                                zlog_info(category_debug,
+                                   "Get Tracked Object Data from the Server");
                                 last_polling_object_tracking_time= current_time;
                                 pthread_mutex_lock(&command_msg_buffer_list_head
                                                    .list_lock);
@@ -1145,15 +1151,16 @@ void *process_wifi_receive(){
                                 break;
 
                             case join_request_ack:
-                                printf("Get Join Request Result from the Server"
-                                       "\n");
+                                zlog_info(category_debug,
+                                   "Get Join Request Result from the Server");
                                 join_status = joined;
                                 last_polling_join_request_time =
                                                               get_system_time();
                                 mp_free(&node_mempool, new_node);
                                 break;
                             case data_for_LBeacon:
-                                printf("Get Data_for_LBeacon\n");
+                                zlog_info(category_debug,
+                                          "Get Data_for_LBeacon");
                                 mp_free(&node_mempool, new_node);
                                 break;
 
@@ -1168,7 +1175,8 @@ void *process_wifi_receive(){
                         switch (pkt_type) {
 
                             case request_to_join:
-                                printf("Get Join Request from LBeacon\n");
+                                zlog_info(category_debug,
+                                             "Get Join Request from LBeacon");
                                 pthread_mutex_lock(&NSI_receive_buffer_list_head
                                                    .list_lock);
                                 insert_list_tail(&new_node -> buffer_entry,
@@ -1179,8 +1187,8 @@ void *process_wifi_receive(){
                                 break;
 
                             case tracked_object_data:
-                                printf("Get Tracked Object Data from LBeacon\n")
-                                       ;
+                                zlog_info(category_debug,
+                                      "Get Tracked Object Data from LBeacon");
                                 pthread_mutex_lock(
                                    &LBeacon_receive_buffer_list_head.list_lock);
                                 insert_list_tail( &new_node -> buffer_entry,
@@ -1190,7 +1198,8 @@ void *process_wifi_receive(){
                                 break;
 
                             case health_report:
-                                printf("Get Health Report from LBeacon\n");
+                                zlog_info(category_debug,
+                                            "Get Health Report from LBeacon");
                                 pthread_mutex_lock(&BHM_receive_buffer_list_head
                                                    .list_lock);
                                 insert_list_tail( &new_node -> buffer_entry,
