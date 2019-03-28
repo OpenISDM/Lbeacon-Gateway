@@ -660,7 +660,6 @@ void *CommUnit_routine(){
                     pthread_mutex_unlock( &current_head -> list_lock);
                     /* Go to check the next buffer list in the priority list */
 
-                    sleep(idle_sleep_time);
                     zlog_debug(category_debug, "No work in CommUnit");
 
                     continue;
@@ -711,7 +710,6 @@ void *CommUnit_routine(){
                 pthread_mutex_unlock( &current_head -> list_lock);
                 /* Go to check the next buffer list in the priority list */
 
-                sleep(idle_sleep_time);
                 zlog_debug(category_debug, "No work in CommUnit");
 
                 continue;
