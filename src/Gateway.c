@@ -598,7 +598,6 @@ void *CommUnit_routine(){
     int current_time;
     Threadpool thpool;
     int return_error_value;
-    int idle_sleep_time = MINIMUM_WAITING_TIME;
 
     /* wait for NSI get ready */
     while(NSI_initialization_complete == false){
@@ -677,7 +676,6 @@ void *CommUnit_routine(){
 
                     zlog_debug(category_debug, "Assign work in CommUnit");
 
-                    idle_sleep_time = MINIMUM_WAITING_TIME;
                     break;
                 }
             }
@@ -685,6 +683,7 @@ void *CommUnit_routine(){
             pthread_mutex_unlock( &priority_list_head.list_lock);
 
             current_time = get_system_time();
+
         }
 
         while(thpool -> num_threads_working == thpool -> num_threads_alive){
@@ -728,9 +727,8 @@ void *CommUnit_routine(){
                 zlog_info(category_debug,
                           "Assign work in CommUnit()[STARVATION]");
 
-                idle_sleep_time = MINIMUM_WAITING_TIME;
-
                 break;
+
             }
         }
 
@@ -738,9 +736,6 @@ void *CommUnit_routine(){
 
         /* Update the init_time */
         init_time = get_system_time();
-
-        sleep(idle_sleep_time);
-        zlog_debug(category_debug, "No work in CommUnit");
 
     } /* End while(ready_to_work == true) */
 
