@@ -627,7 +627,8 @@ void *CommUnit_routine(){
 
         current_time = get_system_time();
 
-        List_Entry *tmp;
+        List_Entry *tmp, *list_entry;
+        BufferNode *current_node;
         BufferListHead *current_head;
 
         /* In the normal situation, the scanning starts from the high priority
@@ -664,12 +665,22 @@ void *CommUnit_routine(){
                     continue;
                 }
                 else {
+
+                    list_entry = current_head -> list_head.next;
+
+                    remove_list_node(list_entry);
+
+                    pthread_mutex_unlock( &current_head -> list_lock);
+
+                    current_node = ListEntry(list_entry, BufferNode,
+                                             buffer_entry);
+
                     /* If there is a node in the buffer and the buffer is not be
                        occupied, do the work according to the function pointer
                      */
                     return_error_value = thpool_add_work(thpool,
                                                 current_head -> function,
-                                                current_head,
+                                                current_node,
                                                 current_head -> priority_nice);
 
                     pthread_mutex_unlock( &current_head -> list_lock);
@@ -683,6 +694,8 @@ void *CommUnit_routine(){
             pthread_mutex_unlock( &priority_list_head.list_lock);
 
             current_time = get_system_time();
+
+            usleep(500);
 
         }
 
@@ -715,11 +728,20 @@ void *CommUnit_routine(){
             }
             else {
 
+                list_entry = current_head -> list_head.next;
+
+                remove_list_node(list_entry);
+
+                pthread_mutex_unlock( &current_head -> list_lock);
+
+                current_node = ListEntry(list_entry, BufferNode,
+                                         buffer_entry);
+
                 /* If there is a node in the buffer and the buffer is not be
                    occupied, do the work according to the function pointer */
                 return_error_value = thpool_add_work(thpool,
                                             current_head -> function,
-                                            current_head,
+                                            current_node,
                                             current_head -> priority_nice);
 
                 pthread_mutex_unlock( &current_head -> list_lock);
@@ -737,6 +759,8 @@ void *CommUnit_routine(){
         /* Update the init_time */
         init_time = get_system_time();
 
+        usleep(500);
+
     } /* End while(ready_to_work == true) */
 
 
@@ -747,162 +771,83 @@ void *CommUnit_routine(){
 }
 
 
-void *NSI_routine(void *_buffer_list_head){
+void *NSI_routine(void *_buffer_node){
 
-    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
+    BufferNode *temp = (BufferNode *)_buffer_node;
 
-    struct List_Entry *temp_list_entry_pointers;
+    char current_uuid[UUID_LENGTH];
 
-    BufferNode *temp;
+    memcpy(current_uuid, &temp->content[1], UUID_LENGTH);
 
-    pthread_mutex_lock( &buffer_list_head -> list_lock);
+    int send_type = (from_gateway & 0x0f)<<4;
 
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
-
-        temp_list_entry_pointers = buffer_list_head -> list_head.next;
-
-        remove_list_node(temp_list_entry_pointers);
-
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
-
-        temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
-
-        char current_uuid[UUID_LENGTH];
-
-        memcpy(current_uuid, &temp->content[1], UUID_LENGTH);
-
-        int send_type = (from_gateway & 0x0f)<<4;
-
-        /* Put the address into LBeacon_address_map and set the return pkt type
-         */
-        if (beacon_join_request(&LBeacon_address_map, current_uuid, temp ->
-                                net_address) == true)
-            send_type += join_request_ack & 0x0f;
-        else
-            send_type += join_request_deny & 0x0f;
-
-        /* put the pkt type to content */
-        temp->content[0] = (char)send_type;
-
-        pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
-
-        insert_list_tail( &temp->buffer_entry,
-                          &NSI_send_buffer_list_head.list_head);
-
-        pthread_mutex_unlock( &NSI_send_buffer_list_head.list_lock);
-    }
+    /* Put the address into LBeacon_address_map and set the return pkt type
+     */
+    if (beacon_join_request(&LBeacon_address_map, current_uuid, temp ->
+                            net_address) == true)
+        send_type += join_request_ack & 0x0f;
     else
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
+        send_type += join_request_deny & 0x0f;
+
+    /* put the pkt type to content */
+    temp->content[0] = (char)send_type;
+
+    pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
+
+    insert_list_tail( &temp->buffer_entry,
+                      &NSI_send_buffer_list_head.list_head);
+
+    pthread_mutex_unlock( &NSI_send_buffer_list_head.list_lock);
 
     return (void *)NULL;
 }
 
 
-void *BHM_routine(void *_buffer_list_head){
+void *BHM_routine(void *_buffer_node){
 
-    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
+    BufferNode *temp = (BufferNode *)_buffer_node;
 
-    /* Create a temporary node and set as the head */
-    struct List_Entry *temp_list_entry_pointers;
-
-    BufferNode *temp;
-
-    pthread_mutex_lock( &buffer_list_head->list_lock);
-
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
-
-        temp_list_entry_pointers = buffer_list_head -> list_head.next;
-
-        remove_list_node(temp_list_entry_pointers);
-
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
-
-        temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
-
-        /* Add the content of tje buffer node to the UDP to be sent to the
-           Server */
-        udp_addpkt( &udp_config, config.server_ip, temp -> content,
-                    temp -> content_size);
+    /* Add the content of tje buffer node to the UDP to be sent to the
+       Server */
+    udp_addpkt( &udp_config, config.server_ip, temp -> content,
+                temp -> content_size);
 
 
-        mp_free( &node_mempool, temp);
-    }
-    else
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
+    mp_free( &node_mempool, temp);
 
     return (void *)NULL;
 }
 
 
-void *LBeacon_routine(void *_buffer_list_head){
+void *LBeacon_routine(void *_buffer_node){
 
-    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
+    BufferNode *temp = (BufferNode *)_buffer_node;
 
-    /* Create a temporary node and set as the head */
-    struct List_Entry *temp_list_entry_pointers;
-
-    BufferNode *temp;
-
-    pthread_mutex_lock( &buffer_list_head -> list_lock);
-
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
-
-        temp_list_entry_pointers = buffer_list_head -> list_head.next;
-
-        remove_list_node(temp_list_entry_pointers);
-
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
-
-        temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
-
-        /* Add the content of tje buffer node to the UDP to be sent to the
-           Server */
-        udp_addpkt( &udp_config, config.server_ip, temp -> content,
-                    temp -> content_size);
+    /* Add the content of tje buffer node to the UDP to be sent to the
+       Server */
+    udp_addpkt( &udp_config, config.server_ip, temp -> content,
+                temp -> content_size);
 
         mp_free( &node_mempool, temp);
-    }
-    else
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
 
-    return (void* )NULL;
+    return (void *)NULL;
 }
 
 
-void *Server_routine(void *_buffer_list_head){
+void *Server_routine(void *_buffer_node){
+
+    BufferNode *temp = (BufferNode *)_buffer_node;
 
     zlog_info(category_debug, "Start Broadcast to LBeacon");
 
-    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
+    beacon_broadcast(&LBeacon_address_map, temp -> content, temp ->
+                     content_size);
 
-    /* Create a temporary node and set as the head */
-    struct List_Entry *temp_list_entry_pointers;
+    zlog_info(category_debug, "Polling Data from Server");
 
-    BufferNode *temp;
+    mp_free( &node_mempool, temp);
 
-    pthread_mutex_lock( &buffer_list_head -> list_lock);
-
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
-
-        temp_list_entry_pointers = buffer_list_head -> list_head.next;
-
-        remove_list_node(temp_list_entry_pointers);
-
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
-
-        temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
-
-        beacon_broadcast(&LBeacon_address_map, temp -> content, temp ->
-                         content_size);
-
-        zlog_info(category_debug, "Polling Data from Server");
-
-        mp_free( &node_mempool, temp);
-    }
-    else
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
-
-    return (void* )NULL;
+    return (void *)NULL;
 }
 
 
@@ -1028,34 +973,15 @@ void Wifi_free(){
 }
 
 
-void *process_wifi_send(void *_buffer_list_head){
+void *process_wifi_send(void *_buffer_node){
 
-    BufferListHead *buffer_list_head = (BufferListHead *)_buffer_list_head;
+    BufferNode *temp = (BufferNode *)_buffer_node;
 
-    struct List_Entry *temp_list_entry_pointers;
+    /* Add the content that to be sent to the server */
+    udp_addpkt( &udp_config, temp -> net_address, temp->content,
+                temp->content_size);
 
-    BufferNode *temp;
-
-    pthread_mutex_lock( &buffer_list_head -> list_lock);
-
-    if(is_entry_list_empty( &buffer_list_head -> list_head) == false){
-
-        temp_list_entry_pointers = buffer_list_head -> list_head.next;
-
-        remove_list_node(temp_list_entry_pointers);
-
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
-
-        temp = ListEntry(temp_list_entry_pointers, BufferNode, buffer_entry);
-
-        /* Add the content that to be sent to the server */
-        udp_addpkt( &udp_config, temp -> net_address, temp->content,
-                   temp->content_size);
-
-        mp_free( &node_mempool, temp);
-    }
-    else
-        pthread_mutex_unlock( &buffer_list_head -> list_lock);
+    mp_free( &node_mempool, temp);
 
     return (void *)NULL;
 }
@@ -1095,6 +1021,9 @@ void *process_wifi_receive(){
                 /* Alloc memory failed, error handling. */
             }
             else{
+
+                memset(new_node, 0, sizeof(BufferNode));
+
                 /* Initialize the entry of the buffer node */
                 init_entry( &new_node -> buffer_entry);
 
