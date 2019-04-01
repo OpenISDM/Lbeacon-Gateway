@@ -794,7 +794,6 @@ void *BHM_routine(void *_buffer_node){
     udp_addpkt( &udp_config, config.server_ip, temp -> content,
                 temp -> content_size);
 
-
     mp_free( &node_mempool, temp);
 
     return (void *)NULL;
@@ -810,7 +809,7 @@ void *LBeacon_routine(void *_buffer_node){
     udp_addpkt( &udp_config, config.server_ip, temp -> content,
                 temp -> content_size);
 
-        mp_free( &node_mempool, temp);
+    mp_free( &node_mempool, temp);
 
     return (void *)NULL;
 }
@@ -1019,6 +1018,8 @@ void *process_wifi_receive(){
 
                 memcpy(new_node -> net_address, tmp_addr, NETWORK_ADDR_LENGTH);
 
+                free(tmp_addr);
+
                 /* read the pkt direction from higher 4 bits. */
                 int pkt_direction = (new_node -> content[0] >> 4) & 0x0f;
                 /* read the pkt type from lower lower 4 bits. */
@@ -1061,7 +1062,7 @@ void *process_wifi_receive(){
 
                             case join_request_ack:
                                 zlog_info(category_debug,
-                                   "Get Join Request Result from the Server");
+                                     "Get Join Request Result from the Server");
                                 join_status = joined;
                                 last_polling_join_request_time =
                                                               get_system_time();
