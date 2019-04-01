@@ -623,8 +623,6 @@ void *CommUnit_routine(){
     /* When there is no dead thead, do the work. */
     while(ready_to_work == true){
 
-        zlog_debug(category_debug, "Processing Data in CommUnit");
-
         current_time = get_system_time();
 
         List_Entry *tmp, *list_entry;
@@ -636,11 +634,8 @@ void *CommUnit_routine(){
            reverse the scanning process */
         while(current_time - init_time < MAX_STARVATION_TIME){
 
-            zlog_debug(category_debug, "Check buffer list in CommUnit");
-
             while(thpool -> num_threads_working == thpool -> num_threads_alive){
                 sleep(MINIMUM_WAITING_TIME);
-                zlog_debug(category_debug, "No worker in CommUnit");
             }
 
             /* Scan the priority_list to get the buffer list with the highest
@@ -659,8 +654,6 @@ void *CommUnit_routine(){
 
                     pthread_mutex_unlock( &current_head -> list_lock);
                     /* Go to check the next buffer list in the priority list */
-
-                    zlog_debug(category_debug, "No work in CommUnit");
 
                     continue;
                 }
@@ -685,8 +678,6 @@ void *CommUnit_routine(){
 
                     pthread_mutex_unlock( &current_head -> list_lock);
 
-                    zlog_debug(category_debug, "Assign work in CommUnit");
-
                     break;
                 }
             }
@@ -701,7 +692,6 @@ void *CommUnit_routine(){
 
         while(thpool -> num_threads_working == thpool -> num_threads_alive){
             sleep(MINIMUM_WAITING_TIME);
-            zlog_debug(category_debug, "No worker in CommUnit[STARVATION]");
         }
         /* Scan the priority list in reverse order to prevent starving the
            lowest priority buffer list. */
@@ -709,9 +699,6 @@ void *CommUnit_routine(){
         pthread_mutex_lock( &priority_list_head.list_lock);
 
         list_for_each_reverse(tmp, &priority_list_head.priority_list_entry){
-
-            zlog_debug(category_debug,
-                       "Check buffer list in CommUnit[STARVATION]");
 
             current_head= ListEntry(tmp, BufferListHead, priority_list_entry);
 
@@ -721,8 +708,6 @@ void *CommUnit_routine(){
 
                 pthread_mutex_unlock( &current_head -> list_lock);
                 /* Go to check the next buffer list in the priority list */
-
-                zlog_debug(category_debug, "No work in CommUnit");
 
                 continue;
             }
@@ -745,9 +730,6 @@ void *CommUnit_routine(){
                                             current_head -> priority_nice);
 
                 pthread_mutex_unlock( &current_head -> list_lock);
-
-                zlog_info(category_debug,
-                          "Assign work in CommUnit()[STARVATION]");
 
                 break;
 
