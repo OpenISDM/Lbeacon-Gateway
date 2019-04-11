@@ -67,6 +67,8 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots){
     if((mp->memory[0] = malloc(size * slots)) == NULL)
         return MEMORY_POOL_ERROR;
 
+    memset((void *)mp->memory[0], 0, size * slots);
+
     /* initialize and set parameters */
     mp->head = NULL;
     mp->size = size;
@@ -92,7 +94,7 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots){
 }
 
 
-int mp_expand(Memory_Pool *mp, size_t slots){
+int mp_expand(Memory_Pool *mp){
 
     int alloc_count;
 
@@ -101,12 +103,14 @@ int mp_expand(Memory_Pool *mp, size_t slots){
     if(alloc_count == MAX_EXP_TIME)
         return MEMORY_POOL_ERROR;
 
-    mp->memory[alloc_count] = malloc(mp->size * slots);
+    mp->memory[alloc_count] = malloc(mp->size * mp->slots);
     if(mp->memory[alloc_count] == NULL )
         return MEMORY_POOL_ERROR;
 
+    memset((void *)mp->memory[alloc_count], 0, mp->size * mp->slots);
+
     /* add every slot to the free list */
-    char *end = (char *) mp->memory[alloc_count] + mp->size * slots;
+    char *end = (char *) mp->memory[alloc_count] + mp->size * mp->slots;
 
     for(char *ite = mp->memory[alloc_count]; ite < end; ite += mp->size){
 
@@ -150,7 +154,7 @@ void *mp_alloc(Memory_Pool *mp){
 
         /* If the next position which mp->head is pointing to is NULL,
            expand the memory pool. */
-      if(mp_expand(mp, mp->slots) == MEMORY_POOL_ERROR){
+      if(mp_expand(mp) == MEMORY_POOL_ERROR){
 
           pthread_mutex_unlock(&mp->mem_lock);
           return NULL;
@@ -181,17 +185,19 @@ int mp_free(Memory_Pool *mp, void *mem){
     for(int i = 0; i < mp->alloc_time; i++){
 
         /* Calculate the offset from mem to mp->memory */
-        int differenceinbyte = (mem - mp->memory[i]) * sizeof(mem);
+        int differenceinbyte = mem - mp->memory[i];
         /* Only consider the positive offset */
         if((differenceinbyte > 0) && ((differenceinbyte < closest) ||
            (closest == -1)))
             closest = differenceinbyte;
     }
     /* check if mem is correct, i.e. is pointing to the struct of a slot */
-    if(mp->size == 0 || (closest % mp->size) != 0){
+    if((closest % mp->size) != 0){
         pthread_mutex_unlock(&mp->mem_lock);
         return MEMORY_POOL_ERROR;
     }
+
+    memset((void *)mem, 0, mp->size);
 
     /* store first address */
     void *temp = mp->head;
