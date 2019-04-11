@@ -188,7 +188,7 @@ int mp_free(Memory_Pool *mp, void *mem){
             closest = differenceinbyte;
     }
     /* check if mem is correct, i.e. is pointing to the struct of a slot */
-    if((closest % mp->size) != 0){
+    if(mp->size == 0 || (closest % mp->size) != 0){
         pthread_mutex_unlock(&mp->mem_lock);
         return MEMORY_POOL_ERROR;
     }

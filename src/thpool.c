@@ -51,30 +51,37 @@
 
 
 /* Initialise thread pool */
-Threadpool thpool_init(int num_threads){
+struct thpool_ *thpool_init(int num_threads){
 
-    int return_value;
+    int return_value, n;
+
+    thpool_ *thpool_p;
 
     if (num_threads < 0){
         num_threads = 0;
     }
 
     /* Make new thread pool */
-    Threadpool thpool_p;
-
-    thpool_p = (Threadpool )malloc(sizeof(thpool_p));
-
+    thpool_p = (thpool_ *)malloc(sizeof(thpool_));
     if (thpool_p == NULL){
         err("thpool_init(): Could not allocate memory for thread pool\n");
         return NULL;
     }
 
+    thpool_p->threads_keepalive = 1;
+
     /* Initialize the memory pool */
-    if(mp_init(&thpool_p->th_mempool, SIZE_FOR_MEM_POOL, SLOTS_FOR_MEM_POOL)
+    if(mp_init(&thpool_p->thread_mempool, sizeof(thread), SLOTS_FOR_MEM_POOL)
        != MEMORY_POOL_SUCCESS)
         return NULL;
 
-    thpool_p->threads_keepalive = 1;
+	if(mp_init(&thpool_p->job_mempool, sizeof(job), SLOTS_FOR_MEM_POOL)
+       != MEMORY_POOL_SUCCESS)
+        return NULL;
+
+	if(mp_init(&thpool_p->bsem_mempool, sizeof(bsem), SLOTS_FOR_MEM_POOL)
+       != MEMORY_POOL_SUCCESS)
+        return NULL;
 
     thpool_p->num_threads_alive   = 0;
     thpool_p->num_threads_working = 0;
@@ -82,34 +89,42 @@ Threadpool thpool_init(int num_threads){
     /* Initialise the job queue */
     if (jobqueue_init(thpool_p, &thpool_p -> jobqueue) == -1){
         err("thpool_init(): Could not allocate memory for job queue\n");
+
+        mp_destroy(&thpool_p->thread_mempool);
+        mp_destroy(&thpool_p->job_mempool);
+        mp_destroy(&thpool_p->bsem_mempool);
+
         free(thpool_p);
         return NULL;
     }
 
     /* Make threads in pool */
-    thpool_p -> threads = (thread **)mp_alloc(&thpool_p->th_mempool);
+    thpool_p -> threads = (thread **)mp_alloc(&thpool_p->thread_mempool);
     if (thpool_p -> threads == NULL){
         err("thpool_init(): Could not allocate memory for threads\n");
         jobqueue_destroy(thpool_p, &thpool_p -> jobqueue);
+
+        mp_destroy(&thpool_p->thread_mempool);
+        mp_destroy(&thpool_p->job_mempool);
+        mp_destroy(&thpool_p->bsem_mempool);
+
         free(thpool_p);
+
         return NULL;
     }
 
     pthread_mutex_init(&(thpool_p -> thcount_lock), NULL);
-    pthread_cond_init(&thpool_p -> threads_all_idle, NULL);
 
     /* Thread init */
-
-    for (int n = 0; n < num_threads; n ++){
+    for (n = 0; n < num_threads; n ++){
         thread_init(thpool_p, &thpool_p -> threads[n], n);
 
     }
 
-    /* Wait for all threads to initialize */
+    /* Wait for threads to initialize */
     while (thpool_p -> num_threads_alive != num_threads) {
-
-        sleep(1);
-    }
+		sleep(WAITING_TIME);
+	}
 
     return thpool_p;
 }
@@ -118,21 +133,21 @@ Threadpool thpool_init(int num_threads){
 /* Add work to the thread pool */
 int thpool_add_work(thpool_ *thpool_p, void (*function_p)(void *),
                     void *arg_p, int priority){
-
     job *newjob;
 
-    newjob = (job *)mp_alloc(&thpool_p->th_mempool);
+    newjob = (job *)mp_alloc(&thpool_p->job_mempool);
+
     if (newjob == NULL){
         err("thpool_add_work(): Could not allocate memory for new job\n");
         return -1;
     }
 
-    /* add function, argument and priority nice */
+    /* add function and argument */
     newjob -> function = function_p;
     newjob -> arg = arg_p;
     newjob -> priority = priority;
 
-    /* add job to the jobqueue */
+    /* add job to queue */
     jobqueue_push(&thpool_p -> jobqueue, newjob);
 
     return 0;
@@ -140,21 +155,27 @@ int thpool_add_work(thpool_ *thpool_p, void (*function_p)(void *),
 
 
 /* Destroy the threadpool */
-void thpool_destroy(Threadpool thpool_p){
+void thpool_destroy(thpool_ *thpool_p){
+
+    volatile int threads_total;
+
+    int n;
+
+    double TIMEOUT, tpassed;
+
+    time_t start, end;
 
     /* No need to destory if it's NULL */
-    if (thpool_p == NULL)
-        return ;
+    if (thpool_p == NULL) return ;
 
-    volatile int threads_total = thpool_p ->  num_threads_alive;
+    threads_total = thpool_p ->  num_threads_alive;
 
-    /* End each thread's infinite loop */
+    /* End each thread 's infinite loop */
     thpool_p->threads_keepalive = 0;
 
     /* Give one second to kill idle threads */
-    double TIMEOUT = 1.0;
-    time_t start, end;
-    double tpassed = 0.0;
+    TIMEOUT = 1.0;
+    tpassed = 0.0;
     time (&start);
     while (tpassed < TIMEOUT && thpool_p -> num_threads_alive){
         bsem_post_all(thpool_p -> jobqueue.has_jobs);
@@ -165,26 +186,28 @@ void thpool_destroy(Threadpool thpool_p){
     /* Poll remaining threads */
     while (thpool_p -> num_threads_alive){
         bsem_post_all(thpool_p -> jobqueue.has_jobs);
-        sleep(1);
+        sleep(WAITING_TIME);
     }
 
     /* Job queue cleanup */
     jobqueue_destroy(thpool_p, &thpool_p -> jobqueue);
-
     /* Deallocs */
-    int n;
     for (n = 0; n < threads_total; n ++){
         thread_destroy(thpool_p -> threads[n]);
     }
-    mp_free(&thpool_p->th_mempool, thpool_p -> threads);
-    mp_free(&thpool_p->th_mempool, thpool_p);
+    mp_free(&thpool_p->thread_mempool, thpool_p -> threads);
 
-    mp_destroy(&thpool_p->th_mempool);
+    mp_destroy(&thpool_p->thread_mempool);
+    mp_destroy(&thpool_p->job_mempool);
+    mp_destroy(&thpool_p->bsem_mempool);
+
     free(thpool_p);
+
+    thpool_p = NULL;
 }
 
 
-int thpool_num_threads_working(Threadpool thpool_p){
+int thpool_num_threads_working(thpool_ *thpool_p){
     return thpool_p -> num_threads_working;
 }
 
@@ -192,8 +215,10 @@ int thpool_num_threads_working(Threadpool thpool_p){
 /* ============================ THREAD ============================== */
 
 
-static int thread_init (Threadpool thpool_p, thread **thread_p, int id){
-    *thread_p = (thread *)mp_alloc(&thpool_p->th_mempool);
+static int thread_init (thpool_ *thpool_p, thread **thread_p, int id){
+
+    *thread_p = (thread *)mp_alloc(&thpool_p -> thread_mempool);
+
     if (thread_p == NULL){
         err("thread_init(): Could not allocate memory for thread\n");
         return -1;
@@ -205,21 +230,17 @@ static int thread_init (Threadpool thpool_p, thread **thread_p, int id){
     pthread_create(&(*thread_p) -> pthread, NULL, (void *)thread_do,
                    (*thread_p));
     pthread_detach((*thread_p) -> pthread);
+
     return 0;
 }
 
 
 static void *thread_do(thread *thread_p){
 
-    /* Set the thread name for profiling and debuging */
-    char thread_name[128] = {0};
-    sprintf(thread_name, "thread-pool-%d", thread_p -> id);
-
-
-    pthread_setname_np(thread_p -> pthread, thread_name);
+    thpool_ *thpool_p;
 
     /* Assure all threads have been created before starting serving */
-    Threadpool thpool_p = thread_p -> thpool_p;
+    thpool_p = thread_p -> thpool_p;
 
     /* Mark thread as alive (initialized) */
     pthread_mutex_lock(&thpool_p -> thcount_lock);
@@ -227,6 +248,10 @@ static void *thread_do(thread *thread_p){
     pthread_mutex_unlock(&thpool_p -> thcount_lock);
 
     while(thpool_p->threads_keepalive){
+
+        void ( *func_buff)(void *);
+        void *arg_buff;
+        job *job_p;
 
         bsem_wait(thpool_p -> jobqueue.has_jobs);
 
@@ -237,23 +262,18 @@ static void *thread_do(thread *thread_p){
             pthread_mutex_unlock(&thpool_p -> thcount_lock);
 
             /* Read job from queue and execute it */
-            void ( *func_buff)(void *);
-            void *arg_buff;
-            job *job_p = jobqueue_pull(&thpool_p -> jobqueue);
+
+            job_p = jobqueue_pull(&thpool_p -> jobqueue);
             if (job_p) {
                 func_buff = job_p -> function;
                 arg_buff  = job_p -> arg;
-                setpriority(PRIO_PROCESS, thread_p -> pthread,
-                            job_p -> priority);
+
                 func_buff(arg_buff);
-                mp_free(&thpool_p->th_mempool ,job_p);
+                mp_free(&thread_p->thpool_p->thread_mempool ,job_p);
             }
 
             pthread_mutex_lock(&thpool_p -> thcount_lock);
             thpool_p -> num_threads_working --;
-            if ( !thpool_p -> num_threads_working) {
-                pthread_cond_signal(&thpool_p -> threads_all_idle);
-            }
             pthread_mutex_unlock(&thpool_p -> thcount_lock);
 
         }
@@ -268,7 +288,9 @@ static void *thread_do(thread *thread_p){
 
 /* Frees a thread  */
 static void thread_destroy (thread *thread_p){
-    mp_free(&thread_p->thpool_p->th_mempool, thread_p);
+    mp_free(&thread_p->thpool_p->thread_mempool, thread_p);
+
+    thread_p = NULL;
 }
 
 
@@ -276,13 +298,13 @@ static void thread_destroy (thread *thread_p){
 
 
 /* Initialize queue */
-static int jobqueue_init(Threadpool thpool_p, jobqueue *jobqueue_p){
-
+static int jobqueue_init(thpool_ *thpool_p, jobqueue *jobqueue_p){
     jobqueue_p -> len = 0;
     jobqueue_p -> front = NULL;
     jobqueue_p -> rear  = NULL;
 
-    jobqueue_p -> has_jobs = (bsem *)mp_alloc( &thpool_p->th_mempool);
+    jobqueue_p -> has_jobs = (bsem *)mp_alloc(&thpool_p-> bsem_mempool);
+
     if (jobqueue_p -> has_jobs == NULL){
         return -1;
     }
@@ -295,10 +317,10 @@ static int jobqueue_init(Threadpool thpool_p, jobqueue *jobqueue_p){
 
 
 /* Clear the queue */
-static void jobqueue_clear(Threadpool thpool_p, jobqueue *jobqueue_p){
+static void jobqueue_clear(thpool_ *thpool_p, jobqueue *jobqueue_p){
 
     while(jobqueue_p -> len){
-        mp_free(&thpool_p->th_mempool, jobqueue_pull(jobqueue_p));
+        mp_free(&thpool_p->thread_mempool, jobqueue_pull(jobqueue_p));
     }
 
     jobqueue_p -> front = NULL;
@@ -336,25 +358,28 @@ static void jobqueue_push(jobqueue *jobqueue_p, job *newjob){
 
 static job *jobqueue_pull(jobqueue *jobqueue_p){
 
+    job *job_p;
+
     pthread_mutex_lock(&jobqueue_p -> rwmutex);
-    job *job_p = jobqueue_p -> front;
+    job_p = jobqueue_p -> front;
 
     switch(jobqueue_p -> len){
 
         case 0:  /* if no jobs in queue */
-            break;
+                    break;
 
         case 1:  /* if one job in queue */
-            jobqueue_p -> front = NULL;
-            jobqueue_p -> rear  = NULL;
-            jobqueue_p -> len = 0;
-            break;
+                    jobqueue_p -> front = NULL;
+                    jobqueue_p -> rear  = NULL;
+                    jobqueue_p -> len = 0;
+                    break;
 
         default: /* if >1 jobs in queue */
-            jobqueue_p -> front = job_p -> prev;
-            jobqueue_p -> len --;
-            /* more than one job in queue -> post it */
-            bsem_post(jobqueue_p -> has_jobs);
+                    jobqueue_p -> front = job_p -> prev;
+                    jobqueue_p -> len --;
+                    /* more than one job in queue -> post it */
+                    bsem_post(jobqueue_p -> has_jobs);
+
     }
 
     pthread_mutex_unlock(&jobqueue_p -> rwmutex);
@@ -363,9 +388,9 @@ static job *jobqueue_pull(jobqueue *jobqueue_p){
 
 
 /* Free all queue resources back to the system */
-static void jobqueue_destroy(Threadpool thpool_p, jobqueue *jobqueue_p){
+static void jobqueue_destroy(thpool_ *thpool_p, jobqueue *jobqueue_p){
     jobqueue_clear(thpool_p, jobqueue_p);
-    mp_free(&thpool_p->th_mempool, jobqueue_p -> has_jobs);
+    mp_free(&thpool_p->thread_mempool, jobqueue_p -> has_jobs);
 }
 
 

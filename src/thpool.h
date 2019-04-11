@@ -44,6 +44,7 @@
      Gary Xiao     , garyh0205@hotmail.com
 
  */
+//TODO thread priority
 
 #ifndef THPOOL_H
 #define THPOOL_H
@@ -64,12 +65,9 @@
 
 /* The number of slots for the memory pool */
 #define SLOTS_FOR_MEM_POOL 100
-
-/* The size of a slot for the memory pool */
-#define SIZE_FOR_MEM_POOL 100
+#define WAITING_TIME 1
 
 #define err(str) fprintf(stderr, str)
-
 
 /* ========================== STRUCTURES ============================ */
 
@@ -128,7 +126,7 @@ typedef struct thread{
     pthread_t pthread;
 
     /* A pointer point to the curret thread pool */
-    struct thpool_* thpool_p;
+    struct thpool_ *thpool_p;
 
 } thread;
 
@@ -147,35 +145,35 @@ typedef struct thpool_{
     /* A mutex use for counting threads */
     pthread_mutex_t  thcount_lock;
 
-    /* A signal for thpool_wait */
-    pthread_cond_t  threads_all_idle;
-
     jobqueue  jobqueue;
 
     volatile int threads_keepalive;
 
-    /* The memory pool for the allocation of all variable in the thpool
-       including bsem and job */
-    Memory_Pool th_mempool;
+    /* Memory pools for the allocation of all variable in the thpool
+       including thread, bsem and job */
+    Memory_Pool thread_mempool;
+
+    Memory_Pool job_mempool;
+
+    Memory_Pool bsem_mempool;
 
 } thpool_;
-
 
 typedef thpool_ *Threadpool;
 
 
-/* ============================== PROTOTYPES ================================ */
+/* ========================== PROTOTYPES ============================ */
 
 
 static int   thread_init(thpool_ *thpool_p, thread **thread_p, int id);
 static void *thread_do(thread *thread_p);
 static void  thread_destroy(thread *thread_p);
 
-static int   jobqueue_init(Threadpool thpool_p, jobqueue *jobqueue_p);
-static void  jobqueue_clear(Threadpool thpool_p, jobqueue *jobqueue_p);
+static int   jobqueue_init(thpool_ *thpool_p, jobqueue *jobqueue_p);
+static void  jobqueue_clear(thpool_ *thpool_p, jobqueue *jobqueue_p);
 static void  jobqueue_push(jobqueue *jobqueue_p, job *newjob_p);
-static job  *jobqueue_pull(jobqueue *jobqueue_p);
-static void  jobqueue_destroy(Threadpool thpool_p, jobqueue *jobqueue_p);
+static job *jobqueue_pull(jobqueue *jobqueue_p);
+static void  jobqueue_destroy(thpool_ *thpool_p, jobqueue *jobqueue_p);
 
 static void  bsem_init(bsem *bsem_p, int value);
 static void  bsem_reset(bsem *bsem_p);
@@ -184,7 +182,6 @@ static void  bsem_post_all(bsem *bsem_p);
 static void  bsem_wait(bsem *bsem_p);
 
 /* ================================= API ==================================== */
-
 
 /*
   thpool_init
