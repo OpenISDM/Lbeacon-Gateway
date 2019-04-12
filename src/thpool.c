@@ -71,16 +71,16 @@ struct thpool_ *thpool_init(int num_threads){
     thpool_p->threads_keepalive = 1;
 
     /* Initialize the memory pool */
-    if(mp_init(&thpool_p->thread_mempool, sizeof(thread), SLOTS_FOR_MEM_POOL)
-       != MEMORY_POOL_SUCCESS)
+    if(mp_init(&thpool_p->thread_mempool, sizeof(thread),
+       num_threads * SLOTS_FOR_MEM_POOL_PER_THREAD) != MEMORY_POOL_SUCCESS)
         return NULL;
 
-	if(mp_init(&thpool_p->job_mempool, sizeof(job), SLOTS_FOR_MEM_POOL)
-       != MEMORY_POOL_SUCCESS)
+	if(mp_init(&thpool_p->job_mempool, sizeof(job),
+       num_threads * SLOTS_FOR_MEM_POOL_PER_THREAD) != MEMORY_POOL_SUCCESS)
         return NULL;
 
-	if(mp_init(&thpool_p->bsem_mempool, sizeof(bsem), SLOTS_FOR_MEM_POOL)
-       != MEMORY_POOL_SUCCESS)
+	if(mp_init(&thpool_p->bsem_mempool, sizeof(bsem),
+       num_threads * SLOTS_FOR_MEM_POOL_PER_THREAD) != MEMORY_POOL_SUCCESS)
         return NULL;
 
     thpool_p->num_threads_alive   = 0;
