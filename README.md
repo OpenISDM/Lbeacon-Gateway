@@ -49,3 +49,23 @@ If Gateway is running, the result looks like the following.
 ```sh
 root      1286 99.2  4.3 217532 19364 ?        Sl   Mar1 1169:28 /home/pi/Lbeacon-Gateway/bin/Gateway.out
 ```
+
+## How to set up a config
+* When setting any config, no space allow before or afeter "=", e.g. `is_polled_by_server=0`
+
+Name                            | Description
+--------------------------------|--------------------------------------------------------------------------------------
+is_polled_by_server             | If tracked object data and Health reports is polled by the server, please set 1 else 0. 
+IP_address                      | The IP address of the server.
+allowed_number_of_nodes         | The number of the LBeacon is allowed to join.
+period_between_RFHR             | The period of time the Gateway polling health report.<br />(Work in `is_polled_by_server=0`)
+period_between_RFTOD            | The period of time the Gateway polling tracked object data.<br />(Work in `is_polled_by_server=0`)
+period_between_join_request     | The period of time the Gateway join the Server.<br />(Work in `is_polled_by_server=0`)
+number_worker_thread            | The number of worker threads is allowed to use. 
+server_ip                       | The Server IP address.
+send_port                       | The port which the Server is prepared to receive messages.
+recv_port                       | The port which the Gateway is prepare to receive messages.
+critical_priority               | The priority nice for critical priority.
+high_priority                   | The priority nice for higher priority.
+normal_priority                 | The priority nice for normal priority.
+low_priority                    | The priority nice for lower priority.
