@@ -269,7 +269,7 @@ static void *thread_do(thread *thread_p){
                 arg_buff  = job_p -> arg;
 
                 func_buff(arg_buff);
-                mp_free(&thread_p->thpool_p->thread_mempool ,job_p);
+                mp_free(&thread_p->thpool_p->job_mempool ,job_p);
             }
 
             pthread_mutex_lock(&thpool_p -> thcount_lock);
@@ -320,7 +320,7 @@ static int jobqueue_init(thpool_ *thpool_p, jobqueue *jobqueue_p){
 static void jobqueue_clear(thpool_ *thpool_p, jobqueue *jobqueue_p){
 
     while(jobqueue_p -> len){
-        mp_free(&thpool_p->thread_mempool, jobqueue_pull(jobqueue_p));
+        mp_free(&thpool_p->job_mempool, jobqueue_pull(jobqueue_p));
     }
 
     jobqueue_p -> front = NULL;
@@ -390,7 +390,7 @@ static job *jobqueue_pull(jobqueue *jobqueue_p){
 /* Free all queue resources back to the system */
 static void jobqueue_destroy(thpool_ *thpool_p, jobqueue *jobqueue_p){
     jobqueue_clear(thpool_p, jobqueue_p);
-    mp_free(&thpool_p->thread_mempool, jobqueue_p -> has_jobs);
+    mp_free(&thpool_p->bsem_mempool, jobqueue_p -> has_jobs);
 }
 
 
