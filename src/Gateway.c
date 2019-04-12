@@ -296,19 +296,23 @@ int main(int argc, char **argv){
                 /* Update the last_polling_LBeacon_for_HR_time */
                 last_polling_LBeacon_for_HR_time = get_system_time();
             }
+            else{
+                usleep(WAITING_TIME);
+            }
         }
 
-        if(join_status == unjoined || (join_status == joining &&
-           current_time - last_polling_join_request_time >
-           JOIN_REQUEST_TIMEOUT) || (join_status == joined && current_time -
-           last_polling_join_request_time > config.
-           period_between_join_request)){
+        if(join_status == unjoined ||
+           (join_status == joining && current_time -
+            last_polling_join_request_time > JOIN_REQUEST_TIMEOUT) ||
+           (join_status == joined && current_time -
+            last_polling_join_request_time > config.period_between_join_request)
+          ){
 
             if(join_retry_time == JOIN_REQUEST_MAX_RETRY_TIME){
                 join_status = unjoined;
-                usleep(WAITING_TIME);
                 join_retry_time = 0;
             }
+
             if(join_status == unjoined)
                 join_status = joining;
 
