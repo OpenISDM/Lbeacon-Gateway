@@ -686,7 +686,7 @@ void *CommUnit_routine(){
 
             current_time = get_system_time();
 
-            usleep(500);
+            usleep(500000);
 
         }
 
@@ -741,7 +741,7 @@ void *CommUnit_routine(){
         /* Update the init_time */
         init_time = get_system_time();
 
-        usleep(500);
+        usleep(500000);
 
     } /* End while(ready_to_work == true) */
 
@@ -793,6 +793,7 @@ void *BHM_routine(void *_buffer_node){
        Server */
     udp_addpkt( &udp_config, config.server_ip, temp -> content,
                 temp -> content_size);
+
 
     mp_free( &node_mempool, temp);
 
@@ -1133,17 +1134,11 @@ void *process_wifi_receive(){
         }
         else if(temppkt.type == NONE){
             /* If there is no packet received, sleep a short time */
-            if (idle_sleep_time < MAXIMUM_WAITING_TIME)
-                sleep(idle_sleep_time++);
-            else
-                sleep(idle_sleep_time);
+            sleep(MINIMUM_WAITING_TIME);
         }
         else {
             /* If there is no packet received, sleep a short time */
-            if (idle_sleep_time < MAXIMUM_WAITING_TIME)
-                sleep(idle_sleep_time++);
-            else
-                sleep(idle_sleep_time);
+            sleep(MINIMUM_WAITING_TIME);
         }
     }
     return (void *)NULL;
