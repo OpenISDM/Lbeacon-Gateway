@@ -55,7 +55,7 @@ root      1286 99.2  4.3 217532 19364 ?        Sl   Mar1 1169:28 /home/pi/Lbeaco
 
 Name                            | Description
 --------------------------------|--------------------------------------------------------------------------------------
-is_polled_by_server             | If tracked object data and Health reports polled by the server, please set 1 else 0. 
+is_polled_by_server             | If tracked object data and Health reports is polled by the server, please set 1 else 0. 
 IP_address                      | The IP address of the server.
 allowed_number_of_nodes         | The number of the LBeacon is allowed to join.
 period_between_RFHR             | The period of time the Gateway polling health report.<br />(Work in `is_polled_by_server=0`)
