@@ -134,13 +134,8 @@
 /* Time interval in seconds for busy-wait checking in threads */
 #define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_SEC 3
 
-/* WAITING_TIME avoids busy loops */
-
-/* Minimum Timeout interval in seconds */
-#define MINIMUM_WAITING_TIME 1
-
-/* Maximum Timeout interval in seconds */
-#define MAXIMUM_WAITING_TIME 5
+/* Minimum Timeout interval in micro seconds */
+#define WAITING_TIME 500
 
 
 typedef enum _ErrorCode{

@@ -158,14 +158,13 @@ void *udp_send_pkt(void *udpconfig){
                       printf("sendto error.[%s]\n", strerror(errno));
 #endif
                   }
-                /* Reset sleep time */
-                sleep_time = 0;
+
             }
         }
         else{
-            sleep(sleep_time);
-            if (sleep_time < SEND_NULL_SLEEP)
-                sleep_time ++;
+
+            usleep(SLEEP_TIME);
+
         }
 
     }
@@ -181,8 +180,6 @@ void *udp_recv_pkt(void *udpconfig){
     int recv_len;
 
     char recv_buf[MESSAGE_LENGTH];
-
-    int usleep_waiting_time = 0;
 
     struct sockaddr_in si_recv;
 
@@ -206,12 +203,9 @@ void *udp_recv_pkt(void *udpconfig){
 #ifdef debugging
             printf("No data received.\n");
 #endif
-            sleep(usleep_waiting_time);
 
-            /* If no data, every timeout will increase 1 us sleep until same as
-               select timout time */
-            if(usleep_waiting_time < UDP_SELECT_TIMEOUT);
-                usleep_waiting_time ++;
+            /* If no data, it will sleep 5 micro seconds */
+            usleep(SLEEP_TIME);
         }
         else if(recv_len > 0){
 #ifdef debugging
@@ -227,8 +221,6 @@ void *udp_recv_pkt(void *udpconfig){
                  , udp_address_reduce_point(inet_ntoa(si_recv.sin_addr))
                  , recv_buf, recv_len);
 
-            /* Reset sleep time */
-            usleep_waiting_time = 0;
         }
     }
 #ifdef debugging

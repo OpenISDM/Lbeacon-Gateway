@@ -214,7 +214,7 @@ int main(int argc, char **argv){
     while(NSI_initialization_complete == false ||
           CommUnit_initialization_complete == false){
 
-        sleep(MINIMUM_WAITING_TIME);
+        usleep(WAITING_TIME);
 
         if(initialization_failed == true){
             ready_to_work = false;
@@ -306,7 +306,7 @@ int main(int argc, char **argv){
 
             if(join_retry_time == JOIN_REQUEST_MAX_RETRY_TIME){
                 join_status = unjoined;
-                sleep(MINIMUM_WAITING_TIME);
+                usleep(WAITING_TIME);
                 join_retry_time = 0;
             }
             if(join_status == unjoined)
@@ -389,7 +389,7 @@ int main(int argc, char **argv){
             /* Update the last_polling_LBeacon_for_HR_time */
             last_polling_join_request_time = current_time;
         }else{
-            sleep(MINIMUM_WAITING_TIME);
+            usleep(WAITING_TIME);
         }
 
     }
@@ -601,7 +601,7 @@ void *CommUnit_routine(){
 
     /* wait for NSI get ready */
     while(NSI_initialization_complete == false){
-        sleep(MINIMUM_WAITING_TIME);
+        usleep(WAITING_TIME);
         if(initialization_failed == true){
             return (void *)NULL;
         }
@@ -635,7 +635,7 @@ void *CommUnit_routine(){
         while(current_time - init_time < MAX_STARVATION_TIME){
 
             while(thpool -> num_threads_working == thpool -> num_threads_alive){
-                sleep(MINIMUM_WAITING_TIME);
+                usleep(WAITING_TIME);
             }
 
             /* Scan the priority_list to get the buffer list with the highest
@@ -686,12 +686,12 @@ void *CommUnit_routine(){
 
             current_time = get_system_time();
 
-            usleep(500000);
+            usleep(WAITING_TIME);
 
         }
 
         while(thpool -> num_threads_working == thpool -> num_threads_alive){
-            sleep(MINIMUM_WAITING_TIME);
+            usleep(WAITING_TIME);
         }
         /* Scan the priority list in reverse order to prevent starving the
            lowest priority buffer list. */
@@ -741,7 +741,7 @@ void *CommUnit_routine(){
         /* Update the init_time */
         init_time = get_system_time();
 
-        usleep(500000);
+        usleep(WAITING_TIME);
 
     } /* End while(ready_to_work == true) */
 
@@ -793,7 +793,6 @@ void *BHM_routine(void *_buffer_node){
        Server */
     udp_addpkt( &udp_config, config.server_ip, temp -> content,
                 temp -> content_size);
-
 
     mp_free( &node_mempool, temp);
 
@@ -977,8 +976,6 @@ void *process_wifi_receive(){
 
         sPkt temppkt = udp_getrecv( &udp_config);
 
-        int idle_sleep_time = MINIMUM_WAITING_TIME;
-
         if(temppkt.type == UDP){
 
             /* counting test time for mp_alloc(). */
@@ -992,7 +989,7 @@ void *process_wifi_receive(){
                 if(test_times == TEST_MALLOC_MAX_NUMBER_TIMES)
                     break;
                 else if(test_times != 0)
-                    sleep(MINIMUM_WAITING_TIME);
+                    usleep(WAITING_TIME);
 
                 new_node = mp_alloc( &node_mempool);
                 test_times ++;
@@ -1130,15 +1127,14 @@ void *process_wifi_receive(){
                         break;
                 }
             }
-            idle_sleep_time = MINIMUM_WAITING_TIME;
         }
         else if(temppkt.type == NONE){
             /* If there is no packet received, sleep a short time */
-            sleep(MINIMUM_WAITING_TIME);
+            usleep(WAITING_TIME);
         }
         else {
             /* If there is no packet received, sleep a short time */
-            sleep(MINIMUM_WAITING_TIME);
+            usleep(WAITING_TIME);
         }
     }
     return (void *)NULL;
