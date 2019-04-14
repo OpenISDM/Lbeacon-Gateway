@@ -6,7 +6,7 @@ The LBeacon Gateway is used for managing LBeacons in a Star Network and connecti
 
 ### Installing OS and Update on Raspberry Pi
 
-[Download](http://downloads.raspberrypi.org/raspbian/images/raspbian-2017-07-05/2017-07-05-raspbian-jessie.zip) Raspbian Jessie lite for the Raspberry Pi and follow its [installation guide](https://www.raspberrypi.org/documentation/installation/installing-images/README.md).
+Download [Raspbian Jessie Lite](http://downloads.raspberrypi.org/raspbian/images/raspbian-2017-07-05/2017-07-05-raspbian-jessie.zip) for the Raspberry Pi and follow its [installation guide](https://www.raspberrypi.org/documentation/installation/installing-images/README.md).
 
 In Raspberry Pi, install packages by running the following command:
 ```sh
