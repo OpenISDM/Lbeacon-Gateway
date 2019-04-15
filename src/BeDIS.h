@@ -135,7 +135,7 @@
 #define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_SEC 3
 
 /* Minimum Timeout interval in micro seconds */
-#define WAITING_TIME 500
+#define BUSY_WAITING_TIME 500
 
 
 typedef enum _ErrorCode{
@@ -197,11 +197,11 @@ typedef enum pkt_types {
 
     /* For Join Request */
 
-    /* Request join from LBeacon */
+    /* Request join */
     request_to_join = 1,
-    /* When Gateway accept LBeacon join request */
+    /* Accept join request */
     join_request_ack = 2,
-    /* When Gateway deny Beacon join request */
+    /* Deny join request */
     join_request_deny = 3,
 
     /* For LBeacon pkt type */

@@ -199,13 +199,6 @@ typedef struct {
 
 } BufferListHead;
 
-typedef enum {
-    unjoined=0,
-    joining=1,
-    joined=2
-} JoinStatus;
-
-
 /* Global variables */
 
 /* A Gateway config struct for storing config parameters from the config file */
@@ -258,9 +251,8 @@ bool CommUnit_initialization_complete;
 
 bool initialization_failed;
 
-JoinStatus join_status;
-
 /* Variables for storing the last polling times in second*/
+int last_polling_time;
 int last_polling_LBeacon_for_HR_time;
 int last_polling_object_tracking_time;
 int last_polling_join_request_time;

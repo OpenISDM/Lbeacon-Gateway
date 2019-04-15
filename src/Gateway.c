@@ -90,8 +90,6 @@ int main(int argc, char **argv){
 
     ready_to_work = true;
 
-    join_status = unjoined;
-
     /* Create the config from input config file */
 
     if(get_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
@@ -214,7 +212,7 @@ int main(int argc, char **argv){
     while(NSI_initialization_complete == false ||
           CommUnit_initialization_complete == false){
 
-        usleep(WAITING_TIME);
+        usleep(BUSY_WAITING_TIME);
 
         if(initialization_failed == true){
             ready_to_work = false;
@@ -240,9 +238,9 @@ int main(int argc, char **argv){
     }else{
         last_polling_join_request_time = get_system_time();
     }
-
-    int join_retry_time = 0;
-
+	
+	last_polling_time = 0;
+	
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
 
@@ -297,25 +295,12 @@ int main(int argc, char **argv){
                 last_polling_LBeacon_for_HR_time = get_system_time();
             }
             else{
-                usleep(WAITING_TIME);
+                usleep(BUSY_WAITING_TIME);
             }
         }
 
-        if(join_status == unjoined ||
-           (join_status == joining && current_time -
-            last_polling_join_request_time > JOIN_REQUEST_TIMEOUT) ||
-           (join_status == joined && current_time -
-            last_polling_join_request_time > config.period_between_join_request)
-          ){
-
-            if(join_retry_time == JOIN_REQUEST_MAX_RETRY_TIME){
-                join_status = unjoined;
-                join_retry_time = 0;
-            }
-
-            if(join_status == unjoined)
-                join_status = joining;
-
+        
+        if(current_time - last_polling_time > JOIN_REQUEST_TIMEOUT){
             /* Join Request */
             /* set the pkt type */
             int send_type = ((from_gateway & 0x0f) << 4) +
@@ -388,12 +373,9 @@ int main(int argc, char **argv){
                 udp_addpkt( &udp_config, config.server_ip, content_temp,
                             content_temp_size);
 
-            join_retry_time ++;
-
-            /* Update the last_polling_LBeacon_for_HR_time */
             last_polling_join_request_time = current_time;
         }else{
-            usleep(WAITING_TIME);
+            usleep(BUSY_WAITING_TIME);
         }
 
     }
@@ -605,7 +587,7 @@ void *CommUnit_routine(){
 
     /* wait for NSI get ready */
     while(NSI_initialization_complete == false){
-        usleep(WAITING_TIME);
+        usleep(BUSY_WAITING_TIME);
         if(initialization_failed == true){
             return (void *)NULL;
         }
@@ -639,7 +621,7 @@ void *CommUnit_routine(){
         while(current_time - init_time < MAX_STARVATION_TIME){
 
             while(thpool -> num_threads_working == thpool -> num_threads_alive){
-                usleep(WAITING_TIME);
+                usleep(BUSY_WAITING_TIME);
             }
 
             /* Scan the priority_list to get the buffer list with the highest
@@ -690,12 +672,12 @@ void *CommUnit_routine(){
 
             current_time = get_system_time();
 
-            usleep(WAITING_TIME);
+            usleep(BUSY_WAITING_TIME);
 
         }
 
         while(thpool -> num_threads_working == thpool -> num_threads_alive){
-            usleep(WAITING_TIME);
+            usleep(BUSY_WAITING_TIME);
         }
         /* Scan the priority list in reverse order to prevent starving the
            lowest priority buffer list. */
@@ -745,7 +727,7 @@ void *CommUnit_routine(){
         /* Update the init_time */
         init_time = get_system_time();
 
-        usleep(WAITING_TIME);
+        usleep(BUSY_WAITING_TIME);
 
     } /* End while(ready_to_work == true) */
 
@@ -793,7 +775,7 @@ void *BHM_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
-    /* Add the content of tje buffer node to the UDP to be sent to the
+    /* Add the content of the buffer node to the UDP to be sent to the
        Server */
     udp_addpkt( &udp_config, config.server_ip, temp -> content,
                 temp -> content_size);
@@ -993,7 +975,7 @@ void *process_wifi_receive(){
                 if(test_times == TEST_MALLOC_MAX_NUMBER_TIMES)
                     break;
                 else if(test_times != 0)
-                    usleep(WAITING_TIME);
+                    usleep(BUSY_WAITING_TIME);
 
                 new_node = mp_alloc( &node_mempool);
                 test_times ++;
@@ -1031,7 +1013,7 @@ void *process_wifi_receive(){
                    list_lock. */
                 switch (pkt_direction) {
                     case from_server:
-
+                        last_polling_time = get_system_time();
                         switch (pkt_type) {
 
                             case RFHR_from_server:
@@ -1065,7 +1047,6 @@ void *process_wifi_receive(){
                             case join_request_ack:
                                 zlog_info(category_debug,
                                      "Get Join Request Result from the Server");
-                                join_status = joined;
                                 last_polling_join_request_time =
                                                               get_system_time();
                                 mp_free(&node_mempool, new_node);
@@ -1134,11 +1115,11 @@ void *process_wifi_receive(){
         }
         else if(temppkt.type == NONE){
             /* If there is no packet received, sleep a short time */
-            usleep(WAITING_TIME);
+            usleep(BUSY_WAITING_TIME);
         }
         else {
             /* If there is no packet received, sleep a short time */
-            usleep(WAITING_TIME);
+            usleep(BUSY_WAITING_TIME);
         }
     }
     return (void *)NULL;
