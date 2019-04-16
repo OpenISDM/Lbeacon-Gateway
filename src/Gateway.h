@@ -307,13 +307,15 @@ void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
 
   Parameters:
 
+     config - The pointer points to the structure which stored config for
+              gateway.
      list_head - The pointer of the priority list head.
 
   Return value:
 
      None
  */
-void *sort_priority_list(BufferListHead *list_head);
+void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
 
 
 /*

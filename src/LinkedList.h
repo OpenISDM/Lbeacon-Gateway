@@ -78,6 +78,7 @@
 /*Struct for the head of a list or doubly linked list entry used in link a
   node in to a list */
 typedef struct List_Entry {
+
     struct List_Entry *next;
     struct List_Entry *prev;
 
@@ -192,6 +193,23 @@ void insert_list_tail(List_Entry *new_node, List_Entry *head);
 
 
 /*
+  concat_list:
+
+     This function concates two lists.
+
+  Parameters:
+
+     first_list_head: The head of list.
+     second_list_head: The head of list to be append to the first_list_head.
+
+  Return value:
+
+     None
+*/
+void concat_list(List_Entry *first_list_head, List_Entry *second_list_head);
+
+
+/*
   remove_entry_list:
 
      This function changes the links between the node and the node which
@@ -214,8 +232,8 @@ void remove_entry_list(List_Entry *prev, List_Entry *next);
 /*
   remove_list_node:
 
-     This function calls the function of remove_node__ to delete a node in the
-     list.
+     This function calls the function of removed_node_ptrs to delete a node in
+     the list.
 
   Parameters:
 

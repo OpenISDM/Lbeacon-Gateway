@@ -92,6 +92,22 @@ inline void insert_list_tail(List_Entry *new_node, List_Entry *head) {
 }
 
 
+void concat_list(List_Entry *first_list_head, List_Entry *second_list_head){
+
+    List_Entry *first_list_tail, *second_list_tail;
+
+    first_list_tail = first_list_head -> prev;
+    second_list_tail = second_list_head -> prev;
+
+    first_list_tail -> next = second_list_head;
+    first_list_head -> prev = second_list_tail;
+
+    second_list_tail -> next = first_list_head;
+    second_list_head -> prev = first_list_tail;
+
+}
+
+
 inline void remove_entry_list(List_Entry *prev, List_Entry *next) {
 
     next->prev = prev;

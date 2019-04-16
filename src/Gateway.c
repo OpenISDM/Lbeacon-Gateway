@@ -159,7 +159,7 @@ int main(int argc, char **argv){
     zlog_info(category_debug, "Buffers initialize Success");
 #endif
 
-    sort_priority_list( &priority_list_head);
+    sort_priority_list(&config, &priority_list_head);
 
     /* Initialize the Wifi connection */
     if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
@@ -238,9 +238,9 @@ int main(int argc, char **argv){
     }else{
         last_polling_join_request_time = get_system_time();
     }
-	
+
 	last_polling_time = 0;
-	
+
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
 
@@ -299,7 +299,7 @@ int main(int argc, char **argv){
             }
         }
 
-        
+
         if(current_time - last_polling_time > JOIN_REQUEST_TIMEOUT){
             /* Join Request */
             /* set the pkt type */
@@ -524,57 +524,75 @@ void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
 }
 
 
-void *sort_priority_list(BufferListHead *list_head){
+void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
 
-    List_Entry *list_pointers,
-               *list_pointers_in_bubble,
-               *save_list_pointers_in_bubble,
-               tmp;
+    List_Entry *list_pointer,
+               *next_list_pointer;
+
+    List_Entry critical_priority_entry, high_priority_entry,
+               normal_priority_entry, low_priority_entry;
 
     BufferListHead *current_head, *next_head;
 
+    init_entry( &critical_priority_entry);
+    init_entry( &high_priority_entry);
+    init_entry( &normal_priority_entry);
+    init_entry( &low_priority_entry);
+
     pthread_mutex_lock( &list_head -> list_lock);
 
-    list_for_each(list_pointers,  &list_head -> priority_list_entry){
+    list_for_each_safe(list_pointer, next_list_pointer,
+                       &list_head -> priority_list_entry){
 
-        list_for_each_safe_reverse(list_pointers_in_bubble,
-                                   save_list_pointers_in_bubble,
-                                    &list_head -> priority_list_entry){
+        remove_list_node(list_pointer);
 
-            current_head = ListEntry(list_pointers_in_bubble, BufferListHead,
-                                     priority_list_entry);
-            next_head = ListEntry(save_list_pointers_in_bubble, BufferListHead,
-                                  priority_list_entry);
+        current_head = ListEntry(list_pointer, BufferListHead,
+                                 priority_list_entry);
 
-            /* save_list_pointers_in_bubble <-> list_pointers_in_bubble <-> head
-             */
+        if(current_head -> priority_nice == config -> critical_priority)
 
-            if(current_head -> priority_nice < next_head -> priority_nice){
+            insert_list_tail( list_pointer, &critical_priority_entry);
 
-                tmp.prev = save_list_pointers_in_bubble -> prev;
-                tmp.next = list_pointers_in_bubble -> next;
+        else if(current_head -> priority_nice == config -> high_priority)
 
-                list_pointers_in_bubble -> prev = tmp.prev;
-                list_pointers_in_bubble -> next = save_list_pointers_in_bubble;
+            insert_list_tail( list_pointer, &high_priority_entry);
 
-                save_list_pointers_in_bubble -> next = tmp.next;
-                save_list_pointers_in_bubble -> prev = list_pointers_in_bubble;
+        else if(current_head -> priority_nice == config -> normal_priority)
 
-                list_pointers_in_bubble -> prev -> next =
-                                                        list_pointers_in_bubble;
-                save_list_pointers_in_bubble -> next -> prev =
-                                                   save_list_pointers_in_bubble;
+            insert_list_tail( list_pointer, &normal_priority_entry);
 
-                save_list_pointers_in_bubble = list_pointers_in_bubble;
-            }
+        else if(current_head -> priority_nice == config -> low_priority)
 
-            if(list_pointers_in_bubble == list_pointers){
-                break;
-            }
-        }
+            insert_list_tail( list_pointer, &low_priority_entry);
+
+    }
+
+    if(is_entry_list_empty(&critical_priority_entry) == false){
+        list_pointer = critical_priority_entry.next;
+        remove_list_node(list_pointer -> prev);
+        concat_list( &list_head -> priority_list_entry, list_pointer);
+    }
+
+    if(is_entry_list_empty(&high_priority_entry) == false){
+        list_pointer = high_priority_entry.next;
+        remove_list_node(list_pointer -> prev);
+        concat_list( &list_head -> priority_list_entry, list_pointer);
+    }
+
+    if(is_entry_list_empty(&normal_priority_entry) == false){
+        list_pointer = normal_priority_entry.next;
+        remove_list_node(list_pointer -> prev);
+        concat_list( &list_head -> priority_list_entry, list_pointer);
+    }
+
+    if(is_entry_list_empty(&low_priority_entry) == false){
+        list_pointer = low_priority_entry.next;
+        remove_list_node(list_pointer -> prev);
+        concat_list( &list_head -> priority_list_entry, list_pointer);
     }
 
     pthread_mutex_unlock( &list_head -> list_lock);
+
 }
 
 
