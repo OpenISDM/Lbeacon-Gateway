@@ -113,10 +113,10 @@
 /* Minimum Wi-Fi message size (One byte for data type and one byte for a space) */
 #define MINIMUM_WIFI_MESSAGE_LENGTH 2
 
-/* The size of array to store Wi-Fi SSID */
+/* The size of the array to store Wi-Fi SSID */
 #define WIFI_SSID_LENGTH 10
 
-/* The size of array to store Wi-Fi Password */
+/* The size of the array to store Wi-Fi Password */
 #define WIFI_PASS_LENGTH 10
 
 /* Length of the LBeacon's UUID in number of characters */
