@@ -239,7 +239,7 @@ int main(int argc, char **argv){
         last_polling_join_request_time = get_system_time();
     }
 
-	last_polling_time = 0;
+    last_polling_time = 0;
 
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
