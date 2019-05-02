@@ -246,7 +246,7 @@ int main(int argc, char **argv){
 
             /* If it is the time to poll LBeacons for tracked object data, get a
                thread to do this work */
-            if(current_time - last_polling_object_tracking_time >
+            if(current_time - last_polling_object_tracking_time >=
                config.period_between_RFTOD){
 
                 /* Poll object tracking object data */
@@ -270,7 +270,7 @@ int main(int argc, char **argv){
 
                 did_work = true;
             }
-            else if(current_time - last_polling_LBeacon_for_HR_time >
+            else if(current_time - last_polling_LBeacon_for_HR_time >=
                     config.period_between_RFHR){
 
                 /* Polling for health reports. */
@@ -630,13 +630,16 @@ void *CommUnit_routine(){
     /* When there is no dead thead, do the work. */
     while(ready_to_work == true){
 
-        did_work = false;
-
-        current_time = get_system_time();
-
         List_Entry *tmp, *list_entry;
         BufferNode *current_node;
         BufferListHead *current_head;
+
+        did_work = false;
+
+        /* Update the init_time */
+        init_time = get_system_time();
+
+        current_time = get_system_time();
 
         /* In the normal situation, the scanning starts from the high priority
            to lower priority. When the timer expired for MAX_STARVATION_TIME,
@@ -693,8 +696,6 @@ void *CommUnit_routine(){
 
             current_time = get_system_time();
 
-            usleep(BUSY_WAITING_TIME);
-
         }
 
         /* Scan the priority list in reverse order to prevent starving the
@@ -704,7 +705,7 @@ void *CommUnit_routine(){
 
         list_for_each_reverse(tmp, &priority_list_head.priority_list_entry){
 
-            current_head= ListEntry(tmp, BufferListHead, priority_list_entry);
+            current_head = ListEntry(tmp, BufferListHead, priority_list_entry);
 
             pthread_mutex_lock( &current_head -> list_lock);
 
@@ -744,15 +745,11 @@ void *CommUnit_routine(){
 
         pthread_mutex_unlock( &priority_list_head.list_lock);
 
-        /* Update the init_time */
-        init_time = get_system_time();
-
         if(did_work == true){
             usleep(BUSY_WAITING_TIME);
         }
 
     } /* End while(ready_to_work == true) */
-
 
     /* Destroy the thread pool */
     thpool_destroy(thpool);
@@ -779,7 +776,7 @@ void *NSI_routine(void *_buffer_node){
     else
         send_type += join_request_deny & 0x0f;
 
-    /* put the pkt type to content */
+    /* put the pkt type into content */
     temp->content[0] = (char)send_type;
 
     pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
@@ -812,7 +809,7 @@ void *LBeacon_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
-    /* Add the content of tje buffer node to the UDP to be sent to the
+    /* Add the content of the buffer node to the UDP to be sent to the
        Server */
     udp_addpkt( &udp_config, config.server_ip, temp -> content,
                 temp -> content_size);
@@ -905,7 +902,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
         }
     }
 
-    /* If still has space for the LBeacon to register */
+    /* If here still has space for the LBeacon to register */
     if (not_in_use != -1){
 
         AddressMap *tmp =  &address_map -> address_map_list[not_in_use];
@@ -1049,7 +1046,7 @@ void *process_wifi_receive(){
                    list_lock. */
                 switch (pkt_direction) {
                     case from_server:
-                        last_polling_join_request_time = get_system_time();
+
                         switch (pkt_type) {
 
                             case RFHR_from_server:
@@ -1083,8 +1080,7 @@ void *process_wifi_receive(){
                             case join_request_ack:
                                 zlog_info(category_debug,
                                      "Get Join Request Result from the Server");
-                                last_polling_join_request_time =
-                                                              get_system_time();
+                                last_polling_join_request_time = current_time;
                                 mp_free(&node_mempool, new_node);
                                 break;
                             case data_for_LBeacon:
