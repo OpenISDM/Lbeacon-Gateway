@@ -170,7 +170,7 @@ typedef struct {
     char net_address[NETWORK_ADDR_LENGTH];
 
     /* pointer to where the data is stored. */
-    char content[WIFI_MESSAGE_LENGTH];
+    char content[MAXINUM_WIFI_MESSAGE_LENGTH];
 
     int content_size;
 

@@ -88,15 +88,15 @@
 
 /* Number of times to retry open file, because file openning operation may have
    transient failure. */
-#define FILE_OPEN_RETRY 5
+#define FILE_OPEN_RETRIES 5
 
 /* Number of times to retry getting a dongle, because this operation may have
    transient failure. */
-#define DONGLE_GET_RETRY 5
+#define DONGLE_GET_RETRIES 5
 
 /* Number of times to retry opening socket, because socket openning operation
    may have transient failure. */
-#define SOCKET_OPEN_RETRY 5
+#define SOCKET_OPEN_RETRIES 5
 
 /* The number of slots in the memory pool */
 #define SLOTS_IN_MEM_POOL 1024
@@ -108,7 +108,7 @@
 #define NETWORK_ADDR_LENGTH_HEX 8
 
 /* Maximum length of message to be sent over WiFi in bytes */
-#define WIFI_MESSAGE_LENGTH 4096
+#define MAXINUM_WIFI_MESSAGE_LENGTH 4096
 
 /* Minimum Wi-Fi message size (One byte for data type and one byte for a space)
  */
@@ -144,7 +144,7 @@
 /* Time interval in seconds for reconnect to Gateway */
 #define INTERVAL_FOR_RECONNECT_GATEWAY_IN_SEC 120
 
-/* Timeout in seconds for UDP recevie socket */
+/* Timeout in seconds for UDP receive socket */
 #define TIMEOUT_UDP_RECEIVCE_IN_SEC 5
 
 
@@ -281,7 +281,7 @@ zlog_category_t *category_health_report, *category_debug;
 /*
   uuid_str_to_data:
 
-     Converts uuid from string to unsigned integer.
+     This function converts uuid from string to unsigned integer.
 
   Parameters:
 
@@ -314,7 +314,7 @@ unsigned int twoc(int in, int t);
 /*
   trim_string_tail:
 
-     This function trim whitespace, newline and carry-return at the end of
+     This function trims whitespace, newline and carry-return at the end of
      the string when reading config messages.
 
   Parameters:
@@ -387,13 +387,13 @@ int get_system_time();
 /*
   memset:
 
-      This function is called to fill a block of memory.
+      This function is called to fill a block of memory with specified value.
 
   Parameters:
 
      ptr    - the pointer to the block memory to fill
-     value  - The value in int type: The function will fill the memory
-              as if this value
+     value  - The value in int type: The function will fill the memory with this
+              value
      number - number of bytes in the memory area starting from ptr to be
                set to value
 

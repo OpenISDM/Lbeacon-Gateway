@@ -45,6 +45,7 @@
 
  */
 //TODO thread priority
+//TODO　struct job uses linked list
 
 #ifndef THPOOL_H
 #define THPOOL_H
@@ -102,10 +103,10 @@ typedef struct jobqueue{
     /* A mutex use for controling the job queue read/write access */
     pthread_mutex_t rwmutex;
 
-    /* A pointer point to the head of the job queue */
+    /* A pointer points to the head of the job queue */
     job *front;
 
-    /* A pointer point to the tail of the job queue  */
+    /* A pointer points to the tail of the job queue  */
     job *rear;
 
     /* A binary semaphore flag to identify if there has jobs */
@@ -139,7 +140,7 @@ typedef struct thpool_{
     /* The number of threads currently alive */
     volatile int num_threads_alive;
 
-    /* The nnumber of threads currently working */
+    /* The number of threads currently working */
     volatile int num_threads_working;
 
     /* A mutex use for counting threads */

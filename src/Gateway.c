@@ -306,8 +306,8 @@ int main(int argc, char **argv){
             int send_type = ((from_gateway & 0x0f) << 4) +
                              (request_to_join & 0x0f);
 
-            char content_temp[WIFI_MESSAGE_LENGTH];
-            memset(content_temp, 0, WIFI_MESSAGE_LENGTH);
+            char content_temp[MAXINUM_WIFI_MESSAGE_LENGTH];
+            memset(content_temp, 0, MAXINUM_WIFI_MESSAGE_LENGTH);
 
             int content_temp_size = MINIMUM_WIFI_MESSAGE_LENGTH;
 
@@ -317,8 +317,8 @@ int main(int argc, char **argv){
 
             pthread_mutex_lock(&LBeacon_address_map.list_lock);
 
-            char content_LBeacon_status[WIFI_MESSAGE_LENGTH];
-            memset(content_LBeacon_status, 0, WIFI_MESSAGE_LENGTH);
+            char content_LBeacon_status[MAXINUM_WIFI_MESSAGE_LENGTH];
+            memset(content_LBeacon_status, 0, MAXINUM_WIFI_MESSAGE_LENGTH);
 
             int content_LBeacon_status_size = 0;
             int counter = 0;
@@ -326,8 +326,8 @@ int main(int argc, char **argv){
             for(int n = 0; n < MAX_NUMBER_NODES; n ++){
                 if (LBeacon_address_map.in_use[n] == true){
 
-                    char tmp[WIFI_MESSAGE_LENGTH];
-                    memset(tmp, 0, WIFI_MESSAGE_LENGTH);
+                    char tmp[MAXINUM_WIFI_MESSAGE_LENGTH];
+                    memset(tmp, 0, MAXINUM_WIFI_MESSAGE_LENGTH);
 
                     char uuid[UUID_LENGTH + 1];
                     memset(uuid, 0, UUID_LENGTH + 1);
@@ -347,8 +347,8 @@ int main(int argc, char **argv){
                 }
             }
 
-            char tmp[WIFI_MESSAGE_LENGTH];
-            memset(tmp, 0, WIFI_MESSAGE_LENGTH);
+            char tmp[MAXINUM_WIFI_MESSAGE_LENGTH];
+            memset(tmp, 0, MAXINUM_WIFI_MESSAGE_LENGTH);
 
             sprintf(tmp, "%d;%s;", counter, config.IPaddress);
 
@@ -368,7 +368,7 @@ int main(int argc, char **argv){
 #endif
             pthread_mutex_unlock(&LBeacon_address_map.list_lock);
 
-            if(content_temp_size < WIFI_MESSAGE_LENGTH)
+            if(content_temp_size < MAXINUM_WIFI_MESSAGE_LENGTH)
                 /* broadcast to LBeacons */
                 udp_addpkt( &udp_config, config.server_ip, content_temp,
                             content_temp_size);
@@ -915,7 +915,7 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
 
     zlog_info(category_debug, "==Current in Brocast==");
 
-    if (size <= WIFI_MESSAGE_LENGTH){
+    if (size <= MAXINUM_WIFI_MESSAGE_LENGTH){
         for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
             if (address_map -> in_use[n] == true){

@@ -20,7 +20,7 @@
      the Mempool.c file.
 
      Note: This code is referred from a post by 2013Asker on 20140504 on the
-     stackexchange website here:
+     stackexchange website at:
      https://codereview.stackexchange.com/questions/48919/simple-memory-pool-
      using-no-extra-memory
 
@@ -61,7 +61,8 @@ typedef struct {
     /* The head of the unused slots */
     void **head;
 
-    /* An array stores the head of each malloced memory */
+    /* An array that stores the starting address of the block of memory address
+       malloced each time */
     void *memory[MAX_EXP_TIME];
 
     /* Counting current malloc times */
@@ -73,7 +74,7 @@ typedef struct {
     /* The size of each slots in byte */
     int size;
 
-    /* The number of slots is made each time the mempool expand */
+    /* The number of slots made available each time the mempool expand */
     int slots;
 
 } Memory_Pool;
@@ -117,8 +118,8 @@ int mp_init(Memory_Pool *mp, size_t size, size_t slots);
 /*
   mp_expand:
 
-     This function expands the number of slots and allocates more memory to the
-     memory pool.
+     This function to expand the number of slots in the pool. Allocates more
+     memory to the memory pool.
 
   Parameters:
 

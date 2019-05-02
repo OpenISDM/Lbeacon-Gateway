@@ -150,10 +150,10 @@ void *mp_alloc(Memory_Pool *mp){
 
     pthread_mutex_lock(&mp->mem_lock);
 
+    /* If the next position pointed to by mp -> head is pointing to is NULL,
+       expand the memory pool. */
     if(*mp->head == NULL){
 
-        /* If the next position which mp->head is pointing to is NULL,
-           expand the memory pool. */
       if(mp_expand(mp) == MEMORY_POOL_ERROR){
 
           pthread_mutex_unlock(&mp->mem_lock);
@@ -181,7 +181,7 @@ int mp_free(Memory_Pool *mp, void *mem){
     pthread_mutex_lock(&mp->mem_lock);
 
     /* Check all the expanded memory space, to find the closest and
-    most relevant mem_head for the current freeing memory. */
+    most relevant mem_head for the slot currently being freed. */
     for(int i = 0; i < mp->alloc_time; i++){
 
         /* Calculate the offset from mem to mp->memory */
@@ -191,7 +191,8 @@ int mp_free(Memory_Pool *mp, void *mem){
            (closest == -1)))
             closest = differenceinbyte;
     }
-    /* check if mem is correct, i.e. is pointing to the struct of a slot */
+    /* check if mem is correct, i.e. is pointing to the start of the struct of a
+       slot */
     if((closest % mp->size) != 0){
         pthread_mutex_unlock(&mp->mem_lock);
         return MEMORY_POOL_ERROR;
