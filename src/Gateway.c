@@ -535,10 +535,10 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
 
     BufferListHead *current_head, *next_head;
 
-    init_entry( &critical_priority_entry);
-    init_entry( &high_priority_entry);
-    init_entry( &normal_priority_entry);
-    init_entry( &low_priority_entry);
+    init_entry( &critical_priority_head);
+    init_entry( &high_priority_head);
+    init_entry( &normal_priority_head);
+    init_entry( &low_priority_head);
 
     pthread_mutex_lock( &list_head -> list_lock);
 
@@ -552,42 +552,42 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
 
         if(current_head -> priority_nice == config -> critical_priority)
 
-            insert_list_tail( list_pointer, &critical_priority_entry);
+            insert_list_tail( list_pointer, &critical_priority_head);
 
         else if(current_head -> priority_nice == config -> high_priority)
 
-            insert_list_tail( list_pointer, &high_priority_entry);
+            insert_list_tail( list_pointer, &high_priority_head);
 
         else if(current_head -> priority_nice == config -> normal_priority)
 
-            insert_list_tail( list_pointer, &normal_priority_entry);
+            insert_list_tail( list_pointer, &normal_priority_head);
 
         else if(current_head -> priority_nice == config -> low_priority)
 
-            insert_list_tail( list_pointer, &low_priority_entry);
+            insert_list_tail( list_pointer, &low_priority_head);
 
     }
 
-    if(is_entry_list_empty(&critical_priority_entry) == false){
-        list_pointer = critical_priority_entry.next;
+    if(is_entry_list_empty(&critical_priority_head) == false){
+        list_pointer = critical_priority_head.next;
         remove_list_node(list_pointer -> prev);
         concat_list( &list_head -> priority_list_entry, list_pointer);
     }
 
-    if(is_entry_list_empty(&high_priority_entry) == false){
-        list_pointer = high_priority_entry.next;
+    if(is_entry_list_empty(&high_priority_head) == false){
+        list_pointer = high_priority_head.next;
         remove_list_node(list_pointer -> prev);
         concat_list( &list_head -> priority_list_entry, list_pointer);
     }
 
-    if(is_entry_list_empty(&normal_priority_entry) == false){
-        list_pointer = normal_priority_entry.next;
+    if(is_entry_list_empty(&normal_priority_head) == false){
+        list_pointer = normal_priority_head.next;
         remove_list_node(list_pointer -> prev);
         concat_list( &list_head -> priority_list_entry, list_pointer);
     }
 
-    if(is_entry_list_empty(&low_priority_entry) == false){
-        list_pointer = low_priority_entry.next;
+    if(is_entry_list_empty(&low_priority_head) == false){
+        list_pointer = low_priority_head.next;
         remove_list_node(list_pointer -> prev);
         concat_list( &list_head -> priority_list_entry, list_pointer);
     }
