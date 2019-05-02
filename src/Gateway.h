@@ -71,13 +71,12 @@
 #endif
 
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
-#define MAX_NUMBER_NODES 32
+#define MAX_NUMBER_NODES 16
 
 #define TEST_MALLOC_MAX_NUMBER_TIMES 5
 
+/* Maximum timeout for join request in second */
 #define JOIN_REQUEST_TIMEOUT 120
-
-#define JOIN_REQUEST_MAX_RETRY_TIME 5
 
 /*
   Maximum length of time in seconds low priority message lists are starved
@@ -87,7 +86,7 @@
 /* The configuration file structure */
 typedef struct {
 
-    /* A flag indicating whether tracked object data from Lbeacon is polling by
+    /* A flag indicating whether tracked object data from Lbeacon is polled by
        the server */
     bool is_polled_by_server;
 
@@ -97,23 +96,23 @@ typedef struct {
     /* The number of LBeacon nodes in the star network of this gateway */
     int allowed_number_nodes;
 
-    /* The time interval in seconds for gateway sending request for health
+    /* The time interval in seconds for gateway to send requests for health
        reports from LBeacon */
     int period_between_RFHR;
 
-    /* The time interval in seconds for gateway sending request for tracked
+    /* The time interval in seconds for gateway to send requests for tracked
        object data from LBeacon */
     int period_between_RFTOD;
 
-    /* The time interval in seconds for gateway sending request for join request
+    /* The time interval in seconds for gateway to send requests for join request
        to Server */
-    int period_between_join_request;
+    int period_between_join_requests;
 
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
     int number_worker_threads;
 
-    /* The IP address of the server ip */
+    /* The IP address of the server */
     char server_ip[NETWORK_ADDR_LENGTH];
 
     /* A port that LBeacons and the server are listening on and for gateway to
@@ -242,7 +241,7 @@ BufferListHead priority_list_head;
 /* Flags */
 
 /*
-  Initialization of gateway components involves network activates that may take
+  Initialization of gateway components involves network activaties that may take
   time. These flags enable each module to inform the main thread when its
   initialization completes.
  */
@@ -252,7 +251,6 @@ bool CommUnit_initialization_complete;
 bool initialization_failed;
 
 /* Variables for storing the last polling times in second*/
-int last_polling_time;
 int last_polling_LBeacon_for_HR_time;
 int last_polling_object_tracking_time;
 int last_polling_join_request_time;
@@ -378,8 +376,8 @@ void *BHM_routine(void *_buffer_node);
 /*
   LBeacon_routine:
 
-     This function is executed by worker threads when they process the buffer
-     nodes in LBeacon_receive_buffer_list and send to the server directly.
+     This function is executed by worker threads when they remove buffer nodes
+     from LBeacon_receive_buffer_list and send them to the server directly.
 
   Parameters:
 
@@ -448,8 +446,9 @@ int is_in_Address_Map(AddressMapArray *address_map, char *uuid);
   beacon_join_request:
 
      This function is executed when a beacon sends a command to join the gateway
-     when executed, it fills the AddressMap with the inputs and sets the
-     network_address if not exceed allowed_number_of_nodes.
+     . When executed, it fills the AddressMap with the inputs and sets the
+     network_address if the number of beacons already joined the gateway does
+     not excceed allowed_number_of_nodes.
 
   Parameters:
 
@@ -470,7 +469,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
 /*
   beacon_brocast:
 
-     This function is executed when a command needs to be broadcast to LBeacons.
+     This function is executed when a command is to be broadcast to LBeacons.
      When called, this function sends msg to all LBeacons registered in the
      LBeacon_address_map.
 
@@ -490,7 +489,7 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size);
 /*
   Wifi_init:
 
-     This function initializes the Wifi's necessory object.
+     This function initializes the Wifi's objects.
 
   Parameters:
 
@@ -524,7 +523,8 @@ void Wifi_free();
 /*
   process_wifi_send:
 
-     This function sends the msg in the buffer list to the server via Wi-Fi.
+     This function sends the msg in the specified buffer list to the server via
+     Wi-Fi.
 
   Parameters:
 
@@ -541,7 +541,7 @@ void *process_wifi_send(void *_buffer_node);
   process_wifi_receive:
 
      This function listens for messages or command received from the server or
-     beacons. After getting the message, push the data in the message into the
+     beacons. After getting the message, put the data in the message into the
      buffer.
 
   Parameters:

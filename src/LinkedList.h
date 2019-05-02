@@ -39,7 +39,7 @@
      Han Wang      , hollywang@iis.sinica.edu.tw
      Joey          , joeyzhou@iis.sinica.edu.tw
      Gary Xiao     , garyh0205@hotmail.com
-*/
+ */
 
 #ifndef LINKEDLIST_H
 #define LINKEDLIST_H

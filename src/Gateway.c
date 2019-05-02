@@ -46,13 +46,21 @@
      Chun Yu Lai    , chunyu1202@gmail.com
  */
 
-/* TODO
-     When Gateway not join Server */
-
 #include "Gateway.h"
 
 
 int main(int argc, char **argv){
+
+    int return_value, current_time;
+
+    /* The flag is to know if any routines are processed in this while loop */
+    bool did_work;
+
+    /* The main thread of the communication Unit */
+    pthread_t CommUnit_thread;
+
+    /* The thread to listen for messages from Wi-Fi interface */
+    pthread_t wifi_listener;
 
     /* Initialize zlog */
 
@@ -74,46 +82,25 @@ int main(int argc, char **argv){
     zlog_info(category_debug, "Gateway start running");
 #endif
 
-    int return_value;
-
-    /* The main thread of the communication Unit */
-    pthread_t CommUnit_thread;
-
-    /* The thread to listen for messages from Wi-Fi interface */
-    pthread_t wifi_listener;
-
-    /* All global flags */
-    NSI_initialization_complete      = false;
-    CommUnit_initialization_complete = false;
-
-    initialization_failed = false;
-
-    ready_to_work = true;
-
-    /* Create the config from input config file */
 
     if(get_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
         zlog_error(category_health_report, "Opening config file Fail");
-#ifdef debugging
+    #ifdef debugging
         zlog_error(category_debug, "Opening config file Fail");
-#endif
+    #endif
         return E_OPEN_FILE;
     }
 
-    /* Initialize the memory pool */
-    if(mp_init( &node_mempool, sizeof(BufferNode), SLOTS_IN_MEM_POOL)
-       != MEMORY_POOL_SUCCESS){
-        zlog_error(category_health_report, "Mempool Initialization Fail");
-#ifdef debugging
-        zlog_error(category_debug, "Mempool Initialization Fail");
-#endif
-        return E_MALLOC;
-    }
+    /* Initialize sll global flags */
+    NSI_initialization_complete      = false;
+    CommUnit_initialization_complete = false;
+    initialization_failed = false;
+    ready_to_work = true;
 
     /* Initialize the address map*/
     init_Address_Map( &LBeacon_address_map);
 
-    /* Initialize buffer_list_heads and add to the head in to the priority list.
+    /* Initialize buffer_list_heads and add to the head into the priority list.
      */
 
     init_buffer( &priority_list_head, (void *) sort_priority_list,
@@ -160,6 +147,18 @@ int main(int argc, char **argv){
 #endif
 
     sort_priority_list(&config, &priority_list_head);
+
+    /* Create the config from input config file */
+
+    /* Initialize the memory pool */
+    if(mp_init( &node_mempool, sizeof(BufferNode), SLOTS_IN_MEM_POOL)
+       != MEMORY_POOL_SUCCESS){
+        zlog_error(category_health_report, "Mempool Initialization Fail");
+#ifdef debugging
+        zlog_error(category_debug, "Mempool Initialization Fail");
+#endif
+        return E_MALLOC;
+    }
 
     /* Initialize the Wifi connection */
     if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
@@ -226,23 +225,20 @@ int main(int argc, char **argv){
         }
     }
 
-    int current_time;
-
-    current_time = get_system_time();
     if(config.is_polled_by_server == false){
 
         /* Start counting down to the time for polling health reports and
            tracking object data */
-        last_polling_LBeacon_for_HR_time = current_time;
-        last_polling_object_tracking_time = current_time;
+        last_polling_LBeacon_for_HR_time = 0;
+        last_polling_object_tracking_time = 0;
     }else{
-        last_polling_join_request_time = get_system_time();
+        last_polling_join_request_time = 0;
     }
-
-    last_polling_time = 0;
 
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
+
+        did_work = false;
 
         current_time = get_system_time();
 
@@ -271,6 +267,8 @@ int main(int argc, char **argv){
 
                 /* Update the last_polling_object_tracking_time */
                 last_polling_object_tracking_time = current_time;
+
+                did_work = true;
             }
             else if(current_time - last_polling_LBeacon_for_HR_time >
                     config.period_between_RFHR){
@@ -290,17 +288,16 @@ int main(int argc, char **argv){
 
                 zlog_info(category_debug, "Polling Health Report from Gateway");
 
-
                 /* Update the last_polling_LBeacon_for_HR_time */
                 last_polling_LBeacon_for_HR_time = get_system_time();
+
+                did_work = true;
             }
-            else{
-                usleep(BUSY_WAITING_TIME);
-            }
+
         }
 
-
-        if(current_time - last_polling_time > JOIN_REQUEST_TIMEOUT){
+        if(current_time - last_polling_join_request_time >
+           JOIN_REQUEST_TIMEOUT){
             /* Join Request */
             /* set the pkt type */
             int send_type = ((from_gateway & 0x0f) << 4) +
@@ -374,10 +371,13 @@ int main(int argc, char **argv){
                             content_temp_size);
 
             last_polling_join_request_time = current_time;
-        }else{
-            usleep(BUSY_WAITING_TIME);
+
+            did_work = true;
         }
 
+        if(did_work == false){
+            usleep(BUSY_WAITING_TIME);
+        }
     }
 
     /* The program is going to be ended. Free the connection of Wifi */
@@ -401,7 +401,8 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
     }
     else {
 
-        /* Create spaces for storing the string in the current line being read*/
+        /* Create spaces for storing the string in the current line being read
+         */
         char  config_setting[CONFIG_BUFFER_SIZE];
         char *config_message = NULL;
         int config_message_size = 0;
@@ -446,7 +447,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->period_between_join_request = atoi(config_message);
+        config->period_between_join_requests = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -602,6 +603,8 @@ void *CommUnit_routine(){
     int current_time;
     Threadpool thpool;
     int return_error_value;
+    /* The flag is to know if buffer nodes are processed in this while loop */
+    bool did_work;
 
     /* wait for NSI get ready */
     while(NSI_initialization_complete == false){
@@ -627,6 +630,8 @@ void *CommUnit_routine(){
     /* When there is no dead thead, do the work. */
     while(ready_to_work == true){
 
+        did_work = false;
+
         current_time = get_system_time();
 
         List_Entry *tmp, *list_entry;
@@ -637,10 +642,6 @@ void *CommUnit_routine(){
            to lower priority. When the timer expired for MAX_STARVATION_TIME,
            reverse the scanning process */
         while(current_time - init_time < MAX_STARVATION_TIME){
-
-            while(thpool -> num_threads_working == thpool -> num_threads_alive){
-                usleep(BUSY_WAITING_TIME);
-            }
 
             /* Scan the priority_list to get the buffer list with the highest
                priority among all lists that are not empty. */
@@ -682,6 +683,8 @@ void *CommUnit_routine(){
 
                     pthread_mutex_unlock( &current_head -> list_lock);
 
+                    did_work = true;
+
                     break;
                 }
             }
@@ -694,9 +697,6 @@ void *CommUnit_routine(){
 
         }
 
-        while(thpool -> num_threads_working == thpool -> num_threads_alive){
-            usleep(BUSY_WAITING_TIME);
-        }
         /* Scan the priority list in reverse order to prevent starving the
            lowest priority buffer list. */
 
@@ -735,6 +735,8 @@ void *CommUnit_routine(){
 
                 pthread_mutex_unlock( &current_head -> list_lock);
 
+                did_work = true;
+
                 break;
 
             }
@@ -745,7 +747,9 @@ void *CommUnit_routine(){
         /* Update the init_time */
         init_time = get_system_time();
 
-        usleep(BUSY_WAITING_TIME);
+        if(did_work == true){
+            usleep(BUSY_WAITING_TIME);
+        }
 
     } /* End while(ready_to_work == true) */
 
@@ -822,6 +826,20 @@ void *LBeacon_routine(void *_buffer_node){
 void *Server_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
+    int pkt_type;
+
+    pkt_type = temp -> content[0] & 0x0f;
+
+    switch(pkt_type){
+        case tracked_object_data:
+        case poll_for_tracked_object_data_from_server:
+            zlog_info(category_debug, "Send tracked object data to LBeacon");
+            break;
+        case health_report:
+        case RFHR_from_server:
+            zlog_info(category_debug, "Send health report to LBeacon");
+            break;
+    }
 
     zlog_info(category_debug, "Start Broadcast to LBeacon");
 
@@ -1031,7 +1049,7 @@ void *process_wifi_receive(){
                    list_lock. */
                 switch (pkt_direction) {
                     case from_server:
-                        last_polling_time = get_system_time();
+                        last_polling_join_request_time = get_system_time();
                         switch (pkt_type) {
 
                             case RFHR_from_server:
@@ -1139,6 +1157,6 @@ void *process_wifi_receive(){
             /* If there is no packet received, sleep a short time */
             usleep(BUSY_WAITING_TIME);
         }
-    }
+    } /* end of while (ready_to_work == true) */
     return (void *)NULL;
 }

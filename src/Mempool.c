@@ -42,7 +42,7 @@
 
      Holly Wang, hollywang@iis.sinica.edu.tw
 
-*/
+ */
 
 #include "Mempool.h"
 

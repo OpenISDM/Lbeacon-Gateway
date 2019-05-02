@@ -45,7 +45,7 @@
      Han Hu, hhu14@illinois.edu
      Jeffrey Lin, lin.jeff03@gmail.com
      Howard Hsu, haohsu0823@gmail.com
-*/
+ */
 
 
 #include "LinkedList.h"
