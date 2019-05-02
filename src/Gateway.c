@@ -530,8 +530,8 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
     List_Entry *list_pointer,
                *next_list_pointer;
 
-    List_Entry critical_priority_entry, high_priority_entry,
-               normal_priority_entry, low_priority_entry;
+    List_Entry critical_priority_head, high_priority_head,
+               normal_priority_head, low_priority_head;
 
     BufferListHead *current_head, *next_head;
 
