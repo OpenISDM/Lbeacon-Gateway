@@ -331,8 +331,10 @@ int main(int argc, char **argv){
 
                     memcpy(uuid, LBeacon_address_map.address_map_list[n].
                            uuid, UUID_LENGTH);
-                    sprintf(tmp, "%s;%d;", uuid, LBeacon_address_map.
-                            address_map_list[n].last_request_time);
+                    sprintf(tmp, "%s;%d;%s;", uuid, LBeacon_address_map.
+                            address_map_list[n].last_request_time,
+                            LBeacon_address_map.address_map_list[n].
+                            net_address);
 
                     memcpy(&content_LBeacon_status
                            [content_LBeacon_status_size], tmp, strlen(tmp) *
