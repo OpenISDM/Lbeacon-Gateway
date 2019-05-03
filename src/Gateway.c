@@ -762,22 +762,31 @@ void *NSI_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
-    char current_uuid[UUID_LENGTH];
+    char *current_uuid = NULL, *datetime_str = NULL, *saveptr = NULL;
 
-    memcpy(current_uuid, &temp->content[1], UUID_LENGTH);
+    int LBeacon_datetime;
 
     int send_type = (from_gateway & 0x0f)<<4;
+
+    current_uuid = strtok_r(&temp->content[1], ";", &saveptr);
+
+    datetime_str = strtok_r(NULL, ";", &saveptr);
+
+    sscanf(datetime_str, "%d", &LBeacon_datetime);
 
     /* Put the address into LBeacon_address_map and set the return pkt type
      */
     if (beacon_join_request(&LBeacon_address_map, current_uuid, temp ->
-                            net_address) == true)
+                            net_address, LBeacon_datetime) == true)
         send_type += join_request_ack & 0x0f;
     else
         send_type += join_request_deny & 0x0f;
 
     /* put the pkt type into content */
     temp->content[0] = (char)send_type;
+
+    sprintf(&temp-> content[1], "%s;%d;%s;", current_uuid, LBeacon_datetime,
+                                             temp -> net_address);
 
     pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
 
@@ -877,7 +886,7 @@ int is_in_Address_Map(AddressMapArray *address_map, char *uuid){
 
 
 bool beacon_join_request(AddressMapArray *address_map, char *uuid,
-                         char *address){
+                         char *address, int datetime){
 
     pthread_mutex_lock( &address_map -> list_lock);
     /* Copy all the necessary information received from the LBeacon to the
@@ -891,6 +900,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     if(answer = is_in_Address_Map(address_map, uuid) >=0){
         address_map -> address_map_list[answer].last_request_time =
                                                               get_system_time();
+        address_map -> address_map_list[answer].last_lbeacon_datetime= datetime;
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }

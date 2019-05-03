@@ -142,6 +142,9 @@ typedef struct {
     /* network address of wifi link to the LBeacon*/
     char net_address[NETWORK_ADDR_LENGTH];
 
+    /* The last LBeacon reported datetime */
+    int last_lbeacon_datetime;
+
     /* The last join request time */
     int last_request_time;
 
@@ -455,6 +458,7 @@ int is_in_Address_Map(AddressMapArray *address_map, char *uuid);
      address_map - The head of the AddressMap.
      uuid - The UUID of the LBeacon
      address - The mac address of the LBeacon IP.
+     datetime - The last LBeacon reported datetime
 
   Return value:
 
@@ -463,7 +467,7 @@ int is_in_Address_Map(AddressMapArray *address_map, char *uuid);
 
  */
 bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
-                         );
+                         , int datetime);
 
 
 /*
