@@ -790,6 +790,8 @@ void *NSI_routine(void *_buffer_node){
     sprintf(&temp-> content[1], "%s;%d;%s;", current_uuid, LBeacon_datetime,
                                              temp -> net_address);
 
+    temp->content_size = strlen(temp-> content);
+
     pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
 
     insert_list_tail( &temp->buffer_entry,
