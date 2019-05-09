@@ -187,7 +187,7 @@ void *udp_recv_pkt(void *udpconfig){
 
     /* keep listening for data */
     while(!(udp_config -> shutdown)){
-
+        
         memset(&si_recv, 0, sizeof(si_recv));
 
         memset(&recv_buf, 0, sizeof(char) * MESSAGE_LENGTH);
@@ -204,8 +204,6 @@ void *udp_recv_pkt(void *udpconfig){
             printf("No data received.\n");
 #endif
 
-            /* If no data, it will sleep 5 micro seconds */
-            usleep(SLEEP_TIME);
         }
         else if(recv_len > 0){
 #ifdef debugging
