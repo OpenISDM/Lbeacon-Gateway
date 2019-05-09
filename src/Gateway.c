@@ -647,7 +647,8 @@ void *CommUnit_routine(){
            to lower priority. When the timer expired for MAX_STARVATION_TIME,
            reverse the scanning process */
         while(current_time - init_time < MAX_STARVATION_TIME){
-
+            did_work = false;
+			
             /* Scan the priority_list to get the buffer list with the highest
                priority among all lists that are not empty. */
 
@@ -697,6 +698,10 @@ void *CommUnit_routine(){
             pthread_mutex_unlock( &priority_list_head.list_lock);
 
             current_time = get_system_time();
+			
+			if(did_work == false){
+				break;
+			}
 
         }
 
@@ -747,7 +752,7 @@ void *CommUnit_routine(){
 
         pthread_mutex_unlock( &priority_list_head.list_lock);
 
-        if(did_work == true){
+        if(did_work == false){
             usleep(BUSY_WAITING_TIME);
         }
 
