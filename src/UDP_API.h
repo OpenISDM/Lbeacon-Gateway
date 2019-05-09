@@ -49,7 +49,7 @@
 
 
 #define UDP_SELECT_TIMEOUT 30    //second
-#define SLEEP_TIME 100
+#define SLEEP_TIME 100000
 
 /* If need to debug. */
 //#define debugging
