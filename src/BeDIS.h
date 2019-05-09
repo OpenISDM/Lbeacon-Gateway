@@ -138,8 +138,8 @@
 /* Time interval in micro seconds for busy-wait checking in threads */
 #define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_MICRO_SECONDS 500000
 
-/* Minimum Timeout interval in micro seconds */
-#define BUSY_WAITING_TIME 500
+/* Minimum Timeout interval in nano seconds */
+#define BUSY_WAITING_TIME 100000
 
 /* Time interval in seconds for reconnect to Gateway */
 #define INTERVAL_FOR_RECONNECT_GATEWAY_IN_SEC 120
