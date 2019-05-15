@@ -699,9 +699,9 @@ void *CommUnit_routine(){
 
             current_time = get_system_time();
 
-			if(did_work == false){
-				break;
-			}
+            if(did_work == false){
+                break;
+            }
 
         }
 
