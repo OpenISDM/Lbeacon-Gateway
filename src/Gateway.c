@@ -648,7 +648,7 @@ void *CommUnit_routine(){
            reverse the scanning process */
         while(current_time - init_time < MAX_STARVATION_TIME){
             did_work = false;
-			
+
             /* Scan the priority_list to get the buffer list with the highest
                priority among all lists that are not empty. */
 
@@ -698,7 +698,7 @@ void *CommUnit_routine(){
             pthread_mutex_unlock( &priority_list_head.list_lock);
 
             current_time = get_system_time();
-			
+
 			if(did_work == false){
 				break;
 			}
@@ -907,6 +907,8 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     int answer;
 
     if(answer = is_in_Address_Map(address_map, uuid) >=0){
+        strncpy(address_map -> address_map_list[answer].net_address,
+                address, NETWORK_ADDR_LENGTH);
         address_map -> address_map_list[answer].last_request_time =
                                                               get_system_time();
         address_map -> address_map_list[answer].last_lbeacon_datetime= datetime;
