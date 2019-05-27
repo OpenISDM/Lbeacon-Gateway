@@ -1009,6 +1009,7 @@ void *process_wifi_send(void *_buffer_node){
 
 
 void *process_wifi_receive(){
+    char tmp_addr[NETWORK_ADDR_LENGTH];
 
     while (ready_to_work == true) {
 
@@ -1051,12 +1052,10 @@ void *process_wifi_receive(){
                      , temppkt.content_size);
 
                 new_node -> content_size = temppkt.content_size;
-
-                char *tmp_addr = udp_hex_to_address(temppkt.address);
+                memset(tmp_addr, 0, sizeof(tmp_addr));
+                udp_hex_to_address(temppkt.address, tmp_addr);
 
                 memcpy(new_node -> net_address, tmp_addr, NETWORK_ADDR_LENGTH);
-
-                free(tmp_addr);
 
                 /* read the pkt direction from higher 4 bits. */
                 int pkt_direction = (new_node -> content[0] >> 4) & 0x0f;

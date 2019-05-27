@@ -265,13 +265,15 @@ void char_to_hex(char *raw, unsigned char *raw_hex, int size);
 
       hex  : A array stored in Hex.
       size : size of the hex length.
+      buf  : an output char array to store the output converted from
+             the input hex array
 
   Return Value:
 
-      char pointer : A pointer stored char array convert from hex.
+      0: success
 
  */
-char *hex_to_char(unsigned char *hex, int size);
+int hex_to_char(unsigned char *hex, int size, char * buf);
 
 
 /* display_pkt

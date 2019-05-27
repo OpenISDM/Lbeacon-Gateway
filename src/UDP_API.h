@@ -205,12 +205,14 @@ int udp_release(pudp_config udp_config);
   Parameter:
 
      raw_addr: A array pointer point to the address we want to convert.
+     address: the output array pointer to store the network address reduced
+              point
 
   Return Value:
 
-     char : return char array of the converted address.
+     0: success
  */
-char *udp_address_reduce_point(char *raw_addr);
+int udp_address_reduce_point(char *raw_addr, char *address);
 
 
 /*
@@ -221,12 +223,13 @@ char *udp_address_reduce_point(char *raw_addr);
   Parameter:
 
      hex_addr: A array pointer point to the address we want to convert.
+     dest_address: the output array pointer to store the converted address
 
   Return Value:
 
-     char : return char array of the converted address.
+     0: success
  */
-char *udp_hex_to_address(unsigned char *hex_addr);
+ int udp_hex_to_address(unsigned char *hex_addr, char *dest_address);
 
 
 #endif

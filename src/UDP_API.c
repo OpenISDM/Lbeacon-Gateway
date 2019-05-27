@@ -96,11 +96,13 @@ int udp_initial(pudp_config udp_config, int send_port, int recv_port){
 
 
 int udp_addpkt(pudp_config udp_config, char *raw_addr, char *content, int size){
+    char removed_address[NETWORK_ADDR_LENGTH];
 
     if(size > MESSAGE_LENGTH)
         return addpkt_msg_oversize;
 
-    char *removed_address = udp_address_reduce_point(raw_addr);
+    memset(removed_address, 0, sizeof(removed_address));
+    udp_address_reduce_point(raw_addr, removed_address);
 
     addpkt(&udp_config -> pkt_Queue, UDP, removed_address, content, size);
 
@@ -122,6 +124,8 @@ void *udp_send_pkt(void *udpconfig){
 
     int sleep_time = 0;
 
+    char dest_address[NETWORK_ADDR_LENGTH];
+
     struct sockaddr_in si_send;
 
     while(!(udp_config -> shutdown)){
@@ -131,8 +135,8 @@ void *udp_send_pkt(void *udpconfig){
             sPkt current_send_pkt = get_pkt(&udp_config -> pkt_Queue);
 
             if (current_send_pkt.type == UDP){
-                char *dest_address = udp_hex_to_address(
-                                     current_send_pkt.address);
+                memset(dest_address, 0, sizeof(dest_address));
+                udp_hex_to_address(current_send_pkt.address, dest_address);
 
                 bzero(&si_send, sizeof(si_send));
                 si_send.sin_family = AF_INET;
@@ -181,13 +185,15 @@ void *udp_recv_pkt(void *udpconfig){
 
     char recv_buf[MESSAGE_LENGTH];
 
+    char tmp_address[NETWORK_ADDR_LENGTH];
+
     struct sockaddr_in si_recv;
 
     int socketaddr_len = sizeof(si_recv);
 
     /* keep listening for data */
     while(!(udp_config -> shutdown)){
-        
+
         memset(&si_recv, 0, sizeof(si_recv));
 
         memset(&recv_buf, 0, sizeof(char) * MESSAGE_LENGTH);
@@ -215,9 +221,10 @@ void *udp_recv_pkt(void *udpconfig){
             printf("]\n");
             printf("Data Length %d\n", recv_len);
 #endif
-            addpkt(&udp_config -> Received_Queue, UDP
-                 , udp_address_reduce_point(inet_ntoa(si_recv.sin_addr))
-                 , recv_buf, recv_len);
+            memset(tmp_address, 0, sizeof(tmp_address));
+            udp_address_reduce_point(inet_ntoa(si_recv.sin_addr), tmp_address);
+            addpkt(&udp_config -> Received_Queue, UDP, tmp_address,
+                   recv_buf, recv_len);
 
         }
     }
@@ -246,11 +253,7 @@ int udp_release(pudp_config udp_config){
 }
 
 
-char *udp_address_reduce_point(char *raw_addr){
-
-    char *address = malloc(sizeof(char) * NETWORK_ADDR_LENGTH);
-
-    memset(address, 0, NETWORK_ADDR_LENGTH);
+int udp_address_reduce_point(char *raw_addr, char *address){
 
     /* Record current filled Address Location. */
     int address_loc = 0;
@@ -299,14 +302,15 @@ char *udp_address_reduce_point(char *raw_addr){
 }
 
 
-char *udp_hex_to_address(unsigned char *hex_addr){
+int udp_hex_to_address(unsigned char *hex_addr, char *dest_address){
 
     /*  Stored a recovered address. */
-    char *dest_address;
-    dest_address = malloc(sizeof(char) * 17);
-    memset(dest_address, 0, sizeof(char) * 17);
-    char *tmp_address = hex_to_char(hex_addr, 6);
+    char tmp_address[NETWORK_ADDR_LENGTH];
     int address_loc = 0;
+
+    memset(tmp_address, 0, sizeof(tmp_address));
+    hex_to_char(hex_addr, 6, tmp_address);
+
     for(int n=0;n < 4;n ++){
 
         bool no_zero = false;
