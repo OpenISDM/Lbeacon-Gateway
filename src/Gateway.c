@@ -775,9 +775,9 @@ void *NSI_routine(void *_buffer_node){
 
     int send_type = (from_gateway & 0x0f)<<4;
 
-    current_uuid = strtok_r(&temp->content[1], ";", &saveptr);
+    current_uuid = strtok_save(&temp->content[1], ";", &saveptr);
 
-    datetime_str = strtok_r(NULL, ";", &saveptr);
+    datetime_str = strtok_save(NULL, ";", &saveptr);
 
     sscanf(datetime_str, "%d", &LBeacon_datetime);
 

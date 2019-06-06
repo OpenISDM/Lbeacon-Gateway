@@ -20,7 +20,7 @@
 
   Version:
 
-     2.0, 20190416
+     2.0, 20190606
 
   Abstract:
 
@@ -114,6 +114,29 @@ ErrorCode startThread(pthread_t *thread, void *( *start_routine)(void *),
     }
 
     return WORK_SUCCESSFULLY;
+
+}
+
+
+char *strtok_save(char *str, char *delim, char **saveptr){
+    
+    char *tmp;
+
+    if(str == NULL){
+        tmp = *saveptr;
+    }
+    else{
+        tmp = str;
+    }
+
+    if(strncmp(tmp, delim, strlen(delim)) == 0){
+        
+        *saveptr += strlen(delim) * sizeof(char);
+        return NULL;
+
+    }
+
+    return strtok_r(str, delim, saveptr);
 
 }
 
