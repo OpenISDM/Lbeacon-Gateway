@@ -389,6 +389,8 @@ int get_system_time();
      
      This function breaks string str into a series of tokens using the delimiter delim.
 
+     Linux uses strtok_r()
+
   Parameters:
 
      str - The contents of this string are modified and broken into smaller    
