@@ -1,126 +1,213 @@
 /*
- Copyright (c) 2016 Academia Sinica, Institute of Information Science
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
 
- License:
+  License:
 
-      GPL 3.0 : The content of this file is subject to the terms and
-      cnditions defined in file 'COPYING.txt', which is part of this source
-      code package.
+     GPL 3.0 : The content of this file is subject to the terms and conditions
+     defined in file 'COPYING.txt', which is part of this source code package.
 
- Project Name:
+  Project Name:
 
-      BeDIPS
+     BeDIS
 
- File Description:
+  File Name:
 
-      This file contains the program to allow the necessory memory
-      allocation for the nodes in the linked list.
+     Mempool.c
 
-      Note: The code is referred to the site:
-      https://codereview.stackexchange.com/questions/48919/simple-memory-
-      pool-%20using-no-extra-memory
+  File Description:
 
+     This file contains the program to allow memory allocation for structs of
+     identical size.
 
- File Name:
+     Note: The code is referred to the site:
+     https://codereview.stackexchange.com/questions/48919/simple-memory-pool-
+     %20using-no-extra-memory
 
-      Mempool.c
+  Version:
 
- Version:
+     2.0, 20190201
 
-       1.2
+  Abstract:
 
- Abstract:
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
+     area.
 
-      BeDIPS uses LBeacons to deliver 3D coordinates and textual
-      descriptions of their locations to users' devices. Basically, a
-      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
-      coordinates and location description of every LBeacon are retrieved
-      from BeDIS (Building/environment Data and Information System) and
-      stored locally during deployment and maintenance times. Once
-      initialized, each LBeacon broadcasts its coordinates and location
-      description to Bluetooth enabled user devices within its coverage
-      area.
+  Authors:
 
- Authors:
+     Holly Wang, hollywang@iis.sinica.edu.tw
 
-      Han Wang, hollywang@iis.sinica.edu.tw
-      Gary Xiao, garyh0205@hotmail.com
-
-*/
+ */
 
 #include "Mempool.h"
 
-int mp_init(Memory_Pool *mp, size_t size, size_t slots)
-{
 
-    //allocate memory
-    if((mp->memory = malloc(size * slots)) == NULL)
+size_t get_current_size_mempool(Memory_Pool *mp){
+
+    pthread_mutex_lock(&mp->mem_lock);
+
+    size_t mem_size = mp->alloc_time * mp->size * mp->slots;
+
+    pthread_mutex_unlock(&mp->mem_lock);
+
+    return mem_size;
+}
+
+
+int mp_init(Memory_Pool *mp, size_t size, size_t slots){
+
+    pthread_mutex_init( &mp->mem_lock, 0);
+
+    /* allocate memory */
+    if((mp->memory[0] = malloc(size * slots)) == NULL)
         return MEMORY_POOL_ERROR;
 
-    //initialize
+    memset((void *)mp->memory[0], 0, size * slots);
+
+    /* initialize and set parameters */
     mp->head = NULL;
     mp->size = size;
+    mp->slots = slots;
+    mp->alloc_time = 1;
 
-     //add every slot to the free list
-    char *end = (char *)mp->memory + size * slots;
+    /* add every slot to the free list */
+    char *end = (char *)mp->memory[0] + size * slots;
 
-    for(char *ite = mp->memory; ite < end; ite += size){
+    for(char *ite = mp->memory[0]; ite < end; ite += size){
 
-        //store first address
+        /* store first address */
         void *temp = mp->head;
 
-        //link the new node
-        mp->head = ite;
+        /* link the new node */
+        mp->head = (void *)ite;
 
-        //link to the list from new node
+        /* link to the list from new node */
         *mp->head = temp;
-
     }
 
     return MEMORY_POOL_SUCCESS;
 }
 
-void mp_destroy(Memory_Pool *mp)
-{
 
-    mp->memory = NULL;
-    free(mp->memory);
+int mp_expand(Memory_Pool *mp){
 
-}
+    int alloc_count;
 
-void *mp_alloc(Memory_Pool *mp)
-{
-    if(mp->head == NULL)
-        return NULL;
+    alloc_count = mp->alloc_time;
 
-    //store first address, i.e., address of the start of first element
-    void *temp = mp->head;
-
-    //link one past it
-    mp->head = *mp->head;
-
-    //return the first address
-    return temp;
-}
-
-int mp_free(Memory_Pool *mp, void *mem)
-{
-    //check if mem is correct, i.e. is pointing to the struct of a slot
-    //calculate the offset from mem to mp->memory
-    int diffrenceinbyte = (mem - mp->memory) * sizeof(mem);
-
-    if((diffrenceinbyte % mp->size) != 0){
-
+    if(alloc_count == MAX_EXP_TIME)
         return MEMORY_POOL_ERROR;
+
+    mp->memory[alloc_count] = malloc(mp->size * mp->slots);
+    if(mp->memory[alloc_count] == NULL )
+        return MEMORY_POOL_ERROR;
+
+    memset((void *)mp->memory[alloc_count], 0, mp->size * mp->slots);
+
+    /* add every slot to the free list */
+    char *end = (char *) mp->memory[alloc_count] + mp->size * mp->slots;
+
+    for(char *ite = mp->memory[alloc_count]; ite < end; ite += mp->size){
+
+        /* store first address */
+        void *temp = mp->head;
+
+        /* link the new node */
+        mp->head = (void *)ite;
+        /* link to the list from new node */
+        *mp->head = temp;
 
     }
 
-    //store first address
+    mp->alloc_time = mp->alloc_time + 1;
+
+    return MEMORY_POOL_SUCCESS;
+}
+
+void mp_destroy(Memory_Pool *mp){
+
+    pthread_mutex_lock( &mp->mem_lock);
+
+    for(int i = 0; i < MAX_EXP_TIME; i++){
+
+        mp->memory[i] = NULL;
+        free(mp->memory[i]);
+    }
+
+    pthread_mutex_unlock( &mp->mem_lock);
+
+    pthread_mutex_destroy( &mp->mem_lock);
+
+}
+
+
+void *mp_alloc(Memory_Pool *mp){
+
+    pthread_mutex_lock(&mp->mem_lock);
+
+    /* If the next position pointed to by mp -> head is pointing to is NULL,
+       expand the memory pool. */
+    if(*mp->head == NULL){
+
+      if(mp_expand(mp) == MEMORY_POOL_ERROR){
+
+          pthread_mutex_unlock(&mp->mem_lock);
+          return NULL;
+      }
+    }
+
+    /* store first address, i.e., address of the start of first element */
     void *temp = mp->head;
-    //link new node
+
+    /* link one past it */
+    mp->head = *mp->head;
+
+    pthread_mutex_unlock( &mp->mem_lock);
+
+    /* return the first address */
+    return temp;
+}
+
+
+int mp_free(Memory_Pool *mp, void *mem){
+
+    int closest = -1;
+
+    pthread_mutex_lock(&mp->mem_lock);
+
+    /* Check all the expanded memory space, to find the closest and
+    most relevant mem_head for the slot currently being freed. */
+    for(int i = 0; i < mp->alloc_time; i++){
+
+        /* Calculate the offset from mem to mp->memory */
+        int differenceinbyte = mem - mp->memory[i];
+        /* Only consider the positive offset */
+        if((differenceinbyte > 0) && ((differenceinbyte < closest) ||
+           (closest == -1)))
+            closest = differenceinbyte;
+    }
+    /* check if mem is correct, i.e. is pointing to the start of the struct of a
+       slot */
+    if((closest % mp->size) != 0){
+        pthread_mutex_unlock(&mp->mem_lock);
+        return MEMORY_POOL_ERROR;
+    }
+
+    memset((void *)mem, 0, mp->size);
+
+    /* store first address */
+    void *temp = mp->head;
+    /* link new node */
     mp->head = mem;
-    //link to the list from new node
+    /* link to the list from new node */
     *mp->head = temp;
+
+    pthread_mutex_unlock(&mp->mem_lock);
 
     return MEMORY_POOL_SUCCESS;
 }

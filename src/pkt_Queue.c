@@ -1,38 +1,40 @@
 /*
- * Copyright (c) 2016 Academia Sinica, Institute of Information Science
- *
- * License:
- *
- *      GPL 3.0 : The content of this file is subject to the terms and
- *      cnditions defined in file 'COPYING.txt', which is part of this
- *      source code package.
- *
- * Project Name:
- *
- *      BeDIPS
- *
- * File Description:
- *
- *   	This file contains the program for the waiting queue.
- *
- * File Name:
- *
- *      pkt_Queue.c
- *
- * Abstract:
- *
- *      BeDIPS uses LBeacons to deliver 3D coordinates and textual
- *      descriptions of their locations to users' devices. Basically, a
- *      LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
- *      coordinates and location description of every LBeacon are retrieved
- *      from BeDIS (Building/environment Data and Information System) and
- *      stored locally during deployment and maintenance times. Once
- *      initialized, each LBeacon broadcasts its coordinates and location
- *      description to Bluetooth enabled user devices within its coverage
- *      area.
- *
- * Authors:
- *      Gary Xiao		, garyh0205@hotmail.com
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
+
+  License:
+
+     GPL 3.0 : The content of this file is subject to the terms and conditions
+     defined in file 'COPYING.txt', which is part of this source code package.
+
+  Project Name:
+
+     BeDIS
+
+  File Name:
+
+     pkt_Queue.c
+
+  File Description:
+
+     This file contains functions for the waiting queue.
+
+  Version:
+
+     2.0, 20190201
+
+  Abstract:
+
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
+     area.
+
+  Authors:
+     Gary Xiao      , garyh0205@hotmail.com
  */
 
 #include "pkt_Queue.h"
@@ -40,35 +42,39 @@
 
 /* Queue initialize and free */
 
+
 int init_Packet_Queue(pkt_ptr pkt_queue){
 
-    int ret;
-
     pthread_mutex_init( &pkt_queue -> mutex, 0);
+
+    pthread_mutex_lock( &pkt_queue -> mutex);
+
+    pkt_queue -> is_free = false;
 
     pkt_queue -> front = -1;
 
     pkt_queue -> rear  = -1;
 
-    for(int num = 0 ; num < MAX_QUEUE_LENGTH ; num ++){
-
+    for(int num = 0 ; num < MAX_QUEUE_LENGTH ; num ++)
         pkt_queue -> Queue[num].type = NONE;
 
-    }
+    pthread_mutex_unlock( &pkt_queue -> mutex);
 
     return pkt_Queue_SUCCESS;
 
 }
 
+
 int Free_Packet_Queue(pkt_ptr pkt_queue){
 
-    int ret;
+    pthread_mutex_lock( &pkt_queue -> mutex);
 
-    while ( !(is_null(pkt_queue))){
+    pkt_queue -> is_free = true;
 
+    while ( !(is_null(pkt_queue)))
         delpkt(pkt_queue);
 
-    }
+    pthread_mutex_unlock( &pkt_queue -> mutex);
 
     pthread_mutex_destroy( &pkt_queue -> mutex);
 
@@ -76,99 +82,79 @@ int Free_Packet_Queue(pkt_ptr pkt_queue){
 
 }
 
+
 /* New : add pkts */
 
-int addpkt(pkt_ptr pkt_queue, unsigned int type, unsigned char *identification
-         , unsigned int Data_fragmentation, unsigned int Data_offset
-         , char *raw_addr, char *content) {
 
-    int ret;
+int addpkt(pkt_ptr pkt_queue, unsigned int type, char *raw_addr, char *content
+                                                           , int content_size) {
+
+    if(content_size > MESSAGE_LENGTH)
+        return MESSAGE_OVERSIZE;
 
     pthread_mutex_lock( &pkt_queue -> mutex);
 
+    if(pkt_queue -> is_free == true){
+        pthread_mutex_unlock( &pkt_queue -> mutex);
+        return pkt_Queue_is_free;
+    }
+
+#ifdef debugging
     printf("--------- Content ---------\n");
     printf("type               : %s\n", type_to_str(type));
 
-    printf("identification     : ");
-
-    print_content(identification, identification_length);
-
-    printf("\n");
-    printf("Data Fragmentation : %d\n", Data_fragmentation);
-
-    printf("Data_offset        : %d\n", Data_offset);
-
     printf("address            : ");
 
-    print_content(raw_addr, Address_length);
+    print_content(raw_addr, NETWORK_ADDR_LENGTH);
 
     printf("\n");
     printf("--------- content ---------\n");
 
-    print_content(content, MAX_DATA_LENGTH);
+    print_content(content, content_size);
 
     printf("\n");
     printf("---------------------------\n");
+#endif
 
-    if(is_null(pkt_queue)){
-
+    if(is_full(pkt_queue)){
+        pthread_mutex_unlock( &pkt_queue -> mutex);
+        return pkt_Queue_FULL;
+    }
+    else if(is_null(pkt_queue)){
         pkt_queue -> front = 0;
-
         pkt_queue -> rear  = 0;
-
     }
-
+    else if( pkt_queue -> rear == MAX_QUEUE_LENGTH - 1){
+        pkt_queue -> rear = 0;
+    }
     else{
-
-        if(is_full(pkt_queue)){
-
-            pthread_mutex_unlock( &pkt_queue -> mutex);
-
-            return pkt_Queue_FULL;
-
-        }
-
-        else{
-
-            if( pkt_queue -> rear == MAX_QUEUE_LENGTH - 1){
-
-                pkt_queue -> rear = 0;
-
-            }
-
-            else{
-
-                pkt_queue -> rear ++ ;
-
-            }
-
-        }
-
+        pkt_queue -> rear ++;
     }
 
-    pkt_queue -> Queue[pkt_queue -> rear].type = type;
+    int current_idx = pkt_queue -> rear;
 
-    char_to_hex(identification, pkt_queue
-             -> Queue[pkt_queue -> rear].identification, identification_length);
+    pkt_queue -> Queue[current_idx].type = type;
 
-    char_to_hex(raw_addr, pkt_queue -> Queue[pkt_queue -> rear].address,
-                Address_length);
+    char_to_hex(raw_addr, pkt_queue -> Queue[current_idx].address,
+                NETWORK_ADDR_LENGTH);
 
-    pkt_queue -> Queue[pkt_queue -> rear].Data_offset = Data_offset;
+    memset(pkt_queue -> Queue[current_idx].content, 0
+         , MESSAGE_LENGTH * sizeof(char));
 
-    memset(pkt_queue -> Queue[pkt_queue -> rear].content, 0
-         , MAX_DATA_LENGTH * sizeof(char));
-
-    strncpy(pkt_queue -> Queue[pkt_queue -> rear].content, content
+    strncpy(pkt_queue -> Queue[current_idx].content, content
           , content_size);
 
-    display_pkt("addedpkt", pkt_queue, pkt_queue -> rear);
+    pkt_queue -> Queue[current_idx].content_size = content_size;
+
+#ifdef debugging
+    display_pkt("addedpkt", pkt_queue, current_idx);
 
     printf("= pkt_queue len  =\n");
 
     printf("%d\n", queue_len(pkt_queue));
 
     printf("==================\n");
+#endif
 
     pthread_mutex_unlock( &pkt_queue -> mutex);
 
@@ -176,160 +162,161 @@ int addpkt(pkt_ptr pkt_queue, unsigned int type, unsigned char *identification
 
 }
 
-/* Delete : delete pkts */
 
-int delpkt(pkt_ptr pkt_queue) {
+sPkt get_pkt(pkt_ptr pkt_queue){
 
     pthread_mutex_lock( &pkt_queue -> mutex);
 
-    if(is_null(pkt_queue)) {
+    sPkt tmp;
 
+    memset(&tmp, 0, sizeof(tmp));
+
+    if(is_null(pkt_queue)){
         pthread_mutex_unlock( &pkt_queue -> mutex);
-
-        return pkt_Queue_SUCCESS;
-
+        tmp.type = NONE;
+        return tmp;
     }
 
-    display_pkt("deledpkt", pkt_queue, pkt_queue -> front);
+#ifdef debugging
+    display_pkt("Get_pkt", pkt_queue, pkt_queue -> front);
+#endif
 
-    memset(pkt_queue -> Queue[pkt_queue -> front].content, 0
-         , MAX_DATA_LENGTH * sizeof(char));
+    tmp = pkt_queue -> Queue[pkt_queue -> front];
 
-    pkt_queue -> Queue[pkt_queue -> front].type = NONE;
+    delpkt(pkt_queue);
 
-    if(pkt_queue -> front == pkt_queue -> rear){
+    pthread_mutex_unlock( &pkt_queue -> mutex);
+
+    return tmp;
+}
+
+
+/* Delete : delete pkts */
+
+
+int delpkt(pkt_ptr pkt_queue) {
+
+    if(is_null(pkt_queue)) {
+        return pkt_Queue_SUCCESS;
+    }
+
+    int current_idx = pkt_queue -> front;
+
+#ifdef debugging
+    display_pkt("deledpkt", pkt_queue, current_idx);
+#endif
+
+    memset(pkt_queue -> Queue[current_idx].content, 0
+         , MESSAGE_LENGTH * sizeof(char));
+
+    pkt_queue -> Queue[current_idx].type = NONE;
+
+    if(current_idx == pkt_queue -> rear){
 
         pkt_queue -> front = -1;
 
         pkt_queue -> rear  = -1;
 
     }
-    else{
+    else if(current_idx == MAX_QUEUE_LENGTH - 1)
+        pkt_queue -> front = 0;
+    else
+        pkt_queue -> front += 1;
 
-        if(pkt_queue -> front == MAX_QUEUE_LENGTH - 1){
-
-            pkt_queue -> front = 0;
-
-        }
-
-        else{
-
-            pkt_queue -> front += 1;
-
-        }
-
-    }
-
+#ifdef debugging
     printf("= pkt_queue len  =\n");
 
     printf("%d\n", queue_len(pkt_queue));
 
     printf("==================\n");
-
-    pthread_mutex_unlock( &pkt_queue -> mutex);
+#endif
 
     return pkt_Queue_SUCCESS;
 
 }
 
-void display_pkt(char *content, pkt_ptr pkt_queue, int pkt_num){
 
-    if(pkt_num < 0 && pkt_num >= MAX_QUEUE_LENGTH)
+int display_pkt(char *display_title, pkt_ptr pkt_queue, int pkt_num){
+    char char_addr[NETWORK_ADDR_LENGTH];
+    char address_char[NETWORK_ADDR_LENGTH];
 
-        return;
+    if(pkt_num < 0 && pkt_num >= MAX_QUEUE_LENGTH){
+        return pkt_Queue_display_over_range;
+    }
 
-    char *char_addr = hex_to_char(pkt_queue -> Queue[pkt_num].address
-                                , Address_length_Hex);
+    pPkt current_pkt = &pkt_queue -> Queue[pkt_num];
 
-    char *identification =hex_to_char(pkt_queue -> Queue[pkt_num].identification
-                                   , identification_length_Hex);
+    memset(char_addr, 0, sizeof(char_addr));
+    hex_to_char(current_pkt -> address, NETWORK_ADDR_LENGTH_HEX, char_addr);
 
     printf("==================\n");
 
-    printf("%s\n", content);
+    printf("%s\n", display_title);
 
     printf("==================\n");
 
     printf("====== type ======\n");
 
-    printf("%s\n", type_to_str(pkt_queue -> Queue[pkt_num].type));
-
-    printf("==Identification==\n");
-
-    char *Identification_char = hex_to_char(identification
-                                          , identification_length_Hex);
-
-    printf("%s\n", Identification_char);
+    printf("%s\n", type_to_str(current_pkt -> type));
 
     printf("===== address ====\n");
 
-    char *address_char = hex_to_char(pkt_queue -> Queue[pkt_num].address
-                                   , Address_length_Hex);
+    memset(address_char, 0, sizeof(address_char));
+    hex_to_char(current_pkt -> address, NETWORK_ADDR_LENGTH_HEX, address_char);
 
-    printf("%s\n", address_char);
-
-    printf("==== content =====\n");
-
-    print_content(pkt_queue -> Queue[pkt_num].content, MAX_XBEE_DATA_LENGTH);
+    print_content(address_char, NETWORK_ADDR_LENGTH);
 
     printf("\n");
 
+    printf("==== content =====\n");
+
+    print_content(current_pkt -> content, current_pkt -> content_size);
+
+    printf("\n");
     printf("==================\n");
 
-    free(Identification_char);
-    free(address_char);
-    free(char_addr);
-
-    return;
+    return pkt_Queue_SUCCESS;
 
 }
 
+
 /* Tools */
 
-char* type_to_str(int type){
+
+char *type_to_str(int type){
 
     switch(type){
 
         case Data:
-
             return "Data";
-
             break;
 
         case Local_AT:
-
             return "Local AT";
+            break;
 
+        case UDP:
+            return "UDP";
             break;
 
         default:
-
             return "UNKNOWN";
     }
 }
 
+
 int str_to_type(const char *conType){
 
     if(memcmp(conType, "Transmit Status"
-     , strlen("Transmit Status") * sizeof(char)) == 0){
-
+     , strlen("Transmit Status") * sizeof(char)) == 0)
         return Data;
-
-    }
-
-    else if(memcmp(conType, "Data", strlen("Data") * sizeof(char)) == 0){
-
+    else if(memcmp(conType, "Data", strlen("Data") * sizeof(char)) == 0)
         return Data;
-
-    }
-
-    else{
-
+    else
         return UNKNOWN;
 
-    }
-
 }
+
 
 void char_to_hex(char *raw, unsigned char *raw_hex, int size){
 
@@ -338,43 +325,22 @@ void char_to_hex(char *raw, unsigned char *raw_hex, int size){
         char tmp[2];
 
         tmp[0] = raw[i * 2];
-
         tmp[1] = raw[i * 2 + 1];
-
         raw_hex[i] = strtol(tmp,(void *) NULL, 16);
-
     }
-
 }
 
-char *hex_to_char(unsigned char *hex, int size){
 
-    int char_size = size * 2;
+int hex_to_char(unsigned char *hex, int size, char *buf){
+    int ret = 0;
+    int len;
 
-    char *char_addr = malloc(sizeof(char) * ((char_size * 2) + 1));
+    for(int len = 0;len < size;len ++)
+        sprintf( &buf[len * 2], "%02x", hex[len]);
 
-    memset(char_addr, 0, sizeof(char) * (char_size + 1));
-
-    for(int len = 0;len < size;len ++){
-
-        sprintf(&char_addr[len * 2], "%02x", hex[len]);
-
-    }
-
-    return char_addr;
+    return ret;
 }
 
-bool address_compare(unsigned char *addr1, unsigned char *addr2){
-
-    if (memcmp(addr1, addr2, Address_length_Hex) == 0){
-
-        return true;
-
-    }
-
-    return false;
-
-}
 
 void array_copy(unsigned char *src, unsigned char *dest, int size){
 
@@ -384,116 +350,77 @@ void array_copy(unsigned char *src, unsigned char *dest, int size){
 
 }
 
+
 bool address_compare(unsigned char *addr1,unsigned char *addr2){
 
-    if (memcmp(addr1, addr2, 8) == 0){
-
+    if (memcmp(addr1, addr2, 8) == 0)
         return true;
 
-    }
-
     return false;
-
 }
 
-pPkt get_pkt(pkt_ptr pkt_queue){
-
-    if(is_null(pkt_queue)){
-
-        return NULL;
-
-    }
-
-    display_pkt("Get_pkt", pkt_queue, pkt_queue -> front);
-
-    return &(pkt_queue -> Queue[pkt_queue -> front]);
-
-}
 
 bool is_null(pkt_ptr pkt_queue){
 
     if (pkt_queue->front == -1 && pkt_queue->rear == -1){
 
         return true;
-
     }
-
     return false;
-
 }
 
-bool is_full(pkt_ptr pkt_Queue){
 
-    if(pkt_Queue -> front == pkt_Queue -> rear + 1){
+bool is_full(pkt_ptr pkt_queue){
 
+    if(pkt_queue -> front == pkt_queue -> rear + 1){
         return true;
-
     }
-
-    else if(pkt_Queue -> front == 0 && pkt_Queue -> rear == MAX_QUEUE_LENGTH - 1){
-
+    else if(pkt_queue -> front == 0 && pkt_queue -> rear == MAX_QUEUE_LENGTH - 1){
         return true;
-
     }
-
     else{
-
         return false;
-
     }
 }
+
 
 int queue_len(pkt_ptr pkt_queue){
 
     if (pkt_queue -> front == 0 && pkt_queue -> rear == 0){
-
         return 1;
 
     }
-
     else if(pkt_queue -> front == -1 && pkt_queue -> rear == -1){
-
         return 0;
 
     }
-
     else if (pkt_queue -> front == pkt_queue -> rear){
-
         return 1;
-
     }
-
     else if (pkt_queue -> rear > pkt_queue -> front){
 
-        return (pkt_queue -> rear - pkt_queue -> front + 1);
-
+        int len = (pkt_queue -> rear - pkt_queue -> front + 1);
+        return len;
     }
-
     else if (pkt_queue -> front > pkt_queue -> rear){
 
-        return ((MAX_QUEUE_LENGTH - pkt_queue -> front) + pkt_queue -> rear + 1);
-
+        int len = ((MAX_QUEUE_LENGTH - pkt_queue -> front)
+                    + pkt_queue -> rear + 1);
+        return len;
     }
-
     else{
-
         return queue_len_error;
-
     }
-
     return queue_len_error;
-
 }
+
 
 void print_content(char *content, int size){
 
-    for(int loc = 0; loc < size; loc ++){
-
+    for(int loc = 0; loc < size; loc ++)
         printf("%c", content[loc]);
-
-    }
-
 }
+
 
 void generate_identification(char *identification, int size){
 
@@ -513,9 +440,6 @@ void generate_identification(char *identification, int size){
     for(int length = 0;length < size;length ++) {
 
         identification[length] = str[rand() % 16];
-
         srand(rand());
-
     }
-
 }

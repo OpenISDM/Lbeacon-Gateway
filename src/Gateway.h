@@ -1,314 +1,562 @@
 /*
- Copyright (c) 2016 Academia Sinica, Institute of Information Science
+  Copyright (c) 2016 Academia Sinica, Institute of Information Science
 
- License:
+  License:
 
-     GPL 3.0 : The content of this file is subject to the terms and
-     conditions defined in file 'COPYING.txt', which is part of this source
-     code package.
+     GPL 3.0 : The content of this file is subject to the terms and conditions
+     defined in file 'COPYING.txt', which is part of this source code package.
 
- Project Name:
+  Project Name:
 
-     BeDIPS
+     BeDIS
 
- File Description:
+  File Name:
+
+     Gateway.h
+
+  File Description:
 
      This is the header file containing the declarations of functions and
      variables used in the Gateway.c file.
 
- File Name:
+  Version:
 
-     Gateway.h
+     1.0, 20190306
 
- Abstract:
+  Abstract:
 
-     BeDIPS uses LBeacons to deliver 3D coordinates and textual
-     descriptions of their locations to users' devices. Basically, a
-     LBeacon is an inexpensive, Bluetooth Smart Ready device. The 3D
-     coordinates and location description of every LBeacon are retrieved
-     from BeDIS (Building/environment Data and Information System) and
-     stored locally during deployment and maintenance times. Once
-     initialized, each LBeacon broadcasts its coordinates and location
-     description to Bluetooth enabled user devices within its coverage
+     BeDIS uses LBeacons to deliver 3D coordinates and textual descriptions of
+     their locations to users' devices. Basically, a LBeacon is an inexpensive,
+     Bluetooth Smart Ready device. The 3D coordinates and location description
+     of every LBeacon are retrieved from BeDIS (Building/environment Data and
+     Information System) and stored locally during deployment and maintenance
+     times. Once initialized, each LBeacon broadcasts its coordinates and
+     location description to Bluetooth enabled user devices within its coverage
      area.
 
  Authors:
 
      Holly Wang   , hollywang@iis.sinica.edu.tw
-     Hank Kung    , hank910140@gmail.com
      Ray Chao     , raychao5566@gmail.com
      Gary Xiao    , garyh0205@hotmail.com
+     Chun Yu Lai  , chunyu1202@gmail.com
 
  */
-
- /*
-  INCLUDES
- */
-
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <signal.h>
-#include <string.h>
-#include <semaphore.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/poll.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/timeb.h>
-#include <time.h>
-#include <unistd.h>
-#include "CommUnit.h"
 
 #ifndef GATEWAY_H
 #define GATEWAY_H
 
-/*
-  CONSTANTS
-*/
+#define _GNU_SOURCE
 
-/* File path of the config file of the LBeacon */
-#define CONFIG_FILE_NAME "../config/gateway.conf"
+#include "BeDIS.h"
 
-/* Parameter that marks the start of the config file */
-#define DELIMITER "="
+/* Enable debugging mode. */
+#define debugging
 
-/* Maximum number of characters in each line of config file */
-#define CONFIG_BUFFER_SIZE 64
+/* Gateway config file location and the config file definition. */
 
-/* Number of lines in the config file */
-#define CONFIG_FILE_LENGTH 11
+/* File path of the config file of the Gateway */
+#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
 
-/* The timeout for waiting in number of millisconds */
-#define TIMEOUT 3000
+/* File path of the config file of the zlog */
+#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
+
+/* The category of log file used for health report */
+#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
+
+#ifdef debugging
+/* The category of the printf during debugging */
+#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
+
+#endif
 
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 16
 
-/* Length of the beacon's UUID in a number of charaters */
-#define UUID_LENGTH 32
+#define TEST_MALLOC_MAX_NUMBER_TIMES 5
 
-/* Length of address of the network in number of bits */
-#define NETWORK_ADDR_LENGTH 16
-
-/* Maximum number of characters in location description */
-#define MAX_LENGTH_LOC_DESCRIPTION  64
-
-/* Length of coordinates in number of bits */
-#define COORDINATE_LENGTH 64
-
-/* Maximum number of worker threads */
-#define MAX_NUM_WORK_THREADS 5
-
-/* Maximum number of buffers */
-#define MAX_NUM_BUFFER 6
-
-/* The time period of avoiding starvation */
-#define MAX_STARVATION_TIME 50000
-
-/* The time period of polling data from Lbeacon */
-#define MAX_POLLING_TIME 100
-
-/* The number of slots in the memory pool */
-#define SLOTS_IN_MEM_POOL 512
-
-/* Names of priority levels */
-#define NORMAL_PRIORITY 0
-#define HIGH_PRIORITY 2
-#define LOW_PRIORITY -2
+/* Maximum timeout for join request in second */
+#define JOIN_REQUEST_TIMEOUT 120
 
 /*
-  TYPEDEF STRUCTS
-*/
+  Maximum length of time in seconds low priority message lists are starved
+  of attention. */
+#define MAX_STARVATION_TIME 600
 
 /* The configuration file structure */
-typedef struct Config {
+typedef struct {
 
-    /* The IP address of server for WiFi netwok connection. */
-    char  IPaddress[CONFIG_BUFFER_SIZE];
+    /* A flag indicating whether tracked object data from Lbeacon is polled by
+       the server */
+    bool is_polled_by_server;
 
-    /* String length needed to store IPaddress */
-    int   address_length;
+    /* The IP address of the server for WiFi netwok connection. */
+    char IPaddress[NETWORK_ADDR_LENGTH];
 
     /* The number of LBeacon nodes in the star network of this gateway */
-    int   allowed_number_nodes;
+    int allowed_number_nodes;
 
-    /* The time period for gateway sending requests to LBeacon */
-    int   Period_between_RFHR;
+    /* The time interval in seconds for gateway to send requests for health
+       reports from LBeacon */
+    int period_between_RFHR;
+
+    /* The time interval in seconds for gateway to send requests for tracked
+       object data from LBeacon */
+    int period_between_RFTOD;
+
+    /* The time interval in seconds for gateway to send requests for join request
+       to Server */
+    int period_between_join_requests;
 
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
-    int   Number_worker_threads;
+    int number_worker_threads;
 
-    /* Priority levels at which worker threads execute. */
-    int   Number_priority_levels;
+    /* The IP address of the server */
+    char server_ip[NETWORK_ADDR_LENGTH];
+
+    /* A port that LBeacons and the server are listening on and for gateway to
+       send to. */
+    int send_port;
+
+    /* A port that the Gateway is listening on and for beacons and server to
+       send to */
+    int recv_port;
+
+    /* Priority levels at which buffer lists are processed by the worker threads
+     */
+    int critical_priority;
+    int high_priority;
+    int normal_priority;
+    int low_priority;
 
 } GatewayConfig;
 
-typedef enum buffer_types {
 
-    LBeacon_receive_buffer = 0;
-    Server_send_buffer = 1;
-    LBeacon_send_buffer = 2;
-    Command_msg_buffer = 3;
-    BHM_receive_buffer = 4;
-    BHM_send_buffer = 5;
+/*  A struct linking network address assigned to a LBeacon to its UUID,
+    coordinates, and location description. */
+typedef struct {
 
-} BufferType;
+    char uuid[UUID_LENGTH];
 
-/*
-  GLOBAL VARIABLES
-*/
-/* Message buffer list heads */
-BufferListHead LBeacon_send_buffer_list_head;
-BufferListHead LBeacon_receive_buffer_list_head;
+    /* network address of wifi link to the LBeacon*/
+    char net_address[NETWORK_ADDR_LENGTH];
 
-BufferListHead Server_send_buffer_list_head;
+    /* The last LBeacon reported datetime */
+    int last_lbeacon_datetime;
 
-BufferListHead BHM_receive_buffer_list_head;
-BufferListHead BHM_send_buffer_list_head;
+    /* The last join request time */
+    int last_request_time;
 
-BufferListHead Command_msg_buffer_list_head;
+} AddressMap;
 
-/* An array of buffer_list_head in the priority order. */
-BufferListHead *priority_array[MAX_NUM_BUFFER];
+typedef struct {
+
+    /* A per list lock */
+    pthread_mutex_t list_lock;
+
+    /* A Boolean array in which ith element records whether the ith address map
+       is in use. */
+    bool in_use[MAX_NUMBER_NODES];
+
+    AddressMap address_map_list[MAX_NUMBER_NODES];
+
+} AddressMapArray;
+
+/* The struct of buffers used to store received data and/or data to be send */
+typedef struct {
+
+    struct List_Entry buffer_entry;
+
+    /* network address of the source or destination */
+    char net_address[NETWORK_ADDR_LENGTH];
+
+    /* pointer to where the data is stored. */
+    char content[MAXINUM_WIFI_MESSAGE_LENGTH];
+
+    int content_size;
+
+} BufferNode;
+
+/* A Head of a list of msg buffers */
+typedef struct {
+
+    /* A per list lock */
+    pthread_mutex_t list_lock;
 
 
-/* A Gateway config struct stored config from the config file */
+    struct List_Entry list_head;
+
+    struct List_Entry priority_list_entry;
+
+    /* nice relative to normal priority (i.e. nice = 0) */
+    int priority_nice;
+
+    /* The pointer point to the function to be called to process buffer nodes in
+       the list. */
+    void (*function)(void *arg);
+
+    /* function's argument */
+    void *arg;
+
+} BufferListHead;
+
+/* Global variables */
+
+/* A Gateway config struct for storing config parameters from the config file */
 GatewayConfig config;
 
-/*
-    A global flag that is initially false and is set by main thread to true
-    when initialization completes Afterward, the flag is used by other threads
-    to inform the main thread the need to shutdown.
+/* Struct for storing necessary objects for Wifi connection */
+sudp_config udp_config;
+
+/* mempool from which buffer node structure are allocated */
+Memory_Pool node_mempool;
+
+/* An array of address maps */
+AddressMapArray LBeacon_address_map;
+
+/* The head of a list of buffers of data from LBeacons to be send to the Server
  */
-bool ready_to_work;
+BufferListHead LBeacon_receive_buffer_list_head;
+
+/* The head of a list of buffers for polling messages and commands */
+BufferListHead command_msg_buffer_list_head;
+
+/* The head of a list of buffers for time critical messages */
+BufferListHead time_critical_LBeacon_receive_buffer_list_head;
+
+/* The head of a list of the return message for LBeacon join requests */
+BufferListHead NSI_send_buffer_list_head;
+
+/* The head of a list of buffers for return join request status */
+BufferListHead NSI_receive_buffer_list_head;
+
+/* The head of a list of buffers holding health reports to be processed and sent
+   to the Server */
+BufferListHead BHM_send_buffer_list_head;
+
+/* The head of a list of buffers holding health reports from LBeacons */
+BufferListHead BHM_receive_buffer_list_head;
+
+/* Head of a list of buffer list head in priority order. */
+BufferListHead priority_list_head;
+
+/* Flags */
 
 /*
-    Initialization of gateway components invole network activates that may
-    take time. These flags enable each module to inform the main thread when
-    its initialization completes.
+  Initialization of gateway components involves network activaties that may take
+  time. These flags enable each module to inform the main thread when its
+  initialization completes.
  */
 bool NSI_initialization_complete;
 bool CommUnit_initialization_complete;
+
 bool initialization_failed;
 
+/* Variables for storing the last polling times in second*/
+int last_polling_LBeacon_for_HR_time;
+int last_polling_object_tracking_time;
+int last_polling_join_request_time;
 
-long long init_time;
-long long poll_LBeacon_time;
 
 /*
   get_config:
 
-      This function reads the specified config file line by line until the
-      end of file and copies the data in the lines into the GatewayConfig
-      struct global variable.
+     This function reads the specified config file line by line until the
+     end of file and copies the data in each line into an element of the
+     GatewayConfig struct global variable.
 
   Parameters:
 
-      file_name - the name of the config file that stores gateway data
+     file_name - the name of the config file that stores gateway data
 
   Return value:
 
-      config - GatewayConfig struct
+     config - GatewayConfig struct
  */
-GatewayConfig get_config(char *file_name);
+ErrorCode get_config(GatewayConfig *config, char *file_name);
+
 
 /*
-  get_system_time:
+  init_buffer:
 
-      This helper function fetches the current time according to the system
-      clock in terms of the number of milliseconds since January 1, 1970.
+     The function fills the attributes of a specified buffer to be called by
+     another threads to process the buffer content, including the function, the
+     argument of the function and the priority level which the function is to be
+     executed.
 
   Parameters:
 
-      None
+     buffer - A pointer of the buffer to be modified.
+     buff_id - The index of the buffer for the priority array
+     function - A function pointer to be assigned to the buffer
+     priority - The priority level of the buffer
 
   Return value:
 
-      system_time - system time in milliseconds
-*/
+     None
+ */
+void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
+                 int priority_nice);
 
-long long get_system_time();
 
 /*
-  startThread:
+  sort_priority_list:
 
-      This function initializes the specified threads.
-
-  Parameters:
-
-      threads - name of the thread
-      thfunct - the function for thread to execute.
-      arg - the argument for thread's function
-
-  Return value:
-
-      Error_code: The error code for the corresponding error
-
- */
-ErrorCode startThread(pthread_t *threads, void *( *thfunct)(void *), void *arg);
-
-/*
-  Initialize_network:
-
-      This function initializes and sets up all the necessary component for the
-      zigee and wifi networks.
+     The function arrange entries in the priority list in nonincreasing
+     order of Priority_nice.
 
   Parameters:
 
-      None
+     config - The pointer points to the structure which stored config for
+              gateway.
+     list_head - The pointer of the priority list head.
 
   Return value:
 
-      None
+     None
  */
-void *Initialize_network();
+void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
+
 
 /*
   CommUnit_routine:
 
-      The function is executed by the main thread of the communication unit that
-      is responsible for sending and receiving packets to and from the sever and
-      LBeacons after the NSI module has initialized WiFi and Zigbee networks. It
-      creates threads to carry out the communication process.
+     The function is executed by the main thread of the communication unit that
+     is responsible for sending and receiving packets to and from the sever and
+     LBeacons after the NSI module has initialized WiFi networks. It creates
+     threads to carry out the communication process.
 
   Parameters:
 
-      Node
+     None
 
   Return value:
 
-      None
+     None
 
  */
 void *CommUnit_routine();
 
-/*
-  Process_message:
 
-      This is the function would be executed by worker threads which proceesed
-      the data node in LBeacon_receive_buffer, Command_msg_buffer and
-      BHM_receive_buffer. This function remanages the node to be added to the
-      new buffer or removed from the orignal buffer.
+/*
+  NSI_routine:
+
+     This function is executed by worker threads when they process the buffer
+     nodes in NSI receive buffer list.
 
   Parameters:
 
-      buffer - A pointer of the buffer to be modified.
+     _buffer_list_head - A pointer of the buffer list containing buffers to be
+                         modified.
 
   Return value:
 
-      None
+     None
 
  */
-void *Process_message(BufferListHead *buffer);
+void *NSI_routine(void *_buffer_node);
+
+
+/*
+  BHM_routine:
+
+     This function is executed by worker threads when they process the buffer
+     nodes in BHM_receive_buffer_list.
+
+  Parameters:
+
+     _buffer_list_head - A pointer of the buffer to be modified.
+
+  Return value:
+
+     None
+
+ */
+void *BHM_routine(void *_buffer_node);
+
+
+/*
+  LBeacon_routine:
+
+     This function is executed by worker threads when they remove buffer nodes
+     from LBeacon_receive_buffer_list and send them to the server directly.
+
+  Parameters:
+
+     _buffer_list_head - A pointer of the buffer to be modified.
+
+  Return value:
+
+     None
+
+ */
+void *LBeacon_routine(void *_buffer_node);
+
+
+/*
+  Server_routine:
+
+     This function is executed by worker threads when they process the buffer
+     nodes in Command_msg_buffer_list and broadcast to LBeacons.
+
+  Parameters:
+
+     _buffer_list_head - A pointer of the buffer to be modified.
+
+  Return value:
+
+     None
+
+ */
+void *Server_routine(void *_buffer_node);
+
+
+/*
+  init_Address_Map:
+
+     This function initialize the head of the AddressMap.
+
+  Parameters:
+
+     address_map - The head of the AddressMap.
+
+  Return value:
+
+     None
+ */
+void init_Address_Map(AddressMapArray *address_map);
+
+
+/*
+  is_in_Address_Map:
+
+     This function check whether the uuid is in LBeacon_address_map.
+
+  Parameters:
+
+     address_map - The head of the AddressMap.
+     uuid - the uuid we decide to compare.
+
+  Return value:
+
+     bool: If return true means in the address map, else false.
+ */
+int is_in_Address_Map(AddressMapArray *address_map, char *uuid);
+
+
+/*
+  beacon_join_request:
+
+     This function is executed when a beacon sends a command to join the gateway
+     . When executed, it fills the AddressMap with the inputs and sets the
+     network_address if the number of beacons already joined the gateway does
+     not excceed allowed_number_of_nodes.
+
+  Parameters:
+
+     address_map - The head of the AddressMap.
+     uuid - The UUID of the LBeacon
+     address - The mac address of the LBeacon IP.
+     datetime - The last LBeacon reported datetime
+
+  Return value:
+
+     bool - true  : Join success.
+            false : Fail to join
+
+ */
+bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
+                         , int datetime);
+
+
+/*
+  beacon_brocast:
+
+     This function is executed when a command is to be broadcast to LBeacons.
+     When called, this function sends msg to all LBeacons registered in the
+     LBeacon_address_map.
+
+  Parameters:
+     address_map - The head of the AddressMap.
+     msg - The pointer to the msg to be send to beacons.
+     size - The size of the msg.
+
+  Return value:
+
+     None
+
+ */
+void beacon_broadcast(AddressMapArray *address_map, char *msg, int size);
+
+
+/*
+  Wifi_init:
+
+     This function initializes the Wifi's objects.
+
+  Parameters:
+
+     IPaddress - The address of the server.
+
+  Return value:
+
+      ErrorCode - The error code for the corresponding error or successful
+
+ */
+ErrorCode Wifi_init(char *IPaddress);
+
+
+/*
+  Wifi_free:
+
+     When called, this function frees the queue of the Wi-Fi pkts and sockets.
+
+  Parameters:
+
+     None
+
+  Return value:
+
+     None
+
+ */
+void Wifi_free();
+
+
+/*
+  process_wifi_send:
+
+     This function sends the msg in the specified buffer list to the server via
+     Wi-Fi.
+
+  Parameters:
+
+     _buffer_list_head - A pointer to the buffer list head.
+
+  Return value:
+
+     None
+ */
+void *process_wifi_send(void *_buffer_node);
+
+
+/*
+  process_wifi_receive:
+
+     This function listens for messages or command received from the server or
+     beacons. After getting the message, put the data in the message into the
+     buffer.
+
+  Parameters:
+
+     None
+
+  Return value:
+
+     None
+ */
+void *process_wifi_receive();
+
 
 #endif
