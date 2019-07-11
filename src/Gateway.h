@@ -70,8 +70,6 @@
 
 #endif
 
-/* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
-#define MAX_NUMBER_NODES 16
 
 #define TEST_MALLOC_MAX_NUMBER_TIMES 5
 

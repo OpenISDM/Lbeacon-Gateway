@@ -147,6 +147,9 @@
 /* Timeout in seconds for UDP receive socket */
 #define TIMEOUT_UDP_RECEIVCE_IN_SEC 5
 
+/* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
+#define MAX_NUMBER_NODES 16
+
 
 typedef enum _ErrorCode{
 
