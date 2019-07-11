@@ -369,7 +369,7 @@ typedef enum DeviceType {
 
 
 /* The configuration file structure */
-extern typedef struct {
+typedef struct {
 
     /* A flag indicating whether tracked object data from Lbeacon is polled by
        the server */
