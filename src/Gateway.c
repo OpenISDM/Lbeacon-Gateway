@@ -208,8 +208,7 @@ int main(int argc, char **argv){
     }
 
     /* The while loop waiting for NSI, BHM and CommUnit to be ready */
-    while(NSI_initialization_complete == false ||
-          CommUnit_initialization_complete == false){
+    while(CommUnit_initialization_complete == false){
 
         usleep(BUSY_WAITING_TIME);
 
