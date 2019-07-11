@@ -76,52 +76,7 @@
 #include "LinkedList.h"
 #include "thpool.h"
 #include "zlog.h"
-
-/* Global variables */
-
-/* A Gateway config struct for storing config parameters from the config file */
-GatewayConfig config;
-
-/* Struct for storing necessary objects for Wifi connection */
-sudp_config udp_config;
-
-/* mempool from which buffer node structure are allocated */
-Memory_Pool node_mempool;
-
-/* An array of address maps */
-AddressMapArray LBeacon_address_map;
-
-/* The head of a list of buffers of data from LBeacons to be send to the Server
- */
-BufferListHead LBeacon_receive_buffer_list_head;
-
-/* The head of a list of buffers for polling messages and commands */
-BufferListHead command_msg_buffer_list_head;
-
-/* The head of a list of buffers for time critical messages */
-BufferListHead time_critical_LBeacon_receive_buffer_list_head;
-
-/* The head of a list of the return message for LBeacon join requests */
-BufferListHead NSI_send_buffer_list_head;
-
-/* The head of a list of buffers for return join request status */
-BufferListHead NSI_receive_buffer_list_head;
-
-/* The head of a list of buffers holding health reports to be processed and sent
-   to the Server */
-BufferListHead BHM_send_buffer_list_head;
-
-/* The head of a list of buffers holding health reports from LBeacons */
-BufferListHead BHM_receive_buffer_list_head;
-
-/* Head of a list of buffer list head in priority order. */
-BufferListHead priority_list_head;
-
-
-/* Variables for storing the last polling times in second*/
-int last_polling_LBeacon_for_HR_time;
-int last_polling_object_tracking_time;
-int last_polling_join_request_time;
+#include "Gateway.h"
 
 /* Parameter that marks the start of the config file */
 #define DELIMITER "="
