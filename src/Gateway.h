@@ -88,7 +88,7 @@ BufferListHead BHM_receive_buffer_list_head;
 
 
 /* The configuration file structure */
-typedef struct {
+typedef struct _GatewayConfig{
 
     /* A flag indicating whether tracked object data from Lbeacon is polled by
        the server */
