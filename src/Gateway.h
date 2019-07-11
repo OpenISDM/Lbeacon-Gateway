@@ -139,11 +139,11 @@ typedef struct {
 /* Global variables */
 
 /* A Gateway config struct for storing config parameters from the config file */
-extern GatewayConfig config;
+GatewayConfig config;
 
 
 /* Head of a list of buffer list head in priority order. */
-extern BufferListHead priority_list_head;
+BufferListHead priority_list_head;
 
 /* Flags */
 
@@ -152,10 +152,10 @@ extern BufferListHead priority_list_head;
   time. These flags enable each module to inform the main thread when its
   initialization completes.
  */
-extern bool NSI_initialization_complete;
-extern bool CommUnit_initialization_complete;
+bool NSI_initialization_complete;
+bool CommUnit_initialization_complete;
 
-extern bool initialization_failed;
+bool initialization_failed;
 
 
 /* Variables for storing the last polling times in second*/
