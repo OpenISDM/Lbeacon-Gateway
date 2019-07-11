@@ -369,7 +369,7 @@ typedef enum DeviceType {
 
 /* Global variables */
 /* A Gateway config struct for storing config parameters from the config file */
-extern struct _Gatewayconfig config;
+extern struct Gatewayconfig config;
 
 /* Head of a list of buffer list head in priority order. */
 extern BufferListHead priority_list_head;

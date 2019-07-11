@@ -88,7 +88,7 @@ BufferListHead BHM_receive_buffer_list_head;
 
 
 /* The configuration file structure */
-typedef struct _GatewayConfig{
+typedef struct GatewayConfig{
 
     /* A flag indicating whether tracked object data from Lbeacon is polled by
        the server */
@@ -140,7 +140,7 @@ typedef struct _GatewayConfig{
 /* Global variables */
 
 /* Head of a list of buffer list head in priority order. */
-extern BufferListHead priority_list_head;
+BufferListHead priority_list_head;
 
 /* Flags */
 
@@ -149,10 +149,10 @@ extern BufferListHead priority_list_head;
   time. These flags enable each module to inform the main thread when its
   initialization completes.
  */
-extern bool NSI_initialization_complete;
-extern bool CommUnit_initialization_complete;
-
-extern bool initialization_failed;
+bool NSI_initialization_complete;
+bool CommUnit_initialization_complete;
+ 
+bool initialization_failed;
 
 /* Global variables */
 
