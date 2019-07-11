@@ -76,7 +76,6 @@
 #include "LinkedList.h"
 #include "thpool.h"
 #include "zlog.h"
-#include "Gateway.h"
 
 /* Parameter that marks the start of the config file */
 #define DELIMITER "="
