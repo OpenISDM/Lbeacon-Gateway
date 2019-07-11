@@ -157,57 +157,6 @@
 
 
 
-/* Global variables */
-
-/* A Gateway config struct for storing config parameters from the config file */
-extern GatewayConfig config;
-
-/* Struct for storing necessary objects for Wifi connection */
-sudp_config udp_config;
-
-/* mempool from which buffer node structure are allocated */
-Memory_Pool node_mempool;
-
-/* An array of address maps */
-AddressMapArray LBeacon_address_map;
-
-/* The head of a list of buffers of data from LBeacons to be send to the Server
- */
-extern BufferListHead LBeacon_receive_buffer_list_head;
-
-/* The head of a list of buffers for polling messages and commands */
-extern BufferListHead command_msg_buffer_list_head;
-
-/* The head of a list of buffers for time critical messages */
-extern BufferListHead time_critical_LBeacon_receive_buffer_list_head;
-
-/* The head of a list of the return message for LBeacon join requests */
-extern BufferListHead NSI_send_buffer_list_head;
-
-/* The head of a list of buffers for return join request status */
-extern BufferListHead NSI_receive_buffer_list_head;
-
-/* The head of a list of buffers holding health reports to be processed and sent
-   to the Server */
-extern BufferListHead BHM_send_buffer_list_head;
-
-/* The head of a list of buffers holding health reports from LBeacons */
-extern BufferListHead BHM_receive_buffer_list_head;
-
-/* Head of a list of buffer list head in priority order. */
-extern BufferListHead priority_list_head;
-
-/* Flags */
-
-/*
-  Initialization of gateway components involves network activaties that may take
-  time. These flags enable each module to inform the main thread when its
-  initialization completes.
- */
-extern bool NSI_initialization_complete;
-extern bool CommUnit_initialization_complete;
-
-extern bool initialization_failed;
 
 typedef enum _ErrorCode{
 
@@ -395,6 +344,59 @@ typedef enum DeviceType {
 
 } DeviceType;
 
+
+
+/* Global variables */
+
+/* A Gateway config struct for storing config parameters from the config file */
+extern GatewayConfig config;
+
+/* Struct for storing necessary objects for Wifi connection */
+extern sudp_config udp_config;
+
+/* mempool from which buffer node structure are allocated */
+extern Memory_Pool node_mempool;
+
+/* An array of address maps */
+extern AddressMapArray LBeacon_address_map;
+
+/* The head of a list of buffers of data from LBeacons to be send to the Server
+ */
+extern BufferListHead LBeacon_receive_buffer_list_head;
+
+/* The head of a list of buffers for polling messages and commands */
+extern BufferListHead command_msg_buffer_list_head;
+
+/* The head of a list of buffers for time critical messages */
+extern BufferListHead time_critical_LBeacon_receive_buffer_list_head;
+
+/* The head of a list of the return message for LBeacon join requests */
+extern BufferListHead NSI_send_buffer_list_head;
+
+/* The head of a list of buffers for return join request status */
+extern BufferListHead NSI_receive_buffer_list_head;
+
+/* The head of a list of buffers holding health reports to be processed and sent
+   to the Server */
+extern BufferListHead BHM_send_buffer_list_head;
+
+/* The head of a list of buffers holding health reports from LBeacons */
+extern BufferListHead BHM_receive_buffer_list_head;
+
+/* Head of a list of buffer list head in priority order. */
+extern BufferListHead priority_list_head;
+
+/* Flags */
+
+/*
+  Initialization of gateway components involves network activaties that may take
+  time. These flags enable each module to inform the main thread when its
+  initialization completes.
+ */
+extern bool NSI_initialization_complete;
+extern bool CommUnit_initialization_complete;
+
+extern bool initialization_failed;
 
 /* A global flag that is initially set to true by the main thread. It is set
    to false by any thread when the thread encounters a fatal error,
