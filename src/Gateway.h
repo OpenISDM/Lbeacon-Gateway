@@ -87,6 +87,75 @@ BufferListHead BHM_send_buffer_list_head;
 BufferListHead BHM_receive_buffer_list_head;
 
 
+/* The configuration file structure */
+typedef struct {
+
+    /* A flag indicating whether tracked object data from Lbeacon is polled by
+       the server */
+    bool is_polled_by_server;
+
+    /* The IP address of the server for WiFi netwok connection. */
+    char IPaddress[NETWORK_ADDR_LENGTH];
+
+    /* The number of LBeacon nodes in the star network of this gateway */
+    int allowed_number_nodes;
+
+    /* The time interval in seconds for gateway to send requests for health
+       reports from LBeacon */
+    int period_between_RFHR;
+
+    /* The time interval in seconds for gateway to send requests for tracked
+       object data from LBeacon */
+    int period_between_RFTOD;
+
+    /* The time interval in seconds for gateway to send requests for join request
+       to Server */
+    int period_between_join_requests;
+
+    /*The number of worker threads used by the communication unit for sending
+      and receiving packets to and from LBeacons and the sever.*/
+    int number_worker_threads;
+
+    /* The IP address of the server */
+    char server_ip[NETWORK_ADDR_LENGTH];
+
+    /* A port that LBeacons and the server are listening on and for gateway to
+       send to. */
+    int send_port;
+
+    /* A port that the Gateway is listening on and for beacons and server to
+       send to */
+    int recv_port;
+
+    /* Priority levels at which buffer lists are processed by the worker threads
+     */
+    int critical_priority;
+    int high_priority;
+    int normal_priority;
+    int low_priority;
+
+} GatewayConfig;
+
+/* Global variables */
+
+/* A Gateway config struct for storing config parameters from the config file */
+extern GatewayConfig config;
+
+
+/* Head of a list of buffer list head in priority order. */
+extern BufferListHead priority_list_head;
+
+/* Flags */
+
+/*
+  Initialization of gateway components involves network activaties that may take
+  time. These flags enable each module to inform the main thread when its
+  initialization completes.
+ */
+extern bool NSI_initialization_complete;
+extern bool CommUnit_initialization_complete;
+
+extern bool initialization_failed;
 
 
 /* Variables for storing the last polling times in second*/
