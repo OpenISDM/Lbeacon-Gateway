@@ -133,74 +133,6 @@ typedef struct {
 } GatewayConfig;
 
 
-/*  A struct linking network address assigned to a LBeacon to its UUID,
-    coordinates, and location description. */
-typedef struct {
-
-    char uuid[UUID_LENGTH];
-
-    /* network address of wifi link to the LBeacon*/
-    char net_address[NETWORK_ADDR_LENGTH];
-
-    /* The last LBeacon reported datetime */
-    int last_lbeacon_datetime;
-
-    /* The last join request time */
-    int last_request_time;
-
-} AddressMap;
-
-typedef struct {
-
-    /* A per list lock */
-    pthread_mutex_t list_lock;
-
-    /* A Boolean array in which ith element records whether the ith address map
-       is in use. */
-    bool in_use[MAX_NUMBER_NODES];
-
-    AddressMap address_map_list[MAX_NUMBER_NODES];
-
-} AddressMapArray;
-
-/* The struct of buffers used to store received data and/or data to be send */
-typedef struct {
-
-    struct List_Entry buffer_entry;
-
-    /* network address of the source or destination */
-    char net_address[NETWORK_ADDR_LENGTH];
-
-    /* pointer to where the data is stored. */
-    char content[MAXINUM_WIFI_MESSAGE_LENGTH];
-
-    int content_size;
-
-} BufferNode;
-
-/* A Head of a list of msg buffers */
-typedef struct {
-
-    /* A per list lock */
-    pthread_mutex_t list_lock;
-
-
-    struct List_Entry list_head;
-
-    struct List_Entry priority_list_entry;
-
-    /* nice relative to normal priority (i.e. nice = 0) */
-    int priority_nice;
-
-    /* The pointer point to the function to be called to process buffer nodes in
-       the list. */
-    void (*function)(void *arg);
-
-    /* function's argument */
-    void *arg;
-
-} BufferListHead;
-
 /* Global variables */
 
 /* A Gateway config struct for storing config parameters from the config file */
@@ -275,29 +207,6 @@ int last_polling_join_request_time;
      config - GatewayConfig struct
  */
 ErrorCode get_config(GatewayConfig *config, char *file_name);
-
-
-/*
-  init_buffer:
-
-     The function fills the attributes of a specified buffer to be called by
-     another threads to process the buffer content, including the function, the
-     argument of the function and the priority level which the function is to be
-     executed.
-
-  Parameters:
-
-     buffer - A pointer of the buffer to be modified.
-     buff_id - The index of the buffer for the priority array
-     function - A function pointer to be assigned to the buffer
-     priority - The priority level of the buffer
-
-  Return value:
-
-     None
- */
-void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
-                 int priority_nice);
 
 
 /*
@@ -410,39 +319,6 @@ void *LBeacon_routine(void *_buffer_node);
 
  */
 void *Server_routine(void *_buffer_node);
-
-
-/*
-  init_Address_Map:
-
-     This function initialize the head of the AddressMap.
-
-  Parameters:
-
-     address_map - The head of the AddressMap.
-
-  Return value:
-
-     None
- */
-void init_Address_Map(AddressMapArray *address_map);
-
-
-/*
-  is_in_Address_Map:
-
-     This function check whether the uuid is in LBeacon_address_map.
-
-  Parameters:
-
-     address_map - The head of the AddressMap.
-     uuid - the uuid we decide to compare.
-
-  Return value:
-
-     bool: If return true means in the address map, else false.
- */
-int is_in_Address_Map(AddressMapArray *address_map, char *uuid);
 
 
 /*
