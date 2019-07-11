@@ -921,7 +921,7 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
             }
         }
     }
-
+    zlog_info(category_debug, "END Brocast for test.!");
     zlog_info(category_debug, "END Brocast");
     pthread_mutex_unlock( &address_map -> list_lock);
 }
