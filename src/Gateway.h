@@ -53,78 +53,7 @@
 /* Enable debugging mode. */
 //#define debugging
 
-/* Gateway config file location and the config file definition. */
 
-/* File path of the config file of the Gateway */
-#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
-
-/* File path of the config file of the zlog */
-#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
-
-/* The category of log file used for health report */
-#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
-
-#ifdef debugging
-/* The category of the printf during debugging */
-#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
-
-#endif
-
-
-#define TEST_MALLOC_MAX_NUMBER_TIMES 5
-
-/* Maximum timeout for join request in second */
-#define JOIN_REQUEST_TIMEOUT 120
-
-
-/* The configuration file structure */
-typedef struct {
-
-    /* A flag indicating whether tracked object data from Lbeacon is polled by
-       the server */
-    bool is_polled_by_server;
-
-    /* The IP address of the server for WiFi netwok connection. */
-    char IPaddress[NETWORK_ADDR_LENGTH];
-
-    /* The number of LBeacon nodes in the star network of this gateway */
-    int allowed_number_nodes;
-
-    /* The time interval in seconds for gateway to send requests for health
-       reports from LBeacon */
-    int period_between_RFHR;
-
-    /* The time interval in seconds for gateway to send requests for tracked
-       object data from LBeacon */
-    int period_between_RFTOD;
-
-    /* The time interval in seconds for gateway to send requests for join request
-       to Server */
-    int period_between_join_requests;
-
-    /*The number of worker threads used by the communication unit for sending
-      and receiving packets to and from LBeacons and the sever.*/
-    int number_worker_threads;
-
-    /* The IP address of the server */
-    char server_ip[NETWORK_ADDR_LENGTH];
-
-    /* A port that LBeacons and the server are listening on and for gateway to
-       send to. */
-    int send_port;
-
-    /* A port that the Gateway is listening on and for beacons and server to
-       send to */
-    int recv_port;
-
-    /* Priority levels at which buffer lists are processed by the worker threads
-     */
-    int critical_priority;
-    int high_priority;
-    int normal_priority;
-    int low_priority;
-
-} GatewayConfig;
 
 
 
