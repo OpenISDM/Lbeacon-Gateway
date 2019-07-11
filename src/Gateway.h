@@ -157,7 +157,7 @@ bool initialization_failed;
 /* Global variables */
 
 /* A Gateway config struct for storing config parameters from the config file */
-GatewayConfig config;
+extern GatewayConfig config;
 
 
 /* Head of a list of buffer list head in priority order. */
