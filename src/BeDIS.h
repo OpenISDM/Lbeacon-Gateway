@@ -367,6 +367,25 @@ typedef enum DeviceType {
 /* Maximum timeout for join request in second */
 #define JOIN_REQUEST_TIMEOUT 120
 
+/* Global variables */
+/* A Gateway config struct for storing config parameters from the config file */
+extern GatewayConfig config;
+
+/* Head of a list of buffer list head in priority order. */
+extern BufferListHead priority_list_head;
+
+/* Flags */
+
+/*
+  Initialization of gateway components involves network activaties that may take
+  time. These flags enable each module to inform the main thread when its
+  initialization completes.
+ */
+extern bool NSI_initialization_complete;
+extern bool CommUnit_initialization_complete;
+
+extern bool initialization_failed;
+
 /* A global flag that is initially set to true by the main thread. It is set
    to false by any thread when the thread encounters a fatal error,
    indicating that it is about to exit. In addition, if user presses Ctrl+C,
