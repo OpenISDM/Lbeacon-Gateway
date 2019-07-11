@@ -51,7 +51,7 @@
 #include "BeDIS.h"
 
 /* Enable debugging mode. */
-#define debugging
+//#define debugging
 
 /* Gateway config file location and the config file definition. */
 
@@ -171,17 +171,6 @@ BufferListHead BHM_receive_buffer_list_head;
 /* Head of a list of buffer list head in priority order. */
 BufferListHead priority_list_head;
 
-/* Flags */
-
-/*
-  Initialization of gateway components involves network activaties that may take
-  time. These flags enable each module to inform the main thread when its
-  initialization completes.
- */
-bool NSI_initialization_complete;
-bool CommUnit_initialization_complete;
-
-bool initialization_failed;
 
 /* Variables for storing the last polling times in second*/
 int last_polling_LBeacon_for_HR_time;

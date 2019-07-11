@@ -150,6 +150,18 @@
 /* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
 #define MAX_NUMBER_NODES 16
 
+/* Flags */
+
+/*
+  Initialization of gateway components involves network activaties that may take
+  time. These flags enable each module to inform the main thread when its
+  initialization completes.
+ */
+bool NSI_initialization_complete;
+bool CommUnit_initialization_complete;
+
+bool initialization_failed;
+
 
 typedef enum _ErrorCode{
 
