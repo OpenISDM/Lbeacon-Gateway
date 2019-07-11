@@ -44,7 +44,8 @@
  */
 
 #include "BeDIS.h"
-
+/* A Gateway config struct for storing config parameters from the config file */
+extern GatewayConfig config;
 
 unsigned int *uuid_str_to_data(char *uuid) {
     char conversion[] = "0123456789ABCDEF";
