@@ -134,25 +134,6 @@ ErrorCode get_config(GatewayConfig *config, char *file_name);
 
 
 /*
-  sort_priority_list:
-
-     The function arrange entries in the priority list in nonincreasing
-     order of Priority_nice.
-
-  Parameters:
-
-     config - The pointer points to the structure which stored config for
-              gateway.
-     list_head - The pointer of the priority list head.
-
-  Return value:
-
-     None
- */
-void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
-
-
-/*
   NSI_routine:
 
      This function is executed by worker threads when they process the buffer

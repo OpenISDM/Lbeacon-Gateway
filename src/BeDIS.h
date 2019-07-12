@@ -355,11 +355,8 @@ typedef enum DeviceType {
 /* The category of log file used for health report */
 #define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
 
-//#ifdef debugging
 /* The category of the printf during debugging */
 #define LOG_CATEGORY_DEBUG "LBeacon_Debug"
-
-//#endif
 
 
 #define TEST_MALLOC_MAX_NUMBER_TIMES 5
@@ -479,6 +476,25 @@ unsigned int *uuid_str_to_data(char *uuid);
      data - @todo
  */
 unsigned int twoc(int in, int t);
+
+
+/*
+  sort_priority_list:
+
+     The function arrange entries in the priority list in nonincreasing
+     order of Priority_nice.
+
+  Parameters:
+
+     config - The pointer points to the structure which stored config for
+              gateway.
+     list_head - The pointer of the priority list head.
+
+  Return value:
+
+     None
+ */
+void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
 
 
 /*
