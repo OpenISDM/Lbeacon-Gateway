@@ -355,11 +355,11 @@ typedef enum DeviceType {
 /* The category of log file used for health report */
 #define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
 
-#ifdef debugging
+//#ifdef debugging
 /* The category of the printf during debugging */
 #define LOG_CATEGORY_DEBUG "LBeacon_Debug"
 
-#endif
+//#endif
 
 
 #define TEST_MALLOC_MAX_NUMBER_TIMES 5
