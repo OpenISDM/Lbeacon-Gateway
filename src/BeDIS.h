@@ -419,7 +419,7 @@ typedef struct{
 
 /* Global variables */
 /* A Gateway config struct for storing config parameters from the config file */
-GatewayConfig config;
+extern GatewayConfig config;
 
 /* Head of a list of buffer list head in priority order. */
 extern BufferListHead priority_list_head;

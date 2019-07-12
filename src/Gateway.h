@@ -51,7 +51,7 @@
 #include "BeDIS.h"
 
 /* Enable debugging mode. */
-//#define debugging
+#define debugging
 
 
 /* Struct for storing necessary objects for Wifi connection */
@@ -89,25 +89,8 @@ BufferListHead BHM_receive_buffer_list_head;
 
 /* Global variables */
 
-/* Head of a list of buffer list head in priority order. */
-BufferListHead priority_list_head;
-
-/* Flags */
-
-/*
-  Initialization of gateway components involves network activaties that may take
-  time. These flags enable each module to inform the main thread when its
-  initialization completes.
- */
-bool NSI_initialization_complete;
-bool CommUnit_initialization_complete;
- 
-bool initialization_failed;
-
-/* Global variables */
-
 /* A Gateway config struct for storing config parameters from the config file */
-extern GatewayConfig config;
+GatewayConfig config;
 
 
 /* Head of a list of buffer list head in priority order. */
