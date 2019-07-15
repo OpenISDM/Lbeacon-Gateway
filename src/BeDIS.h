@@ -155,7 +155,25 @@
   of attention. */
 #define MAX_STARVATION_TIME 600
 
+/* Gateway config file location and the config file definition. */
 
+/* File path of the config file of the Gateway */
+#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
+
+/* File path of the config file of the zlog */
+#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
+
+/* The category of log file used for health report */
+#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
+
+/* The category of the printf during debugging */
+#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
+
+
+#define TEST_MALLOC_MAX_NUMBER_TIMES 5
+
+/* Maximum timeout for join request in second */
+#define JOIN_REQUEST_TIMEOUT 120
 
 
 typedef enum _ErrorCode{
@@ -343,27 +361,6 @@ typedef enum DeviceType {
     max_type = 2
 
 } DeviceType;
-
-/* Gateway config file location and the config file definition. */
-
-/* File path of the config file of the Gateway */
-#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
-
-/* File path of the config file of the zlog */
-#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
-
-/* The category of log file used for health report */
-#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
-
-/* The category of the printf during debugging */
-#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
-
-
-#define TEST_MALLOC_MAX_NUMBER_TIMES 5
-
-/* Maximum timeout for join request in second */
-#define JOIN_REQUEST_TIMEOUT 120
-
 
 /* The configuration file structure */
 typedef struct{

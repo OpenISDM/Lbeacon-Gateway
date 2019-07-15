@@ -116,7 +116,7 @@ int last_polling_join_request_time;
 
 
 /*
-  get_config:
+  get_gateway_config:
 
      This function reads the specified config file line by line until the
      end of file and copies the data in each line into an element of the
@@ -130,11 +130,11 @@ int last_polling_join_request_time;
 
      config - GatewayConfig struct
  */
-ErrorCode get_config(GatewayConfig *config, char *file_name);
+ErrorCode get_gateway_config(GatewayConfig *config, char *file_name);
 
 
 /*
-  NSI_routine:
+  Gateway_NSI_routine:
 
      This function is executed by worker threads when they process the buffer
      nodes in NSI receive buffer list.
@@ -149,11 +149,11 @@ ErrorCode get_config(GatewayConfig *config, char *file_name);
      None
 
  */
-void *NSI_routine(void *_buffer_node);
+void *Gateway_NSI_routine(void *_buffer_node);
 
 
 /*
-  BHM_routine:
+  Gateway_BHM_routine:
 
      This function is executed by worker threads when they process the buffer
      nodes in BHM_receive_buffer_list.
@@ -167,11 +167,11 @@ void *NSI_routine(void *_buffer_node);
      None
 
  */
-void *BHM_routine(void *_buffer_node);
+void *Gateway_BHM_routine(void *_buffer_node);
 
 
 /*
-  LBeacon_routine:
+  Gateway_LBeacon_routine:
 
      This function is executed by worker threads when they remove buffer nodes
      from LBeacon_receive_buffer_list and send them to the server directly.
@@ -185,7 +185,7 @@ void *BHM_routine(void *_buffer_node);
      None
 
  */
-void *LBeacon_routine(void *_buffer_node);
+void *Gateway_LBeacon_routine(void *_buffer_node);
 
 
 /*
@@ -286,7 +286,7 @@ void Wifi_free();
 
 
 /*
-  process_wifi_send:
+  Gateway_process_wifi_send:
 
      This function sends the msg in the specified buffer list to the server via
      Wi-Fi.
@@ -299,11 +299,11 @@ void Wifi_free();
 
      None
  */
-void *process_wifi_send(void *_buffer_node);
+void *Gateway_process_wifi_send(void *_buffer_node);
 
 
 /*
-  process_wifi_receive:
+  Gateway_process_wifi_receive:
 
      This function listens for messages or command received from the server or
      beacons. After getting the message, put the data in the message into the
@@ -317,7 +317,7 @@ void *process_wifi_send(void *_buffer_node);
 
      None
  */
-void *process_wifi_receive();
+void *Gateway_process_wifi_receive();
 
 
 #endif

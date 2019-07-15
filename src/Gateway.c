@@ -82,7 +82,7 @@ int main(int argc, char **argv){
 #endif
 
 
-    if(get_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
+    if(get_gateway_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
         zlog_error(category_health_report, "Opening config file Fail");
     #ifdef debugging
         zlog_error(category_debug, "Opening config file Fail");
@@ -106,7 +106,7 @@ int main(int argc, char **argv){
                 config.high_priority);
 
     init_buffer( &time_critical_LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_routine, config.normal_priority);
+                (void *) Gateway_LBeacon_routine, config.normal_priority);
     insert_list_tail( &time_critical_LBeacon_receive_buffer_list_head
                      .priority_list_entry,
                       &priority_list_head.priority_list_entry);
@@ -117,27 +117,27 @@ int main(int argc, char **argv){
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_routine, config.normal_priority);
+                (void *) Gateway_LBeacon_routine, config.normal_priority);
     insert_list_tail( &LBeacon_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_send_buffer_list_head,
-                (void *) process_wifi_send, config.low_priority);
+                (void *) Gateway_process_wifi_send, config.low_priority);
     insert_list_tail( &NSI_send_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_receive_buffer_list_head,
-                (void *) NSI_routine, config.low_priority);
+                (void *) Gateway_NSI_routine, config.low_priority);
     insert_list_tail( &NSI_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &BHM_receive_buffer_list_head,
-                (void *) BHM_routine, config.low_priority);
+                (void *) Gateway_BHM_routine, config.low_priority);
     insert_list_tail( &BHM_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &BHM_send_buffer_list_head,
-                (void *) process_wifi_send, config.low_priority);
+                (void *) Gateway_process_wifi_send, config.low_priority);
     insert_list_tail( &BHM_send_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
@@ -177,7 +177,7 @@ int main(int argc, char **argv){
     /* Create threads for sending and receiving data from and to LBeacons and
        the server. */
     /* Two static threads to listen for messages from LBeacon or Sever */
-    return_value = startThread( &wifi_listener, (void *)process_wifi_receive,
+    return_value = startThread( &wifi_listener, (void *)Gateway_process_wifi_receive,
                                NULL);
 
     if(return_value != WORK_SUCCESSFULLY){
@@ -391,7 +391,7 @@ int main(int argc, char **argv){
 }
 
 
-ErrorCode get_config(GatewayConfig *config, char *file_name) {
+ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
 
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
@@ -508,7 +508,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 }
 
 
-void *NSI_routine(void *_buffer_node){
+void *Gateway_NSI_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
@@ -551,7 +551,7 @@ void *NSI_routine(void *_buffer_node){
 }
 
 
-void *BHM_routine(void *_buffer_node){
+void *Gateway_BHM_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
@@ -566,7 +566,7 @@ void *BHM_routine(void *_buffer_node){
 }
 
 
-void *LBeacon_routine(void *_buffer_node){
+void *Gateway_LBeacon_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
@@ -711,7 +711,7 @@ void Wifi_free(){
 }
 
 
-void *process_wifi_send(void *_buffer_node){
+void *Gateway_process_wifi_send(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
@@ -725,7 +725,7 @@ void *process_wifi_send(void *_buffer_node){
 }
 
 
-void *process_wifi_receive(){
+void *Gateway_process_wifi_receive(){
     char tmp_addr[NETWORK_ADDR_LENGTH];
 
     while (ready_to_work == true) {
