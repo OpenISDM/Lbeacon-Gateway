@@ -75,8 +75,16 @@
 
 #define TEST_MALLOC_MAX_NUMBER_TIMES 5
 
-/* Maximum timeout for join request in second */
-#define JOIN_REQUEST_TIMEOUT 120
+/* Time interval in seconds for idle status of the Wifi connection between the
+gateway and server. Usually, the Wifi connection being idle for longer than
+the specified time interval is impossible in BeDIS Object tracker solution. So
+we treat the condition as a network connection failure. When this happens,
+gateway sends UDP join_request to the server again.
+*/
+#define INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC 180
+
+/* Time interval in seconds for reconnect to server */
+#define INTERVAL_FOR_RECONNECT_SERVER_IN_SEC 120
 
 /*
   Maximum length of time in seconds low priority message lists are starved
@@ -86,10 +94,9 @@
 /* The configuration file structure */
 typedef struct {
 
-    /* A flag indicating whether tracked object data from Lbeacon is polled by
-       the server */
-    bool is_polled_by_server;
-
+    /* A flag indicating whether this Gateway is responsible for geofence feature.*/
+    bool is_geofence;
+	
     /* The IP address of the server for WiFi netwok connection. */
     char IPaddress[NETWORK_ADDR_LENGTH];
 
@@ -137,7 +144,7 @@ typedef struct {
     coordinates, and location description. */
 typedef struct {
 
-    char uuid[UUID_LENGTH];
+    char uuid[LENGTH_OF_UUID];
 
     /* network address of wifi link to the LBeacon*/
     char net_address[NETWORK_ADDR_LENGTH];
@@ -222,9 +229,6 @@ BufferListHead LBeacon_receive_buffer_list_head;
 /* The head of a list of buffers for polling messages and commands */
 BufferListHead command_msg_buffer_list_head;
 
-/* The head of a list of buffers for time critical messages */
-BufferListHead time_critical_LBeacon_receive_buffer_list_head;
-
 /* The head of a list of the return message for LBeacon join requests */
 BufferListHead NSI_send_buffer_list_head;
 
@@ -253,10 +257,9 @@ bool CommUnit_initialization_complete;
 
 bool initialization_failed;
 
-/* Variables for storing the last polling times in second*/
-int last_polling_LBeacon_for_HR_time;
-int last_polling_object_tracking_time;
-int last_polling_join_request_time;
+/* Variables for storing the last polling times in second*/\
+int server_latest_polling_time;
+int last_join_request_time;
 
 
 /*
@@ -411,6 +414,44 @@ void *LBeacon_routine(void *_buffer_node);
  */
 void *Server_routine(void *_buffer_node);
 
+/*
+  send_join_request:
+
+      This function sends join_request to server when there is no packets
+      from the server for a specified long time or there are new LBeacon 
+	  requesting for join to this gateway.
+
+  Parameters:
+
+      report_all_lbeacons - specify if need to report all registered 
+	                        lbeacons to server
+	  single_lbeacon_uuid - uuid of LBeacon which need to be reported to
+	                        server
+
+  Return value:
+
+      ErrorCode - The error code for the corresponding error if the function
+                  fails or WORK SUCCESSFULLY otherwise
+*/
+
+ErrorCode send_join_request(bool report_all_lbeacons, 
+                            char *single_lbeacon_uuid);
+
+/*
+  handle_health_report:
+
+      This function sends health status to server.
+
+  Parameters:
+
+      None
+
+  Return value:
+
+      ErrorCode - The error code for the corresponding error if the function
+                  fails or WORK SUCCESSFULLY otherwise
+*/
+ErrorCode handle_health_report();
 
 /*
   init_Address_Map:
