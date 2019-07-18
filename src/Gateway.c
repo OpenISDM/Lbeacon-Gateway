@@ -380,23 +380,6 @@ ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
 }
 
 
-void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
-                 int priority_nice){
-
-    init_entry( &(buffer_list_head -> list_head));
-
-    init_entry( &(buffer_list_head -> priority_list_entry));
-
-    pthread_mutex_init( &buffer_list_head->list_lock, 0);
-
-    buffer_list_head -> function = function_p;
-
-    buffer_list_head -> arg = (void *) buffer_list_head;
-
-    buffer_list_head -> priority_nice = priority_nice;
-}
-
-
 void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
 
     List_Entry *list_pointer,

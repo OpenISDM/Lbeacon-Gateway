@@ -70,19 +70,6 @@ AddressMapArray LBeacon_address_map;
 /* The head of a list of buffers for polling messages and commands */
 BufferListHead command_msg_buffer_list_head;
 
-
-/* Flags */
-
-/*
-  Initialization of gateway components involves network activaties that may take
-  time. These flags enable each module to inform the main thread when its
-  initialization completes.
- */
-bool NSI_initialization_complete;
-bool CommUnit_initialization_complete;
-
-bool initialization_failed;
-
 /* Variables for storing the last polling times in second*/\
 int server_latest_polling_time;
 int last_join_request_time;
@@ -104,6 +91,26 @@ int last_join_request_time;
      config - GatewayConfig struct
  */
 ErrorCode get_gateway_config(GatewayConfig *config, char *file_name);
+
+
+/*
+  sort_priority_list:
+
+     The function arrange entries in the priority list in nonincreasing
+     order of the priority nice.
+
+  Parameters:
+
+     config - The pointer points to the structure which stored config for
+              gateway.
+     list_head - The pointer points to the priority list head.
+
+  Return value:
+
+     None
+ */
+void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
+
 
 
 /*

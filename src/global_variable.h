@@ -84,7 +84,7 @@
 #define WIFI_PASS_LENGTH 10
 
 /* Length of the LBeacon's UUID in number of characters */
-#define UUID_LENGTH 32
+#define LENGTH_OF_UUID 33
 
 /* Length of coordinates in number of bits */
 #define COORDINATE_LENGTH 64
@@ -147,7 +147,7 @@ gateway sends UDP join_request to the server again.
     coordinates, and location description. */
 typedef struct {
 
-    char uuid[UUID_LENGTH];
+    char uuid[LENGTH_OF_UUID];
 
     /* network address of wifi link to the LBeacon*/
     char net_address[NETWORK_ADDR_LENGTH];
