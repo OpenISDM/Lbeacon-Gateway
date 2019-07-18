@@ -121,7 +121,7 @@
 #define WIFI_PASS_LENGTH 10
 
 /* Length of the LBeacon's UUID in number of characters */
-#define UUID_LENGTH 32
+#define LENGTH_OF_UUID 33
 
 /* Length of coordinates in number of bits */
 #define COORDINATE_LENGTH 64
@@ -231,17 +231,7 @@ typedef enum pkt_types {
     /* A pkt containing tracked object data */
     tracked_object_data = 4,
     /* A pkt containing health report */
-    health_report = 5,
-    /* A pkt for LBeacon */
-    data_for_LBeacon = 6,
-
-    /* For server */
-
-    /* For the Gateway polling tracked object data from LBeacons */
-    poll_for_tracked_object_data_from_server = 9,
-    /* A polling request for health report from server */
-    RFHR_from_server = 10
-
+    health_report = 5
 } PktType;
 
 
