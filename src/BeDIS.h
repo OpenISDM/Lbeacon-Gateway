@@ -56,18 +56,38 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include <winsock2.h>
-#pragma comment(lib,"WS2_32.lib")
-#include <WS2tcpip.h>
 #include <signal.h>
 #include <time.h>
-#include <windows.h>
 #include "Mempool.h"
 #include "UDP_API.h"
 #include "LinkedList.h"
 #include "thpool.h"
 #include "zlog.h"
 #include "global_variable.h"
+
+#ifdef __unix__                    /*Unix systems */
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/timeb.h>
+#include <sys/file.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <dirent.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#elif defined(_WIN32) || defined(WIN32)     /* 32 or 64 bit Windows systems */
+
+#include <windows.h>
+#include <winsock2.h>
+#pragma comment(lib,"WS2_32.lib")
+#include <WS2tcpip.h>
+
+#endif
 
 
 typedef enum _ErrorCode{
