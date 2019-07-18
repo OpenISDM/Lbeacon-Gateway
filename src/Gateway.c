@@ -893,3 +893,28 @@ void *Gateway_process_wifi_receive(){
     } /* end of while (ready_to_work == true) */
     return (void *)NULL;
 }
+
+unsigned int *uuid_str_to_data(char *uuid) {
+    char conversion[] = "0123456789ABCDEF";
+    int uuid_length = strlen(uuid);
+    unsigned int *data =
+        (unsigned int *)malloc(sizeof(unsigned int) * uuid_length);
+
+    if (data == NULL) {
+        /* Error handling */
+        perror("Failed to allocate memory");
+        return NULL;
+    }
+
+    unsigned int *data_pointer = data;
+    char *uuid_counter = uuid;
+
+    for (uuid_counter = uuid; uuid_counter < uuid + uuid_length;data_pointer++,
+         uuid_counter += 2) {
+        *data_pointer =
+            ((strchr(conversion, toupper(*uuid_counter)) - conversion) * 16) +
+            (strchr(conversion, toupper(*(uuid_counter + 1))) - conversion);
+    }
+
+    return data;
+}

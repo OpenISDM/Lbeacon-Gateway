@@ -76,104 +76,7 @@
 #include "LinkedList.h"
 #include "thpool.h"
 #include "zlog.h"
-
-/* Parameter that marks the start of the config file */
-#define DELIMITER "="
-
-/* Parameter that marks the start of fracton part of float number */
-#define FRACTION_DOT "."
-
-/* Maximum number of characters in each line of config file */
-#define CONFIG_BUFFER_SIZE 64
-
-/* Number of times to retry open file, because file openning operation may have
-   transient failure. */
-#define FILE_OPEN_RETRIES 5
-
-/* Number of times to retry getting a dongle, because this operation may have
-   transient failure. */
-#define DONGLE_GET_RETRIES 5
-
-/* Number of times to retry opening socket, because socket openning operation
-   may have transient failure. */
-#define SOCKET_OPEN_RETRIES 5
-
-/* The number of slots in the memory pool */
-#define SLOTS_IN_MEM_POOL 1024
-
-/* Length of the IP address in byte */
-#define NETWORK_ADDR_LENGTH 16
-
-/* Length of the IP address in Hex */
-#define NETWORK_ADDR_LENGTH_HEX 8
-
-/* Maximum length of message to be sent over WiFi in bytes */
-#define MAXINUM_WIFI_MESSAGE_LENGTH 4096
-
-/* Minimum Wi-Fi message size (One byte for data type and one byte for a space)
- */
-#define MINIMUM_WIFI_MESSAGE_LENGTH 2
-
-/* The size of the array to store Wi-Fi SSID */
-#define WIFI_SSID_LENGTH 10
-
-/* The size of the array to store Wi-Fi Password */
-#define WIFI_PASS_LENGTH 10
-
-/* Length of the LBeacon's UUID in number of characters */
-#define UUID_LENGTH 32
-
-/* Length of coordinates in number of bits */
-#define COORDINATE_LENGTH 64
-
-/* The port on which to listen for incoming data */
-#define UDP_LISTEN_PORT 8888
-
-/* Number of bytes in the string format of epoch time */
-#define LENGTH_OF_EPOCH_TIME 11
-
-/* Time interval in seconds for busy-wait checking in threads */
-#define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_SEC 3
-
-/* Time interval in micro seconds for busy-wait checking in threads */
-#define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_MICRO_SECONDS 500000
-
-/* Minimum Timeout interval in nano seconds */
-#define BUSY_WAITING_TIME 100000
-
-/* Time interval in seconds for reconnect to Gateway */
-#define INTERVAL_FOR_RECONNECT_GATEWAY_IN_SEC 120
-
-/* Timeout in seconds for UDP receive socket */
-#define TIMEOUT_UDP_RECEIVCE_IN_SEC 5
-
-/* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
-#define MAX_NUMBER_NODES 16
-
-/*
-  Maximum length of time in seconds low priority message lists are starved
-  of attention. */
-#define MAX_STARVATION_TIME 600
-
-/* Gateway config file location and the config file definition. */
-
-/* File path of the config file of the Gateway */
-#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
-
-/* File path of the config file of the zlog */
-#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
-
-/* The category of log file used for health report */
-#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
-
-/* The category of the printf during debugging */
-#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
-
-
-#define TEST_MALLOC_MAX_NUMBER_TIMES 5
-
-/* Maximum timeout for join request in second */
-#define JOIN_REQUEST_TIMEOUT 120
+#include "global_variable.h"
 
 
 typedef enum _ErrorCode{
@@ -362,61 +265,38 @@ typedef enum DeviceType {
 
 } DeviceType;
 
-/* The configuration file structure */
-typedef struct{
 
-    /* A flag indicating whether tracked object data from Lbeacon is polled by
-       the server */
-    bool is_polled_by_server;
+/* The pointer to the category of the log file */
+zlog_category_t *category_health_report, *category_debug;
 
-    /* The IP address of the server for WiFi netwok connection. */
-    char IPaddress[NETWORK_ADDR_LENGTH];
 
-    /* The number of LBeacon nodes in the star network of this gateway */
-    int allowed_number_nodes;
+/* Struct for storing necessary objects for Wifi connection */
+sudp_config udp_config;
 
-    /* The time interval in seconds for gateway to send requests for health
-       reports from LBeacon */
-    int period_between_RFHR;
+/* mempool from which buffer node structure are allocated */
+Memory_Pool node_mempool;
 
-    /* The time interval in seconds for gateway to send requests for tracked
-       object data from LBeacon */
-    int period_between_RFTOD;
+/* The head of a list of buffers of data from LBeacons to be send to the Server
+ */
+BufferListHead LBeacon_receive_buffer_list_head;
 
-    /* The time interval in seconds for gateway to send requests for join request
-       to Server */
-    int period_between_join_requests;
+/* The head of a list of the return message for LBeacon join requests */
+BufferListHead NSI_send_buffer_list_head;
 
-    /*The number of worker threads used by the communication unit for sending
-      and receiving packets to and from LBeacons and the sever.*/
-    int number_worker_threads;
+/* The head of a list of buffers for return join request status */
+BufferListHead NSI_receive_buffer_list_head;
 
-    /* The IP address of the server */
-    char server_ip[NETWORK_ADDR_LENGTH];
+/* The head of a list of buffers holding health reports to be processed and sent
+   to the Server */
+BufferListHead BHM_send_buffer_list_head;
 
-    /* A port that LBeacons and the server are listening on and for gateway to
-       send to. */
-    int send_port;
-
-    /* A port that the Gateway is listening on and for beacons and server to
-       send to */
-    int recv_port;
-
-    /* Priority levels at which buffer lists are processed by the worker threads
-     */
-    int critical_priority;
-    int high_priority;
-    int normal_priority;
-    int low_priority;
-
-} GatewayConfig;
-
-/* Global variables */
-/* A Gateway config struct for storing config parameters from the config file */
-extern GatewayConfig config;
+/* The head of a list of buffers holding health reports from LBeacons */
+BufferListHead BHM_receive_buffer_list_head;
 
 /* Head of a list of buffer list head in priority order. */
-extern BufferListHead priority_list_head;
+BufferListHead priority_list_head;
+
+
 
 /* Flags */
 
@@ -425,10 +305,11 @@ extern BufferListHead priority_list_head;
   time. These flags enable each module to inform the main thread when its
   initialization completes.
  */
-extern bool NSI_initialization_complete;
-extern bool CommUnit_initialization_complete;
+bool NSI_initialization_complete;
+bool CommUnit_initialization_complete;
 
-extern bool initialization_failed;
+/* The flag is to identify whether any component fail to initialize */
+bool initialization_failed;
 
 /* A global flag that is initially set to true by the main thread. It is set
    to false by any thread when the thread encounters a fatal error,
@@ -436,26 +317,8 @@ extern bool initialization_failed;
    the ready_to_work flag will be set as false to stop all threads. */
 bool ready_to_work;
 
-/* The pointer to the category of the log file */
-zlog_category_t *category_health_report, *category_debug;
-
 
 /* FUNCTIONS */
-
-/*
-  uuid_str_to_data:
-
-     This function converts uuid from string to unsigned integer.
-
-  Parameters:
-
-     uuid - The uuid in string type.
-
-  Return value:
-
-     unsigned int - The converted uuid in unsigned int type.
- */
-unsigned int *uuid_str_to_data(char *uuid);
 
 
 /*

@@ -54,18 +54,19 @@
 #define debugging
 
 
-/* Struct for storing necessary objects for Wifi connection */
-sudp_config udp_config;
+/* Gateway config file location and the config file definition. */
 
-/* mempool from which buffer node structure are allocated */
-Memory_Pool node_mempool;
+/* File path of the config file of the Gateway */
+#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
+
+/* File path of the config file of the zlog */
+#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
+
+
+/* Global variables */
 
 /* An array of address maps */
 AddressMapArray LBeacon_address_map;
-
-/* The head of a list of buffers of data from LBeacons to be send to the Server
- */
-BufferListHead LBeacon_receive_buffer_list_head;
 
 /* The head of a list of buffers for polling messages and commands */
 BufferListHead command_msg_buffer_list_head;
@@ -73,46 +74,11 @@ BufferListHead command_msg_buffer_list_head;
 /* The head of a list of buffers for time critical messages */
 BufferListHead time_critical_LBeacon_receive_buffer_list_head;
 
-/* The head of a list of the return message for LBeacon join requests */
-BufferListHead NSI_send_buffer_list_head;
-
-/* The head of a list of buffers for return join request status */
-BufferListHead NSI_receive_buffer_list_head;
-
-/* The head of a list of buffers holding health reports to be processed and sent
-   to the Server */
-BufferListHead BHM_send_buffer_list_head;
-
-/* The head of a list of buffers holding health reports from LBeacons */
-BufferListHead BHM_receive_buffer_list_head;
-
-
-/* Global variables */
-
-/* A Gateway config struct for storing config parameters from the config file */
-GatewayConfig config;
-
-
-/* Head of a list of buffer list head in priority order. */
-BufferListHead priority_list_head;
-
-/* Flags */
-
-/*
-  Initialization of gateway components involves network activaties that may take
-  time. These flags enable each module to inform the main thread when its
-  initialization completes.
- */
-bool NSI_initialization_complete;
-bool CommUnit_initialization_complete;
-
-bool initialization_failed;
-
-
 /* Variables for storing the last polling times in second*/
 int last_polling_LBeacon_for_HR_time;
 int last_polling_object_tracking_time;
 int last_polling_join_request_time;
+
 
 
 /*
@@ -318,6 +284,22 @@ void *Gateway_process_wifi_send(void *_buffer_node);
      None
  */
 void *Gateway_process_wifi_receive();
+
+
+/*
+  uuid_str_to_data:
+
+     This function converts uuid from string to unsigned integer.
+
+  Parameters:
+
+     uuid - The uuid in string type.
+
+  Return value:
+
+     unsigned int - The converted uuid in unsigned int type.
+ */
+unsigned int *uuid_str_to_data(char *uuid);
 
 
 #endif
