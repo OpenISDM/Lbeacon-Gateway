@@ -562,25 +562,6 @@ int clock_gettime();
 
 
 /*
-  sort_priority_list:
-
-     The function arrange entries in the priority list in nonincreasing
-     order of the priority nice.
-
-  Parameters:
-
-     config - The pointer points to the structure which stored config for
-              gateway.
-     list_head - The pointer points to the priority list head.
-
-  Return value:
-
-     None
- */
-void *sort_priority_list(ServerConfig *config, BufferListHead *list_head);
-
-
-/*
   CommUnit_routine:
 
      The function is executed by the main thread of the communication unit that

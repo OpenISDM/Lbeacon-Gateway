@@ -303,8 +303,8 @@ void *CommUnit_routine()
     zlog_info(category_debug,"[CommUnit] thread pool Initializing");
 #endif
     /* Initialize the threadpool with specified number of worker threads
-       according to the data stored in the serverconfig file. */
-    thpool = thpool_init(serverconfig.number_worker_threads);
+       according to the data stored in the config file. */
+    thpool = thpool_init(config.number_worker_threads);
 
 #ifdef debugging
     zlog_info(category_debug, "[CommUnit] thread pool Initialized");
@@ -393,7 +393,7 @@ void *CommUnit_routine()
                                      priority_list_entry);
 
             if(current_head -> priority_nice == 
-                serverconfig.time_critical_priority){
+                config.time_critical_priority){
 
                 pthread_mutex_lock( &current_head -> list_lock);
 

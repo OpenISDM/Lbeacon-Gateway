@@ -70,10 +70,14 @@
 /* Length of the IP address in Hex */
 #define NETWORK_ADDR_LENGTH_HEX 8
 
-/* Maximum length of message to be sent over WiFi in bytes */
-#define MAXINUM_WIFI_MESSAGE_LENGTH 4096
+/* The size of message to be sent over WiFi in bytes */
+#define WIFI_MESSAGE_LENGTH 4096
 
-/* Minimum Wi-Fi message size (One byte for data type and one byte for a space)
+/* Maximum length of the message in bytes allow to set to WIFI_MESSAGE_LENGTH */
+#define MAXIMUM_WIFI_MESSAGE_LENGTH 65507
+
+/* Minimum length of the message in bytes
+   (One byte for data type and one byte for a space) 
  */
 #define MINIMUM_WIFI_MESSAGE_LENGTH 2
 
@@ -141,24 +145,6 @@ gateway sends UDP join_request to the server again.
 
 /* Time interval in seconds for reconnect to server */
 #define INTERVAL_FOR_RECONNECT_SERVER_IN_SEC 120
-
-
-/*  A struct linking network address assigned to a LBeacon to its UUID,
-    coordinates, and location description. */
-typedef struct {
-
-    char uuid[LENGTH_OF_UUID];
-
-    /* network address of wifi link to the LBeacon*/
-    char net_address[NETWORK_ADDR_LENGTH];
-
-    /* The last LBeacon reported datetime */
-    int last_lbeacon_datetime;
-
-    /* The last join request time */
-    int last_request_time;
-
-} AddressMap;
 
 
 /* The configuration file structure */
