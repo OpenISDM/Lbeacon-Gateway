@@ -291,6 +291,9 @@ sudp_config udp_config;
 /* The mempool for the buffer node structure to allocate memory */
 Memory_Pool node_mempool;
 
+/* The head of a list of buffers of data from LBeacons */
+BufferListHead LBeacon_receive_buffer_list_head;
+
 /* The head of a list of the return message for the Gateway join requests */
 BufferListHead NSI_send_buffer_list_head;
 
