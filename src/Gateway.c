@@ -51,11 +51,9 @@
 
 int main(int argc, char **argv){
 
-    struct timespec current_time;
     int return_value;
 
-    /* The flag is to know if any routines are processed in this while loop */
-    bool did_work;
+    int uptime;
 	
     /* The main thread of the communication Unit */
     pthread_t CommUnit_thread;
@@ -231,16 +229,16 @@ int main(int argc, char **argv){
 
         did_work = false;
 
-        clock_gettime(CLOCK_MONOTONIC, &current_time);
+        uptime = clock_gettime();
 
-        if(current_time.tv_sec - server_latest_polling_time > 
+        if(uptime - server_latest_polling_time > 
 		   INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
-		   current_time.tv_sec - last_join_request_time >
+		   uptime - last_join_request_time >
            INTERVAL_FOR_RECONNECT_SERVER_IN_SEC){
 			   
 			if(WORK_SUCCESSFULLY == send_join_request(true, temp_lbeacon_uuid))
             {
-                last_join_request_time = current_time.tv_sec;
+                last_join_request_time = uptime;
             }
             did_work = true;
         }
@@ -842,7 +840,7 @@ void *process_wifi_send(void *_buffer_node){
 
 void *process_wifi_receive(){
     char tmp_addr[NETWORK_ADDR_LENGTH];
-	struct timespec current_time;
+    int uptime;
 
     while (ready_to_work == true) {
 
@@ -852,7 +850,8 @@ void *process_wifi_receive(){
 
         if(temppkt.type == UDP){
 
-			clock_gettime(CLOCK_MONOTONIC, &current_time);
+            uptime = clock_gettime();
+			
 
             /* Allocate memory from node_mempool a buffer node for received data
                and copy the data from Wi-Fi receive queue to the node. */
@@ -889,7 +888,7 @@ void *process_wifi_receive(){
                 switch (pkt_direction) {
                     case from_server:
 					
-                        server_latest_polling_time = current_time.tv_sec;
+                        server_latest_polling_time = uptime;
 						
                         switch (pkt_type) {
 

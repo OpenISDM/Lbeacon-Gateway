@@ -437,7 +437,14 @@ int get_system_time()
 
 int clock_gettime()
 {
+#ifdef _WIN32
     return GetTickCount() / 1000;
+#elif __unix__
+    struct timespec current_time;
+    clock_gettime(CLOCK_MONOTONIC, &current_time);
+    return current_time.tv_sec;
+#endif
+
 }
 
 
