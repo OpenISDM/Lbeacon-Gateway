@@ -86,7 +86,7 @@ void init_Address_Map(AddressMapArray *address_map)
 int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag)
 {
     int n;
-    if (flag==1)
+    if (flag==0)
     {
         for(n = 0;n < MAX_NUMBER_NODES;n ++)
         {
@@ -98,7 +98,7 @@ int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag)
             }
         }
     }
-    else if(flag ==0)
+    else if(flag ==1)
     {
             
         for(n = 0;n < MAX_NUMBER_NODES; n ++){
@@ -119,6 +119,223 @@ int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag)
         }
     }
     return -1;
+}
+
+void *CommUnit_routine()
+{
+    /* The last reset time */
+    int init_time;
+
+    int uptime;
+
+    Threadpool thpool;
+
+    int return_error_value;
+
+    /* A flag to indicate whether any buffer nodes were processed in 
+    this iteration of the while loop */
+    bool did_work;
+
+    /* The pointer point to the current priority buffer list entry */
+    List_Entry *current_entry, *list_entry;
+
+    BufferNode *current_node;
+
+    /* The pointer point to the current buffer list head */
+    BufferListHead *current_head;
+
+    /* wait for NSI get ready */
+    while(NSI_initialization_complete == false)
+    {
+        Sleep(BUSY_WAITING_TIME);
+        if(initialization_failed == true)
+        {
+            return (void *)NULL;
+        }
+    }
+#ifdef debugging
+    zlog_info(category_debug,"[CommUnit] thread pool Initializing");
+#endif
+    /* Initialize the threadpool with specified number of worker threads
+       according to the data stored in the serverconfig file. */
+    thpool = thpool_init(serverconfig.number_worker_threads);
+
+#ifdef debugging
+    zlog_info(category_debug, "[CommUnit] thread pool Initialized");
+#endif
+
+    uptime = clock_gettime();
+
+    /* Set the initial time. */
+    init_time = uptime;
+
+    /* All the buffers lists have been are initialized and the thread pool
+       initialized. Set the flag to true. */
+    CommUnit_initialization_complete = true;
+
+    /* When there is no dead thead, do the work. */
+    while(ready_to_work == true)
+    {
+        did_work = false;
+
+        uptime = clock_gettime();
+
+        /* In the normal situation, the scanning starts from the high priority
+           to lower priority. When the timer expired for MAX_STARVATION_TIME,
+           reverse the scanning process */
+        while(uptime - init_time < MAX_STARVATION_TIME)
+        {
+            /* Scan the priority_list to get the buffer list with the highest
+               priority among all lists that are not empty. */
+
+            pthread_mutex_lock( &priority_list_head.list_lock);
+
+            list_for_each(current_entry,
+                          &priority_list_head.priority_list_entry)
+            {
+                current_head = ListEntry(current_entry, BufferListHead,
+                                         priority_list_entry);
+
+                pthread_mutex_lock( &current_head -> list_lock);
+
+                if (is_entry_list_empty( &current_head->list_head) == true)
+                {
+                    pthread_mutex_unlock( &current_head -> list_lock);
+                    /* Go to check the next buffer list in the priority list */
+
+                    continue;
+                }
+                else 
+                {
+                    list_entry = current_head -> list_head.next;
+
+                    remove_list_node(list_entry);
+
+                    pthread_mutex_unlock( &current_head -> list_lock);
+
+                    current_node = ListEntry(list_entry, BufferNode,
+                                             buffer_entry);
+
+                    /* Call the function specified by the function pointer to 
+                       the work */
+                    return_error_value = thpool_add_work(thpool,
+                                                     current_head -> function,
+                                                     current_node,
+                                                     current_head ->
+                                                     priority_nice);
+                    did_work = true;
+                    break;
+                }
+            }
+            uptime = clock_gettime();
+            pthread_mutex_unlock( &priority_list_head.list_lock);
+        }
+
+        /* Scan the priority list in reverse order to prevent starving the
+           lowest priority buffer list. */
+
+        pthread_mutex_lock( &priority_list_head.list_lock);
+
+        
+        // In starvation scenario, we still need to process time-critial buffer 
+        // lists first. We first process Geo_fence_alert_buffer_list_head, 
+        // then Geo_fence_receive_buffer_list_head, and finally reversely 
+        // traverse the priority list.
+        list_for_each(current_entry, &priority_list_head.priority_list_entry)
+        {
+            current_head = ListEntry(current_entry, BufferListHead,
+                                     priority_list_entry);
+
+            if(current_head -> priority_nice == 
+                serverconfig.time_critical_priority){
+
+                pthread_mutex_lock( &current_head -> list_lock);
+
+                if (is_entry_list_empty( &current_head->list_head) == true)
+                {
+                    pthread_mutex_unlock( &current_head -> list_lock);
+
+                    continue;
+                }
+                else 
+                {
+                    list_entry = current_head -> list_head.next;
+
+                    remove_list_node(list_entry);
+
+                    pthread_mutex_unlock( &current_head -> list_lock);
+
+                    current_node = ListEntry(list_entry, BufferNode,
+                                             buffer_entry);
+
+                    return_error_value = thpool_add_work(thpool,
+                                                     current_head -> function,
+                                                     current_node,
+                                                     current_head ->
+                                                     priority_nice);
+                    did_work = true;
+                    break;
+                }
+            }
+        }
+
+        // reversly traverse the priority list
+        list_for_each_reverse(current_entry,
+                              &priority_list_head.priority_list_entry)
+        {
+            current_head = ListEntry(current_entry, BufferListHead,
+                                     priority_list_entry);
+
+            pthread_mutex_lock( &current_head -> list_lock);
+
+            if (is_entry_list_empty( &current_head->list_head) == true)
+            {
+                pthread_mutex_unlock( &current_head -> list_lock);
+
+                continue;
+            }
+            else 
+            {
+                list_entry = current_head -> list_head.next;
+
+                remove_list_node(list_entry);
+
+                pthread_mutex_unlock( &current_head -> list_lock);
+
+                current_node = ListEntry(list_entry, BufferNode,
+                                         buffer_entry);
+
+                /* Call the function pointed to by the function pointer to do 
+                   the work */
+                return_error_value = thpool_add_work(thpool,
+                                                     current_head -> function,
+                                                     current_node,
+                                                     current_head ->
+                                                     priority_nice);
+                did_work = true;
+                break;
+            }
+        }
+
+        /* Update the init_time */
+        init_time = clock_gettime();
+
+        pthread_mutex_unlock( &priority_list_head.list_lock);
+
+        /* If during this iteration of while loop no work were done, 
+           sleep before starting the next iteration */
+        if(did_work == false)
+        {
+            Sleep(BUSY_WAITING_TIME);
+        }
+
+    } /* End while(ready_to_work == true) */
+
+    
+    /* Destroy the thread pool */
+    thpool_destroy(thpool);
+
+    return (void *)NULL;
 }
 
 
@@ -264,222 +481,4 @@ int display_time(void)
     printf("%s", ctime(&now));
     
     return 0;
-}
-
-
-void *CommUnit_routine()
-{
-    /* The last reset time */
-    int init_time;
-
-    int uptime;
-
-    Threadpool thpool;
-
-    int return_error_value;
-
-    /* A flag to indicate whether any buffer nodes were processed in 
-    this iteration of the while loop */
-    bool did_work;
-
-    /* The pointer point to the current priority buffer list entry */
-    List_Entry *current_entry, *list_entry;
-
-    BufferNode *current_node;
-
-    /* The pointer point to the current buffer list head */
-    BufferListHead *current_head;
-
-    /* wait for NSI get ready */
-    while(NSI_initialization_complete == false)
-    {
-        Sleep(BUSY_WAITING_TIME);
-        if(initialization_failed == true)
-        {
-            return (void *)NULL;
-        }
-    }
-#ifdef debugging
-    zlog_info(category_debug,"[CommUnit] thread pool Initializing");
-#endif
-    /* Initialize the threadpool with specified number of worker threads
-       according to the data stored in the config file. */
-    thpool = thpool_init(config.number_worker_threads);
-
-#ifdef debugging
-    zlog_info(category_debug, "[CommUnit] thread pool Initialized");
-#endif
-
-    uptime = clock_gettime();
-
-    /* Set the initial time. */
-    init_time = uptime;
-
-    /* All the buffers lists have been are initialized and the thread pool
-       initialized. Set the flag to true. */
-    CommUnit_initialization_complete = true;
-
-    /* When there is no dead thead, do the work. */
-    while(ready_to_work == true)
-    {
-        did_work = false;
-
-        uptime = clock_gettime();
-
-        /* In the normal situation, the scanning starts from the high priority
-           to lower priority. When the timer expired for MAX_STARVATION_TIME,
-           reverse the scanning process */
-        while(uptime - init_time < MAX_STARVATION_TIME)
-        {
-            /* Scan the priority_list to get the buffer list with the highest
-               priority among all lists that are not empty. */
-
-            pthread_mutex_lock( &priority_list_head.list_lock);
-
-            list_for_each(current_entry,
-                          &priority_list_head.priority_list_entry)
-            {
-                current_head = ListEntry(current_entry, BufferListHead,
-                                         priority_list_entry);
-
-                pthread_mutex_lock( &current_head -> list_lock);
-
-                if (is_entry_list_empty( &current_head->list_head) == true)
-                {
-                    pthread_mutex_unlock( &current_head -> list_lock);
-                    /* Go to check the next buffer list in the priority list */
-
-                    continue;
-                }
-                else 
-                {
-                    list_entry = current_head -> list_head.next;
-
-                    remove_list_node(list_entry);
-
-                    pthread_mutex_unlock( &current_head -> list_lock);
-
-                    current_node = ListEntry(list_entry, BufferNode,
-                                             buffer_entry);
-
-                    /* Call the function specified by the function pointer to 
-                       the work */
-                    return_error_value = thpool_add_work(thpool,
-                                                     current_head -> function,
-                                                     current_node,
-                                                     current_head ->
-                                                     priority_nice);
-                    did_work = true;
-                    break;
-                }
-            }
-            uptime = clock_gettime();
-            pthread_mutex_unlock( &priority_list_head.list_lock);
-        }
-
-        /* Scan the priority list in reverse order to prevent starving the
-           lowest priority buffer list. */
-
-        pthread_mutex_lock( &priority_list_head.list_lock);
-
-        
-        // In starvation scenario, we still need to process time-critial buffer 
-        // lists first. We first process Geo_fence_alert_buffer_list_head, 
-        // then Geo_fence_receive_buffer_list_head, and finally reversely 
-        // traverse the priority list.
-        list_for_each(current_entry, &priority_list_head.priority_list_entry)
-        {
-            current_head = ListEntry(current_entry, BufferListHead,
-                                     priority_list_entry);
-
-            if(current_head -> priority_nice == 
-                config.time_critical_priority){
-
-                pthread_mutex_lock( &current_head -> list_lock);
-
-                if (is_entry_list_empty( &current_head->list_head) == true)
-                {
-                    pthread_mutex_unlock( &current_head -> list_lock);
-
-                    continue;
-                }
-                else 
-                {
-                    list_entry = current_head -> list_head.next;
-
-                    remove_list_node(list_entry);
-
-                    pthread_mutex_unlock( &current_head -> list_lock);
-
-                    current_node = ListEntry(list_entry, BufferNode,
-                                             buffer_entry);
-
-                    return_error_value = thpool_add_work(thpool,
-                                                     current_head -> function,
-                                                     current_node,
-                                                     current_head ->
-                                                     priority_nice);
-                    did_work = true;
-                    break;
-                }
-            }
-        }
-
-        // reversly traverse the priority list
-        list_for_each_reverse(current_entry,
-                              &priority_list_head.priority_list_entry)
-        {
-            current_head = ListEntry(current_entry, BufferListHead,
-                                     priority_list_entry);
-
-            pthread_mutex_lock( &current_head -> list_lock);
-
-            if (is_entry_list_empty( &current_head->list_head) == true)
-            {
-                pthread_mutex_unlock( &current_head -> list_lock);
-
-                continue;
-            }
-            else 
-            {
-                list_entry = current_head -> list_head.next;
-
-                remove_list_node(list_entry);
-
-                pthread_mutex_unlock( &current_head -> list_lock);
-
-                current_node = ListEntry(list_entry, BufferNode,
-                                         buffer_entry);
-
-                /* Call the function pointed to by the function pointer to do 
-                   the work */
-                return_error_value = thpool_add_work(thpool,
-                                                     current_head -> function,
-                                                     current_node,
-                                                     current_head ->
-                                                     priority_nice);
-                did_work = true;
-                break;
-            }
-        }
-
-        /* Update the init_time */
-        init_time = clock_gettime();
-
-        pthread_mutex_unlock( &priority_list_head.list_lock);
-
-        /* If during this iteration of while loop no work were done, 
-           sleep before starting the next iteration */
-        if(did_work == false)
-        {
-            Sleep(BUSY_WAITING_TIME);
-        }
-
-    } /* End while(ready_to_work == true) */
-
-    
-    /* Destroy the thread pool */
-    thpool_destroy(thpool);
-
-    return (void *)NULL;
 }

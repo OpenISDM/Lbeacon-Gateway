@@ -90,6 +90,7 @@ int last_join_request_time;
 
      config - GatewayConfig struct
  */
+
 ErrorCode get_gateway_config(GatewayConfig *config, char *file_name);
 
 
@@ -223,8 +224,6 @@ ErrorCode send_join_request(bool report_all_lbeacons,
                   fails or WORK SUCCESSFULLY otherwise
 */
 ErrorCode handle_health_report();
-
-
 
 
 /*

@@ -47,6 +47,30 @@
 #ifndef BEDIS_H
 #define BEDIS_H
 
+#ifdef _WIN32
+ 
+   #include <winsock2.h>
+   #pragma  comment(lib,"WS2_32.lib")
+   #include <WS2tcpip.h>
+   #include <windows.h>
+
+#elif __unix__ // all unices not caught above
+
+   #include <netdb.h>
+   #include <netinet/in.h>
+   #include <dirent.h>
+   #include <pthread.h>
+   #include <arpa/inet.h>
+   #include <sys/socket.h>
+   #include <sys/poll.h>
+   #include <sys/ioctl.h>
+   #include <sys/types.h>
+   #include <sys/time.h>
+   #include <sys/timeb.h>
+   #include <sys/file.h>
+#else
+#   error "Unknown compiler"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,31 +88,6 @@
 #include "thpool.h"
 #include "zlog.h"
 #include "global_variable.h"
-
-#ifdef __unix__                    /*Unix systems */
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/poll.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/timeb.h>
-#include <sys/file.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <dirent.h>
-#include <pthread.h>
-#include <unistd.h>
-
-#elif defined(_WIN32) || defined(WIN32)     /* 32 or 64 bit Windows systems */
-
-#include <windows.h>
-#include <winsock2.h>
-#pragma comment(lib,"WS2_32.lib")
-#include <WS2tcpip.h>
-
-#endif
-
 
 typedef enum _ErrorCode{
 
@@ -198,36 +197,6 @@ typedef enum DeviceType {
 } DeviceType;
 
 
-/*  A struct for recording the network address and it's last update time */
-typedef struct {
-
-    char uuid[LENGTH_OF_UUID];
-
-    /* The network address of wifi link to the Gateway */
-    char net_address[NETWORK_ADDR_LENGTH];
-
-    /* The last LBeacon reported datetime */
-    int last_lbeacon_datetime;
-
-    /* The last join request time */
-    int last_request_time;
-
-} AddressMap;
-
-typedef struct {
-
-    /* A per array lock for the AddressMapArray when reading and update data */
-    pthread_mutex_t list_lock;
-
-    /* A Boolean array in which ith element records whether the ith address map
-       is in use. */
-    bool in_use[MAX_NUMBER_NODES];
-
-    AddressMap address_map_list[MAX_NUMBER_NODES];
-
-} AddressMapArray;
-
-
 /* A node of buffer to store received data and/or data to be send */
 typedef struct {
 
@@ -274,6 +243,38 @@ typedef struct {
 
 } BufferListHead;
 
+
+/*  A struct for recording the network address and it's last update time */
+typedef struct {
+
+    char uuid[LENGTH_OF_UUID];
+
+    /* The network address of wifi link to the Gateway */
+    char net_address[NETWORK_ADDR_LENGTH];
+
+    /* The last LBeacon reported datetime */
+    int last_lbeacon_datetime;
+
+    /* The last join request time */
+    int last_request_time;
+
+} AddressMap;
+
+
+typedef struct {
+
+    /* A per array lock for the AddressMapArray when reading and update data */
+    pthread_mutex_t list_lock;
+
+    /* A Boolean array in which ith element records whether the ith address map
+       is in use. */
+    bool in_use[MAX_NUMBER_NODES];
+
+    AddressMap address_map_list[MAX_NUMBER_NODES];
+
+} AddressMapArray;
+
+
 typedef struct coordinates{
 
     char X_coordinates[COORDINATE_LENGTH];
@@ -283,18 +284,12 @@ typedef struct coordinates{
 } Coordinates;
 
 
-/* The pointer to the category of the log file */
-zlog_category_t *category_health_report, *category_debug;
-
 
 /* The struct for storing necessary objects for the Wifi connection */
 sudp_config udp_config;
 
 /* The mempool for the buffer node structure to allocate memory */
 Memory_Pool node_mempool;
-
-/* The head of a list of buffers of data from LBeacons */
-BufferListHead LBeacon_receive_buffer_list_head;
 
 /* The head of a list of the return message for the Gateway join requests */
 BufferListHead NSI_send_buffer_list_head;
@@ -315,7 +310,6 @@ BufferListHead priority_list_head;
 
 
 /* Flags */
-
 /*
   Initialization of the Server components involves network activates that may
   take time. These flags enable each module to inform the main thread when its
@@ -333,10 +327,11 @@ bool initialization_failed;
    the ready_to_work flag will be set as false to stop all threads. */
 bool ready_to_work;
 
+/* The pointer to the category of the log file */
+zlog_category_t *category_health_report, *category_debug;
 
 
 /* FUNCTIONS */
-
 /*
   twoc:
 
@@ -402,13 +397,35 @@ void init_Address_Map(AddressMapArray *address_map);
 
      address_map - A pointer to the head of the AddressMap.
      net_address - The pointer to the network address to compare.
-     flag - 1: find uuid
-            0: find net_address 
+     flag - 0: find net_address
+            1: find uuid
+            
+
   Return value:
 
      int: If not find, return -1, else return its array number.
  */
-int is_in_Address_Map(AddressMapArray *address_map, char *net_address, int flag);
+int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag);
+
+
+/*
+  CommUnit_routine:
+
+     The function is executed by the main thread of the communication unit that
+     is responsible for sending and receiving packets to and from the sever and
+     LBeacons after the NSI module has initialized WiFi networks. It creates
+     threads to carry out the communication process.
+
+  Parameters:
+
+     None
+
+  Return value:
+
+     None
+
+ */
+void *CommUnit_routine();
 
 
 /*
@@ -559,25 +576,5 @@ int get_system_time();
 */
 int clock_gettime();
 
-
-
-/*
-  CommUnit_routine:
-
-     The function is executed by the main thread of the communication unit that
-     is responsible for sending and receiving packets to and from the sever and
-     LBeacons after the NSI module has initialized WiFi networks. It creates
-     threads to carry out the communication process.
-
-  Parameters:
-
-     None
-
-  Return value:
-
-     None
-
- */
-void *CommUnit_routine();
 
 #endif
