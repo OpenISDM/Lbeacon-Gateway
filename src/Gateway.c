@@ -86,7 +86,7 @@ int main(int argc, char **argv){
 #endif
 
 
-    if(get_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
+    if(get_gateway_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
         zlog_error(category_health_report, "Opening config file Fail");
     #ifdef debugging
         zlog_error(category_debug, "Opening config file Fail");
@@ -263,7 +263,7 @@ int main(int argc, char **argv){
 }
 
 
-ErrorCode get_config(GatewayConfig *config, char *file_name) {
+ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
 
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
@@ -377,23 +377,6 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 
     }
     return WORK_SUCCESSFULLY;
-}
-
-
-void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
-                 int priority_nice){
-
-    init_entry( &(buffer_list_head -> list_head));
-
-    init_entry( &(buffer_list_head -> priority_list_entry));
-
-    pthread_mutex_init( &buffer_list_head->list_lock, 0);
-
-    buffer_list_head -> function = function_p;
-
-    buffer_list_head -> arg = (void *) buffer_list_head;
-
-    buffer_list_head -> priority_nice = priority_nice;
 }
 
 
@@ -830,7 +813,7 @@ ErrorCode send_join_request(bool report_all_lbeacons,
 				   
         pthread_mutex_lock(&LBeacon_address_map.list_lock);
 		
-		index = is_in_Address_Map(&LBeacon_address_map, single_lbeacon_uuid);
+		index = is_in_Address_Map(&LBeacon_address_map, single_lbeacon_uuid, 1);
 		if(index >= 0){
 			count = 1;
 			
@@ -906,36 +889,6 @@ ErrorCode handle_health_report(){
 	return WORK_SUCCESSFULLY;
 }
 
-void init_Address_Map(AddressMapArray *address_map){
-
-    pthread_mutex_init( &address_map -> list_lock, 0);
-
-    memset(address_map -> address_map_list, 0,
-           sizeof(address_map -> address_map_list));
-
-    for(int n = 0; n < MAX_NUMBER_NODES; n ++)
-        address_map -> in_use[n] = false;
-}
-
-
-int is_in_Address_Map(AddressMapArray *address_map, char *uuid){
-
-    for(int n = 0;n < MAX_NUMBER_NODES;n ++){
-
-        if (address_map -> in_use[n] == true && strncmp(address_map ->
-            address_map_list[n].uuid, uuid, strlen(uuid)) == 0){
-				zlog_debug(category_debug,
-				           "uuid matached n=%d [%s] [%s] [%d]\n", 
-						   n, 
-						   address_map->address_map_list[n].uuid, 
-						   uuid, 
-						   strlen(uuid));
-                return n;
-        }
-    }
-    return -1;
-}
-
 
 bool beacon_join_request(AddressMapArray *address_map, char *uuid,
                          char *address, int datetime){
@@ -949,7 +902,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     int not_in_use = -1;
     int answer;
 
-    if(answer = is_in_Address_Map(address_map, uuid) >=0){
+    if(answer = is_in_Address_Map(address_map, uuid, 1) >=0){
         strncpy(address_map -> address_map_list[answer].net_address,
                 address, NETWORK_ADDR_LENGTH);
         address_map -> address_map_list[answer].last_request_time =
