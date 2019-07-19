@@ -61,6 +61,7 @@
 /* File path of the config file of the zlog */
 #define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
 
+#define Sleep usleep
 
 /* Global variables */
 

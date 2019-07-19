@@ -190,7 +190,7 @@ typedef struct {
 
     /* Priority levels at which buffer lists are processed by the worker threads
      */
-    int critical_priority;
+    int time_critical_priority;
     int high_priority;
     int normal_priority;
     int low_priority;
@@ -201,103 +201,5 @@ typedef struct {
 /* A Gateway config struct for storing config parameters from the config file */
 GatewayConfig config;
 
-
-/* unix functions */
-
-#ifdef __unix__
-/*
-  memset:
-
-      This function is called to fill a block of memory with specified value.
-
-  Parameters:
-
-     ptr    - the pointer to the block memory to fill
-     value  - The value in int type: The function will fill the memory with this
-              value
-     number - number of bytes in the memory area starting from ptr to be
-               set to value
-
-  Return value:
-
-     void * - a pointer points to the memory area
-*/
-extern void * memset(void * ptr, int value, size_t number);
-
-
-/*
-  pthread_attr_init:
-
-      This function is called to initialize thread attributes object pointed
-      to by attr with default attribute values
-
-  Parameters:
-
-      attr - pointer to the thread attributes object to be initialized
-
-  Return value:
-
-      0 for success. error number for error.
-*/
-extern int pthread_attr_init(pthread_attr_t *attr);
-
-
-/*
-  pthread_attr_destroy:
-
-      This function is called to destroy the thread attributes object
-      pointed to by attr
-
-  Parameters:
-
-      attr - the thread attributes object to be destroyed
-
-  Return value:
-
-      0 for success. error number for error.
-*/
-extern int pthread_attr_destroy(pthread_attr_t *attr);
-
-
-/*
-  pthread_create:
-
-      This function is called to start a new thread in the calling process.
-      The new thread starts execution by invoking start_routine.
-
-  Parameters:
-
-      thread - a pointer to the new thread
-      attr - set thread properties
-      start_routine - routine to be executed by the new thread
-      arg - the parameters of the start_routine.
-
-  Return value:
-
-      0 for success. error number for error and the contents of *thread are
-      undefined.
-*/
-extern int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
-                          void *(*start_routine) (void *), void *arg);
-
-
-/*
-  pthread_detach:
-
-      This function is called to mark the thread identified by thread as
-      detached. When a detached thread returns, its resources are
-      automatically released back to the system.
-
-  Parameters:
-
-      thread - a thread to be detached
-
-  Return value:
-
-      0 for success. error number for error.
-*/
-extern int pthread_detach(pthread_t thread);
-
-#endif
 
 #endif

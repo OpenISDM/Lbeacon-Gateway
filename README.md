@@ -65,7 +65,7 @@ number_worker_thread            | The number of worker threads is allowed to use
 server_ip                       | The Server IP address.
 send_port                       | The port which the Server is prepared to receive messages.
 recv_port                       | The port which the Gateway is prepare to receive messages.
-critical_priority               | The priority nice for critical priority.
+time_critical_priority               | The priority nice for critical priority.
 high_priority                   | The priority nice for higher priority.
 normal_priority                 | The priority nice for normal priority.
 low_priority                    | The priority nice for lower priority.

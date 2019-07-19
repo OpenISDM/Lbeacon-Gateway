@@ -353,7 +353,7 @@ ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->critical_priority = atoi(config_message);
+        config->time_critical_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -405,7 +405,7 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
         current_head = ListEntry(list_pointer, BufferListHead,
                                  priority_list_entry);
 
-        if(current_head -> priority_nice == config -> critical_priority)
+        if(current_head -> priority_nice == config -> time_critical_priority)
 
             insert_list_tail( list_pointer, &critical_priority_head);
 
@@ -588,10 +588,10 @@ void *Server_routine(void *_buffer_node){
 ErrorCode send_join_request(bool report_all_lbeacons, 
                             char *single_lbeacon_uuid){
 	
-    char message_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
-	char summary_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
-	char lbeacons_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
-	char one_lbeacon_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
+    char message_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+	char summary_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+	char lbeacons_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+	char one_lbeacon_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
 	
 	int send_type = 0;
 	int count = 0;
@@ -783,7 +783,7 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
 
     zlog_info(category_debug, "==Current in Brocast==");
 
-    if (size <= MAXINUM_WIFI_MESSAGE_LENGTH){
+    if (size <= MAXIMUM_WIFI_MESSAGE_LENGTH){
         for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
             if (address_map -> in_use[n] == true){
