@@ -433,26 +433,6 @@ int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag);
 void *CommUnit_routine();
 
 /*
-  udp_sendpkt
-
-     This function is called to send a packet to the destination via UDP 
-     connection.
-
-  Parameter:
-
-     udp_config  : A pointer to the structure contains all variables 
-                   for the UDP connection.
-     buffer_node : A pointer to the buffer node.
-
-  Return Value:
-
-     int : If return 0, everything work successfully.
-           If not 0   , something wrong.
- */
-int udp_sendpkt(pudp_config udp_config, BufferNode *buffer_node);
-
-
-/*
   trim_string_tail:
 
      This function trims whitespace, newline and carry-return at the end of

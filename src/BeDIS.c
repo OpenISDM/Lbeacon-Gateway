@@ -338,34 +338,6 @@ void *CommUnit_routine()
 }
 
 
-
-int udp_sendpkt(pudp_config udp_config, BufferNode *buffer_node)
-{
-    int pkt_type;
-
-    char content[WIFI_MESSAGE_LENGTH];
-
-    pkt_type = ((buffer_node->pkt_direction << 4) & 0xf0) + 
-               (buffer_node->pkt_type & 0x0f);
-
-    memset(content, 0, WIFI_MESSAGE_LENGTH);
-
-    sprintf(content, "%c%s", (char)pkt_type, buffer_node ->content);
-
-    buffer_node -> content_size =  buffer_node -> content_size + 1;
-  
-    /* Add the content of the buffer node to the UDP to be sent to the 
-       destination */
-    udp_addpkt(udp_config, 
-               buffer_node -> net_address, 
-               buffer_node -> port,
-               content,
-               buffer_node -> content_size);
-
-    return WORK_SUCCESSFULLY;
-}
-
-
 void trim_string_tail(char *message) 
 {
     int idx = 0;
