@@ -227,9 +227,7 @@ int main(int argc, char **argv){
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
 
-        did_work = false;
-
-        uptime = clock_gettime();
+        uptime = get_clock_time();
 
         if(uptime - server_latest_polling_time > 
 		   INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
@@ -240,10 +238,8 @@ int main(int argc, char **argv){
             {
                 last_join_request_time = uptime;
             }
-            did_work = true;
         }
-
-        if(did_work == false){
+        else{
             usleep(BUSY_WAITING_TIME_IN_MS);
         }
     }
@@ -705,7 +701,7 @@ ErrorCode handle_health_report(){
     /* put the pkt type into content */
     new_node->content[0] = (char)send_type;
 
-    sprintf(&new_node-> content[1], "%s;%d;", config.IPaddress, S_NORMAL);
+    sprintf(&new_node-> content[1], "%s;%d;", config.IPaddress, S_NORMAL_STATUS);
      
 	new_node->content_size = strlen(new_node-> content);
 	
@@ -850,7 +846,7 @@ void *process_wifi_receive(){
 
         if(temppkt.type == UDP){
 
-            uptime = clock_gettime();
+            uptime = get_clock_time();
 			
 
             /* Allocate memory from node_mempool a buffer node for received data
