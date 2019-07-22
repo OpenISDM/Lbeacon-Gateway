@@ -89,6 +89,7 @@
 #include "zlog.h"
 #include "global_variable.h"
 
+
 typedef enum _ErrorCode{
 
     WORK_SUCCESSFULLY = 0,
@@ -283,7 +284,7 @@ typedef struct coordinates{
 
 } Coordinates;
 
-
+/* Global variables */
 
 /* The struct for storing necessary objects for the Wifi connection */
 sudp_config udp_config;
@@ -313,6 +314,7 @@ BufferListHead priority_list_head;
 
 
 /* Flags */
+
 /*
   Initialization of the Server components involves network activates that may
   take time. These flags enable each module to inform the main thread when its
@@ -333,8 +335,8 @@ bool ready_to_work;
 /* The pointer to the category of the log file */
 zlog_category_t *category_health_report, *category_debug;
 
-
 /* FUNCTIONS */
+
 /*
   twoc:
 
@@ -399,7 +401,7 @@ void init_Address_Map(AddressMapArray *address_map);
   Parameters:
 
      address_map - A pointer to the head of the AddressMap.
-     net_address - The pointer to the network address to compare.
+     find - The pointer to the network address to compare.
      flag - 0: find net_address
             1: find uuid
             
@@ -429,7 +431,6 @@ int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag);
 
  */
 void *CommUnit_routine();
-
 
 /*
   udp_sendpkt

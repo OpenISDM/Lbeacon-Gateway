@@ -88,6 +88,7 @@ int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag)
     int n;
     if (flag==0)
     {
+ 
         for(n = 0;n < MAX_NUMBER_NODES;n ++)
         {
             if (address_map -> in_use[n] == true && 
@@ -100,9 +101,7 @@ int is_in_Address_Map(AddressMapArray *address_map, char *find, int flag)
     }
     else if(flag ==1)
     {
-            
         for(n = 0;n < MAX_NUMBER_NODES; n ++){
-
             if (address_map -> in_use[n] == true && 
                 strncmp(address_map -> address_map_list[n].uuid, 
                 find, LENGTH_OF_UUID) == 0)
@@ -147,7 +146,7 @@ void *CommUnit_routine()
     /* wait for NSI get ready */
     while(NSI_initialization_complete == false)
     {
-        Sleep(BUSY_WAITING_TIME);
+        Sleep(BUSY_WAITING_TIME_IN_MS);
         if(initialization_failed == true)
         {
             return (void *)NULL;
@@ -157,7 +156,7 @@ void *CommUnit_routine()
     zlog_info(category_debug,"[CommUnit] thread pool Initializing");
 #endif
     /* Initialize the threadpool with specified number of worker threads
-       according to the data stored in the config file. */
+       according to the data stored in the serverconfig file. */
     thpool = thpool_init(config.number_worker_threads);
 
 #ifdef debugging
@@ -326,7 +325,7 @@ void *CommUnit_routine()
            sleep before starting the next iteration */
         if(did_work == false)
         {
-            Sleep(BUSY_WAITING_TIME);
+            Sleep(BUSY_WAITING_TIME_IN_MS);
         }
 
     } /* End while(ready_to_work == true) */
@@ -337,6 +336,7 @@ void *CommUnit_routine()
 
     return (void *)NULL;
 }
+
 
 
 int udp_sendpkt(pudp_config udp_config, BufferNode *buffer_node)
@@ -444,7 +444,6 @@ int clock_gettime()
     clock_gettime(CLOCK_MONOTONIC, &current_time);
     return current_time.tv_sec;
 #endif
-
 }
 
 
@@ -485,7 +484,6 @@ int display_time(void)
 
     // Convert to local time format and print to stdout
     zlog_debug(category_debug, "%s", ctime(&now));
-    printf("%s", ctime(&now));
     
     return 0;
 }
