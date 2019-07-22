@@ -459,3 +459,12 @@ int display_time(void)
     
     return 0;
 }
+
+void sleep(int wait_time)
+{
+#ifdef _WIN32
+    Sleep(wait_time);
+#elif __unix__
+    usleep(wait_time);
+#endif
+}
