@@ -206,7 +206,7 @@ int main(int argc, char **argv){
     while(NSI_initialization_complete == false ||
           CommUnit_initialization_complete == false){
 
-        usleep(BUSY_WAITING_TIME_IN_MS);
+        sleep_t(BUSY_WAITING_TIME_IN_MS);
 
         if(initialization_failed == true){
             ready_to_work = false;
@@ -240,7 +240,7 @@ int main(int argc, char **argv){
             }
         }
         else{
-            usleep(BUSY_WAITING_TIME_IN_MS);
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
         }
     }
 
@@ -975,11 +975,11 @@ void *process_wifi_receive(){
         }
         else if(temppkt.type == NONE){
             /* If there is no packet received, sleep a short time */
-            usleep(BUSY_WAITING_TIME_IN_MS);
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
         }
         else {
             /* If there is no packet received, sleep a short time */
-            usleep(BUSY_WAITING_TIME_IN_MS);
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
         }
     } /* end of while (ready_to_work == true) */
     return (void *)NULL;

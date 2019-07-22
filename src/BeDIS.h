@@ -561,6 +561,6 @@ int get_system_time();
 int get_clock_time();
 
 
-void sleep(int wait_time);
+void sleep_t(int wait_time);
 
 #endif

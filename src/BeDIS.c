@@ -146,7 +146,7 @@ void *CommUnit_routine()
     /* wait for NSI get ready */
     while(NSI_initialization_complete == false)
     {
-        Sleep(BUSY_WAITING_TIME_IN_MS);
+        sleep_t(BUSY_WAITING_TIME_IN_MS);
         if(initialization_failed == true)
         {
             return (void *)NULL;
@@ -325,7 +325,7 @@ void *CommUnit_routine()
            sleep before starting the next iteration */
         if(did_work == false)
         {
-            Sleep(BUSY_WAITING_TIME_IN_MS);
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
         }
 
     } /* End while(ready_to_work == true) */
@@ -460,7 +460,7 @@ int display_time(void)
     return 0;
 }
 
-void sleep(int wait_time)
+void sleep_t(int wait_time)
 {
 #ifdef _WIN32
     Sleep(wait_time);
