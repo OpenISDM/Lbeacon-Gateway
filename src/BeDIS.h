@@ -512,6 +512,7 @@ ErrorCode startThread(pthread_t *thread, void *( *start_routine)(void *),
      delimiter delim.
      
      Windows uses strtok_s()
+     Linux uses strtok_r()
 
   Parameters:
 

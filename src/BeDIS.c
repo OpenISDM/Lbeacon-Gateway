@@ -437,8 +437,13 @@ char *strtok_save(char *str, char *delim, char **saveptr)
         *saveptr += strlen(delim) * sizeof(char);
         return NULL;
     }
-
+    
+#ifdef _WIN32
     return strtok_s(str, delim, saveptr);
+#elif __unix__
+    return strtok_r(str, delim, saveptr);
+#endif
+    
 }
 
 
