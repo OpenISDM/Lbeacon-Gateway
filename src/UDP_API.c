@@ -167,7 +167,7 @@ void *udp_send_pkt(void *udpconfig){
         }
         else{
 
-            usleep(SLEEP_TIME);
+            sleep_t(SLEEP_TIME);
 
         }
 

@@ -61,201 +61,13 @@
 /* File path of the config file of the zlog */
 #define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
 
-/* The category of log file used for health report */
-#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
-
-#ifdef debugging
-/* The category of the printf during debugging */
-#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
-
-#endif
-
-/* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
-#define MAX_NUMBER_NODES 16
-
-#define TEST_MALLOC_MAX_NUMBER_TIMES 5
-
-/* Time interval in seconds for idle status of the Wifi connection between the
-gateway and server. Usually, the Wifi connection being idle for longer than
-the specified time interval is impossible in BeDIS Object tracker solution. So
-we treat the condition as a network connection failure. When this happens,
-gateway sends UDP join_request to the server again.
-*/
-#define INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC 180
-
-/* Time interval in seconds for reconnect to server */
-#define INTERVAL_FOR_RECONNECT_SERVER_IN_SEC 120
-
-/*
-  Maximum length of time in seconds low priority message lists are starved
-  of attention. */
-#define MAX_STARVATION_TIME 600
-
-/* The configuration file structure */
-typedef struct {
-
-    /* A flag indicating whether this Gateway is responsible for geofence feature.*/
-    bool is_geofence;
-	
-    /* The IP address of the server for WiFi netwok connection. */
-    char IPaddress[NETWORK_ADDR_LENGTH];
-
-    /* The number of LBeacon nodes in the star network of this gateway */
-    int allowed_number_nodes;
-
-    /* The time interval in seconds for gateway to send requests for health
-       reports from LBeacon */
-    int period_between_RFHR;
-
-    /* The time interval in seconds for gateway to send requests for tracked
-       object data from LBeacon */
-    int period_between_RFTOD;
-
-    /* The time interval in seconds for gateway to send requests for join request
-       to Server */
-    int period_between_join_requests;
-
-    /*The number of worker threads used by the communication unit for sending
-      and receiving packets to and from LBeacons and the sever.*/
-    int number_worker_threads;
-
-    /* The IP address of the server */
-    char server_ip[NETWORK_ADDR_LENGTH];
-
-    /* A port that LBeacons and the server are listening on and for gateway to
-       send to. */
-    int send_port;
-
-    /* A port that the Gateway is listening on and for beacons and server to
-       send to */
-    int recv_port;
-
-    /* Priority levels at which buffer lists are processed by the worker threads
-     */
-    int critical_priority;
-    int high_priority;
-    int normal_priority;
-    int low_priority;
-
-} GatewayConfig;
-
-
-/*  A struct linking network address assigned to a LBeacon to its UUID,
-    coordinates, and location description. */
-typedef struct {
-
-    char uuid[LENGTH_OF_UUID];
-
-    /* network address of wifi link to the LBeacon*/
-    char net_address[NETWORK_ADDR_LENGTH];
-
-    /* The last LBeacon reported datetime */
-    int last_lbeacon_datetime;
-
-    /* The last join request time */
-    int last_request_time;
-
-} AddressMap;
-
-typedef struct {
-
-    /* A per list lock */
-    pthread_mutex_t list_lock;
-
-    /* A Boolean array in which ith element records whether the ith address map
-       is in use. */
-    bool in_use[MAX_NUMBER_NODES];
-
-    AddressMap address_map_list[MAX_NUMBER_NODES];
-
-} AddressMapArray;
-
-/* The struct of buffers used to store received data and/or data to be send */
-typedef struct {
-
-    struct List_Entry buffer_entry;
-
-    /* network address of the source or destination */
-    char net_address[NETWORK_ADDR_LENGTH];
-
-    /* pointer to where the data is stored. */
-    char content[MAXINUM_WIFI_MESSAGE_LENGTH];
-
-    int content_size;
-
-} BufferNode;
-
-/* A Head of a list of msg buffers */
-typedef struct {
-
-    /* A per list lock */
-    pthread_mutex_t list_lock;
-
-
-    struct List_Entry list_head;
-
-    struct List_Entry priority_list_entry;
-
-    /* nice relative to normal priority (i.e. nice = 0) */
-    int priority_nice;
-
-    /* The pointer point to the function to be called to process buffer nodes in
-       the list. */
-    void (*function)(void *arg);
-
-    /* function's argument */
-    void *arg;
-
-} BufferListHead;
-
 /* Global variables */
-
-/* A Gateway config struct for storing config parameters from the config file */
-GatewayConfig config;
-
-/* Struct for storing necessary objects for Wifi connection */
-sudp_config udp_config;
-
-/* mempool from which buffer node structure are allocated */
-Memory_Pool node_mempool;
 
 /* An array of address maps */
 AddressMapArray LBeacon_address_map;
 
-/* The head of a list of buffers of data from LBeacons to be send to the Server
- */
-BufferListHead LBeacon_receive_buffer_list_head;
-
 /* The head of a list of buffers for polling messages and commands */
 BufferListHead command_msg_buffer_list_head;
-
-/* The head of a list of the return message for LBeacon join requests */
-BufferListHead NSI_send_buffer_list_head;
-
-/* The head of a list of buffers for return join request status */
-BufferListHead NSI_receive_buffer_list_head;
-
-/* The head of a list of buffers holding health reports to be processed and sent
-   to the Server */
-BufferListHead BHM_send_buffer_list_head;
-
-/* The head of a list of buffers holding health reports from LBeacons */
-BufferListHead BHM_receive_buffer_list_head;
-
-/* Head of a list of buffer list head in priority order. */
-BufferListHead priority_list_head;
-
-/* Flags */
-
-/*
-  Initialization of gateway components involves network activaties that may take
-  time. These flags enable each module to inform the main thread when its
-  initialization completes.
- */
-bool NSI_initialization_complete;
-bool CommUnit_initialization_complete;
-
-bool initialization_failed;
 
 /* Variables for storing the last polling times in second*/\
 int server_latest_polling_time;
@@ -263,7 +75,7 @@ int last_join_request_time;
 
 
 /*
-  get_config:
+  get_gateway_config:
 
      This function reads the specified config file line by line until the
      end of file and copies the data in each line into an element of the
@@ -277,43 +89,21 @@ int last_join_request_time;
 
      config - GatewayConfig struct
  */
-ErrorCode get_config(GatewayConfig *config, char *file_name);
 
-
-/*
-  init_buffer:
-
-     The function fills the attributes of a specified buffer to be called by
-     another threads to process the buffer content, including the function, the
-     argument of the function and the priority level which the function is to be
-     executed.
-
-  Parameters:
-
-     buffer - A pointer of the buffer to be modified.
-     buff_id - The index of the buffer for the priority array
-     function - A function pointer to be assigned to the buffer
-     priority - The priority level of the buffer
-
-  Return value:
-
-     None
- */
-void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
-                 int priority_nice);
+ErrorCode get_gateway_config(GatewayConfig *config, char *file_name);
 
 
 /*
   sort_priority_list:
 
      The function arrange entries in the priority list in nonincreasing
-     order of Priority_nice.
+     order of the priority nice.
 
   Parameters:
 
      config - The pointer points to the structure which stored config for
               gateway.
-     list_head - The pointer of the priority list head.
+     list_head - The pointer points to the priority list head.
 
   Return value:
 
@@ -321,25 +111,6 @@ void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
  */
 void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
 
-
-/*
-  CommUnit_routine:
-
-     The function is executed by the main thread of the communication unit that
-     is responsible for sending and receiving packets to and from the sever and
-     LBeacons after the NSI module has initialized WiFi networks. It creates
-     threads to carry out the communication process.
-
-  Parameters:
-
-     None
-
-  Return value:
-
-     None
-
- */
-void *CommUnit_routine();
 
 
 /*
@@ -452,38 +223,6 @@ ErrorCode send_join_request(bool report_all_lbeacons,
                   fails or WORK SUCCESSFULLY otherwise
 */
 ErrorCode handle_health_report();
-
-/*
-  init_Address_Map:
-
-     This function initialize the head of the AddressMap.
-
-  Parameters:
-
-     address_map - The head of the AddressMap.
-
-  Return value:
-
-     None
- */
-void init_Address_Map(AddressMapArray *address_map);
-
-
-/*
-  is_in_Address_Map:
-
-     This function check whether the uuid is in LBeacon_address_map.
-
-  Parameters:
-
-     address_map - The head of the AddressMap.
-     uuid - the uuid we decide to compare.
-
-  Return value:
-
-     bool: If return true means in the address map, else false.
- */
-int is_in_Address_Map(AddressMapArray *address_map, char *uuid);
 
 
 /*
@@ -598,6 +337,100 @@ void *process_wifi_send(void *_buffer_node);
      None
  */
 void *process_wifi_receive();
+
+
+/*
+  memset:
+
+      This function is called to fill a block of memory with specified value.
+
+  Parameters:
+
+     ptr    - the pointer to the block memory to fill
+     value  - The value in int type: The function will fill the memory with this
+              value
+     number - number of bytes in the memory area starting from ptr to be
+               set to value
+
+  Return value:
+
+     void * - a pointer points to the memory area
+*/
+extern void * memset(void * ptr, int value, size_t number);
+
+
+/*
+  pthread_attr_init:
+
+      This function is called to initialize thread attributes object pointed
+      to by attr with default attribute values
+
+  Parameters:
+
+      attr - pointer to the thread attributes object to be initialized
+
+  Return value:
+
+      0 for success. error number for error.
+*/
+extern int pthread_attr_init(pthread_attr_t *attr);
+
+
+/*
+  pthread_attr_destroy:
+
+      This function is called to destroy the thread attributes object
+      pointed to by attr
+
+  Parameters:
+
+      attr - the thread attributes object to be destroyed
+
+  Return value:
+
+      0 for success. error number for error.
+*/
+extern int pthread_attr_destroy(pthread_attr_t *attr);
+
+
+/*
+  pthread_create:
+
+      This function is called to start a new thread in the calling process.
+      The new thread starts execution by invoking start_routine.
+
+  Parameters:
+
+      thread - a pointer to the new thread
+      attr - set thread properties
+      start_routine - routine to be executed by the new thread
+      arg - the parameters of the start_routine.
+
+  Return value:
+
+      0 for success. error number for error and the contents of *thread are
+      undefined.
+*/
+extern int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                          void *(*start_routine) (void *), void *arg);
+
+
+/*
+  pthread_detach:
+
+      This function is called to mark the thread identified by thread as
+      detached. When a detached thread returns, its resources are
+      automatically released back to the system.
+
+  Parameters:
+
+      thread - a thread to be detached
+
+  Return value:
+
+      0 for success. error number for error.
+*/
+extern int pthread_detach(pthread_t thread);
 
 
 #endif

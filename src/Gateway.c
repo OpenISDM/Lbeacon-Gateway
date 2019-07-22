@@ -51,11 +51,9 @@
 
 int main(int argc, char **argv){
 
-    struct timespec current_time;
     int return_value;
 
-    /* The flag is to know if any routines are processed in this while loop */
-    bool did_work;
+    int uptime;
 	
     /* The main thread of the communication Unit */
     pthread_t CommUnit_thread;
@@ -86,7 +84,7 @@ int main(int argc, char **argv){
 #endif
 
 
-    if(get_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
+    if(get_gateway_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
         zlog_error(category_health_report, "Opening config file Fail");
     #ifdef debugging
         zlog_error(category_debug, "Opening config file Fail");
@@ -208,7 +206,7 @@ int main(int argc, char **argv){
     while(NSI_initialization_complete == false ||
           CommUnit_initialization_complete == false){
 
-        usleep(BUSY_WAITING_TIME);
+        sleep_t(BUSY_WAITING_TIME_IN_MS);
 
         if(initialization_failed == true){
             ready_to_work = false;
@@ -229,24 +227,20 @@ int main(int argc, char **argv){
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
 
-        did_work = false;
+        uptime = get_clock_time();
 
-        clock_gettime(CLOCK_MONOTONIC, &current_time);
-
-        if(current_time.tv_sec - server_latest_polling_time > 
+        if(uptime - server_latest_polling_time > 
 		   INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
-		   current_time.tv_sec - last_join_request_time >
+		   uptime - last_join_request_time >
            INTERVAL_FOR_RECONNECT_SERVER_IN_SEC){
 			   
 			if(WORK_SUCCESSFULLY == send_join_request(true, temp_lbeacon_uuid))
             {
-                last_join_request_time = current_time.tv_sec;
+                last_join_request_time = uptime;
             }
-            did_work = true;
         }
-
-        if(did_work == false){
-            usleep(BUSY_WAITING_TIME);
+        else{
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
         }
     }
 
@@ -263,7 +257,7 @@ int main(int argc, char **argv){
 }
 
 
-ErrorCode get_config(GatewayConfig *config, char *file_name) {
+ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
 
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
@@ -353,7 +347,7 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->critical_priority = atoi(config_message);
+        config->time_critical_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -377,23 +371,6 @@ ErrorCode get_config(GatewayConfig *config, char *file_name) {
 
     }
     return WORK_SUCCESSFULLY;
-}
-
-
-void init_buffer(BufferListHead *buffer_list_head, void (*function_p)(void *),
-                 int priority_nice){
-
-    init_entry( &(buffer_list_head -> list_head));
-
-    init_entry( &(buffer_list_head -> priority_list_entry));
-
-    pthread_mutex_init( &buffer_list_head->list_lock, 0);
-
-    buffer_list_head -> function = function_p;
-
-    buffer_list_head -> arg = (void *) buffer_list_head;
-
-    buffer_list_head -> priority_nice = priority_nice;
 }
 
 
@@ -422,7 +399,7 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
         current_head = ListEntry(list_pointer, BufferListHead,
                                  priority_list_entry);
 
-        if(current_head -> priority_nice == config -> critical_priority)
+        if(current_head -> priority_nice == config -> time_critical_priority)
 
             insert_list_tail( list_pointer, &critical_priority_head);
 
@@ -469,170 +446,6 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
 }
 
 
-void *CommUnit_routine(){
-
-    int init_time;
-	struct timespec current_time;
-    Threadpool thpool;
-    int return_error_value;
-    /* The flag is to know if buffer nodes are processed in this while loop */
-    bool did_work;
-
-    /* wait for NSI get ready */
-    while(NSI_initialization_complete == false){
-        usleep(BUSY_WAITING_TIME);
-        if(initialization_failed == true){
-            return (void *)NULL;
-        }
-    }
-
-    /* Initialize the threadpool with specified number of worker threads
-       according to the data stored in the config file. */
-    thpool = thpool_init(config.number_worker_threads);
-
-    clock_gettime(CLOCK_MONOTONIC, &current_time);
-
-    /* Set the initial time. */
-    init_time = current_time.tv_sec;
-
-    /* All the buffers lists have been are initialized and the thread pool
-       initialized. Set the flag to true. */
-    CommUnit_initialization_complete = true;
-
-    /* When there is no dead thead, do the work. */
-    while(ready_to_work == true){
-
-        List_Entry *tmp, *list_entry;
-        BufferNode *current_node;
-        BufferListHead *current_head;
-
-        did_work = false;
-
-        /* Update the init_time */
-        init_time = get_system_time();
-
-        clock_gettime(CLOCK_MONOTONIC, &current_time);
-
-        /* In the normal situation, the scanning starts from the high priority
-           to lower priority. When the timer expired for MAX_STARVATION_TIME,
-           reverse the scanning process */
-        while(current_time.tv_sec - init_time < MAX_STARVATION_TIME){
-            did_work = false;
-
-            /* Scan the priority_list to get the buffer list with the highest
-               priority among all lists that are not empty. */
-
-            pthread_mutex_lock( &priority_list_head.list_lock);
-
-            list_for_each(tmp, &priority_list_head.priority_list_entry){
-
-                current_head = ListEntry(tmp, BufferListHead,
-                                        priority_list_entry);
-
-                pthread_mutex_lock( &current_head -> list_lock);
-
-                if (is_entry_list_empty( &current_head->list_head) == true){
-
-                    pthread_mutex_unlock( &current_head -> list_lock);
-                    /* Go to check the next buffer list in the priority list */
-
-                    continue;
-                }
-                else {
-
-                    list_entry = current_head -> list_head.next;
-
-                    remove_list_node(list_entry);
-
-                    pthread_mutex_unlock( &current_head -> list_lock);
-
-                    current_node = ListEntry(list_entry, BufferNode,
-                                             buffer_entry);
-
-                    /* If there is a node in the buffer and the buffer is not be
-                       occupied, do the work according to the function pointer
-                     */
-                    return_error_value = thpool_add_work(thpool,
-                                                current_head -> function,
-                                                current_node,
-                                                current_head -> priority_nice);
-
-                    pthread_mutex_unlock( &current_head -> list_lock);
-
-                    did_work = true;
-
-                    break;
-                }
-            }
-
-            pthread_mutex_unlock( &priority_list_head.list_lock);
-
-            clock_gettime(CLOCK_MONOTONIC, &current_time);
-
-            if(did_work == false){
-                break;
-            }
-
-        }
-
-        /* Scan the priority list in reverse order to prevent starving the
-           lowest priority buffer list. */
-
-        pthread_mutex_lock( &priority_list_head.list_lock);
-
-        list_for_each_reverse(tmp, &priority_list_head.priority_list_entry){
-
-            current_head = ListEntry(tmp, BufferListHead, priority_list_entry);
-
-            pthread_mutex_lock( &current_head -> list_lock);
-
-            if (is_entry_list_empty( &current_head->list_head) == true){
-
-                pthread_mutex_unlock( &current_head -> list_lock);
-                /* Go to check the next buffer list in the priority list */
-
-                continue;
-            }
-            else {
-
-                list_entry = current_head -> list_head.next;
-
-                remove_list_node(list_entry);
-
-                pthread_mutex_unlock( &current_head -> list_lock);
-
-                current_node = ListEntry(list_entry, BufferNode,
-                                         buffer_entry);
-
-                /* If there is a node in the buffer and the buffer is not be
-                   occupied, do the work according to the function pointer */
-                return_error_value = thpool_add_work(thpool,
-                                            current_head -> function,
-                                            current_node,
-                                            current_head -> priority_nice);
-
-                pthread_mutex_unlock( &current_head -> list_lock);
-
-                did_work = true;
-
-                break;
-
-            }
-        }
-
-        pthread_mutex_unlock( &priority_list_head.list_lock);
-
-        if(did_work == false){
-            usleep(BUSY_WAITING_TIME);
-        }
-
-    } /* End while(ready_to_work == true) */
-
-    /* Destroy the thread pool */
-    thpool_destroy(thpool);
-
-    return (void *)NULL;
-}
 
 
 void *NSI_routine(void *_buffer_node){
@@ -769,10 +582,10 @@ void *Server_routine(void *_buffer_node){
 ErrorCode send_join_request(bool report_all_lbeacons, 
                             char *single_lbeacon_uuid){
 	
-    char message_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
-	char summary_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
-	char lbeacons_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
-	char one_lbeacon_buf[MAXINUM_WIFI_MESSAGE_LENGTH];
+    char message_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+	char summary_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+	char lbeacons_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+	char one_lbeacon_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
 	
 	int send_type = 0;
 	int count = 0;
@@ -830,7 +643,7 @@ ErrorCode send_join_request(bool report_all_lbeacons,
 				   
         pthread_mutex_lock(&LBeacon_address_map.list_lock);
 		
-		index = is_in_Address_Map(&LBeacon_address_map, single_lbeacon_uuid);
+		index = is_in_Address_Map(&LBeacon_address_map, single_lbeacon_uuid, 1);
 		if(index >= 0){
 			count = 1;
 			
@@ -888,7 +701,7 @@ ErrorCode handle_health_report(){
     /* put the pkt type into content */
     new_node->content[0] = (char)send_type;
 
-    sprintf(&new_node-> content[1], "%s;%d;", config.IPaddress, S_NORMAL);
+    sprintf(&new_node-> content[1], "%s;%d;", config.IPaddress, S_NORMAL_STATUS);
      
 	new_node->content_size = strlen(new_node-> content);
 	
@@ -906,36 +719,6 @@ ErrorCode handle_health_report(){
 	return WORK_SUCCESSFULLY;
 }
 
-void init_Address_Map(AddressMapArray *address_map){
-
-    pthread_mutex_init( &address_map -> list_lock, 0);
-
-    memset(address_map -> address_map_list, 0,
-           sizeof(address_map -> address_map_list));
-
-    for(int n = 0; n < MAX_NUMBER_NODES; n ++)
-        address_map -> in_use[n] = false;
-}
-
-
-int is_in_Address_Map(AddressMapArray *address_map, char *uuid){
-
-    for(int n = 0;n < MAX_NUMBER_NODES;n ++){
-
-        if (address_map -> in_use[n] == true && strncmp(address_map ->
-            address_map_list[n].uuid, uuid, strlen(uuid)) == 0){
-				zlog_debug(category_debug,
-				           "uuid matached n=%d [%s] [%s] [%d]\n", 
-						   n, 
-						   address_map->address_map_list[n].uuid, 
-						   uuid, 
-						   strlen(uuid));
-                return n;
-        }
-    }
-    return -1;
-}
-
 
 bool beacon_join_request(AddressMapArray *address_map, char *uuid,
                          char *address, int datetime){
@@ -949,7 +732,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     int not_in_use = -1;
     int answer;
 
-    if(answer = is_in_Address_Map(address_map, uuid) >=0){
+    if(answer = is_in_Address_Map(address_map, uuid, 1) >=0){
         strncpy(address_map -> address_map_list[answer].net_address,
                 address, NETWORK_ADDR_LENGTH);
         address_map -> address_map_list[answer].last_request_time =
@@ -994,7 +777,7 @@ void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
 
     zlog_info(category_debug, "==Current in Brocast==");
 
-    if (size <= MAXINUM_WIFI_MESSAGE_LENGTH){
+    if (size <= MAXIMUM_WIFI_MESSAGE_LENGTH){
         for(int n = 0;n < MAX_NUMBER_NODES;n ++){
 
             if (address_map -> in_use[n] == true){
@@ -1053,7 +836,7 @@ void *process_wifi_send(void *_buffer_node){
 
 void *process_wifi_receive(){
     char tmp_addr[NETWORK_ADDR_LENGTH];
-	struct timespec current_time;
+    int uptime;
 
     while (ready_to_work == true) {
 
@@ -1063,7 +846,8 @@ void *process_wifi_receive(){
 
         if(temppkt.type == UDP){
 
-			clock_gettime(CLOCK_MONOTONIC, &current_time);
+            uptime = get_clock_time();
+			
 
             /* Allocate memory from node_mempool a buffer node for received data
                and copy the data from Wi-Fi receive queue to the node. */
@@ -1100,7 +884,7 @@ void *process_wifi_receive(){
                 switch (pkt_direction) {
                     case from_server:
 					
-                        server_latest_polling_time = current_time.tv_sec;
+                        server_latest_polling_time = uptime;
 						
                         switch (pkt_type) {
 
@@ -1191,11 +975,11 @@ void *process_wifi_receive(){
         }
         else if(temppkt.type == NONE){
             /* If there is no packet received, sleep a short time */
-            usleep(BUSY_WAITING_TIME);
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
         }
         else {
             /* If there is no packet received, sleep a short time */
-            usleep(BUSY_WAITING_TIME);
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
         }
     } /* end of while (ready_to_work == true) */
     return (void *)NULL;

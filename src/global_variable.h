@@ -40,6 +40,8 @@
 
 #ifndef GLOBAL_VARIABLE_H
 #define GLOBAL_VARIABLE_H
+
+
 /* Parameter that marks the start of the config file */
 #define DELIMITER "="
 
@@ -106,7 +108,7 @@
 #define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_MICRO_SECONDS 500000
 
 /* Minimum Timeout interval in nano seconds */
-#define BUSY_WAITING_TIME 100000
+#define BUSY_WAITING_TIME_IN_MS 100000
 
 /* Time interval in seconds for reconnect to Gateway */
 #define INTERVAL_FOR_RECONNECT_GATEWAY_IN_SEC 120
@@ -188,7 +190,7 @@ typedef struct {
 
     /* Priority levels at which buffer lists are processed by the worker threads
      */
-    int critical_priority;
+    int time_critical_priority;
     int high_priority;
     int normal_priority;
     int low_priority;
