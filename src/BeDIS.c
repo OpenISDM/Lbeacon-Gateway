@@ -163,7 +163,7 @@ void *CommUnit_routine()
     zlog_info(category_debug, "[CommUnit] thread pool Initialized");
 #endif
 
-    uptime = clock_gettime();
+    uptime = get_clock_time();
 
     /* Set the initial time. */
     init_time = uptime;
@@ -177,7 +177,7 @@ void *CommUnit_routine()
     {
         did_work = false;
 
-        uptime = clock_gettime();
+        uptime = get_clock_time();
 
         /* In the normal situation, the scanning starts from the high priority
            to lower priority. When the timer expired for MAX_STARVATION_TIME,
@@ -226,7 +226,7 @@ void *CommUnit_routine()
                     break;
                 }
             }
-            uptime = clock_gettime();
+            uptime = get_clock_time();
             pthread_mutex_unlock( &priority_list_head.list_lock);
         }
 
@@ -317,7 +317,7 @@ void *CommUnit_routine()
         }
 
         /* Update the init_time */
-        init_time = clock_gettime();
+        init_time = get_clock_time();
 
         pthread_mutex_unlock( &priority_list_head.list_lock);
 
@@ -407,7 +407,7 @@ int get_system_time()
     return system_time;
 }
 
-int clock_gettime()
+int get_clock_time()
 {
 #ifdef _WIN32
     return GetTickCount() / 1000;

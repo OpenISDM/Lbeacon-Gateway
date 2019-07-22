@@ -546,7 +546,7 @@ int get_system_time();
 
 
 /*
-  clock_gettime:
+  get_clock_time:
 
      This helper function gets the monotonic time.
 
@@ -558,7 +558,7 @@ int get_system_time();
 
      int - uptime of MONOTONIC time in seconds
 */
-int clock_gettime();
+int get_clock_time();
 
 
 #endif
