@@ -37,3 +37,5 @@
 
 # Backup file
 *.bak
+src/BeDIS.c
+src/BeDIS.h

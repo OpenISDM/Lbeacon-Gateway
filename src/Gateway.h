@@ -53,14 +53,6 @@
 /* Enable debugging mode. */
 #define debugging
 
-/* Gateway config file location and the config file definition. */
-
-/* File path of the config file of the Gateway */
-#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
-
-/* File path of the config file of the zlog */
-#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
-
 /* Global variables */
 
 /* An array of address maps */

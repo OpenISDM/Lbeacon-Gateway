@@ -35,107 +35,24 @@
      area.
 
   Authors:
-
+      
+     Jia Ying Shi  , littlestone1225@yahoo.com.tw
  */
 
 #ifndef GLOBAL_VARIABLE_H
 #define GLOBAL_VARIABLE_H
 
 
-/* Parameter that marks the start of the config file */
-#define DELIMITER "="
+/* Gateway config file location and the config file definition. */
 
-/* Parameter that marks the start of fracton part of float number */
-#define FRACTION_DOT "."
+/* File path of the config file of the Gateway */
+#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
 
-/* Maximum number of characters in each line of config file */
-#define CONFIG_BUFFER_SIZE 64
-
-/* Number of times to retry open file, because file openning operation may have
-   transient failure. */
-#define FILE_OPEN_RETRIES 5
-
-/* Number of times to retry getting a dongle, because this operation may have
-   transient failure. */
-#define DONGLE_GET_RETRIES 5
-
-/* Number of times to retry opening socket, because socket openning operation
-   may have transient failure. */
-#define SOCKET_OPEN_RETRIES 5
-
-/* The number of slots in the memory pool */
-#define SLOTS_IN_MEM_POOL 1024
-
-/* Length of the IP address in byte */
-#define NETWORK_ADDR_LENGTH 16
-
-/* Length of the IP address in Hex */
-#define NETWORK_ADDR_LENGTH_HEX 8
-
-/* The size of message to be sent over WiFi in bytes */
-#define WIFI_MESSAGE_LENGTH 4096
-
-/* Maximum length of the message in bytes allow to set to WIFI_MESSAGE_LENGTH */
-#define MAXIMUM_WIFI_MESSAGE_LENGTH 65507
-
-/* Minimum length of the message in bytes
-   (One byte for data type and one byte for a space) 
- */
-#define MINIMUM_WIFI_MESSAGE_LENGTH 2
-
-/* The size of the array to store Wi-Fi SSID */
-#define WIFI_SSID_LENGTH 10
-
-/* The size of the array to store Wi-Fi Password */
-#define WIFI_PASS_LENGTH 10
+/* File path of the config file of the zlog */
+#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
 
 /* Length of the LBeacon's UUID in number of characters */
 #define LENGTH_OF_UUID 33
-
-/* Length of coordinates in number of bits */
-#define COORDINATE_LENGTH 64
-
-/* The port on which to listen for incoming data */
-#define UDP_LISTEN_PORT 8888
-
-/* Number of bytes in the string format of epoch time */
-#define LENGTH_OF_EPOCH_TIME 11
-
-/* Time interval in seconds for busy-wait checking in threads */
-#define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_SEC 3
-
-/* Time interval in micro seconds for busy-wait checking in threads */
-#define INTERVAL_FOR_BUSY_WAITING_CHECK_IN_MICRO_SECONDS 500000
-
-/* Minimum Timeout interval in nano seconds */
-#define BUSY_WAITING_TIME_IN_MS 100000
-
-/* Time interval in seconds for reconnect to Gateway */
-#define INTERVAL_FOR_RECONNECT_GATEWAY_IN_SEC 120
-
-/* Timeout in seconds for UDP receive socket */
-#define TIMEOUT_UDP_RECEIVCE_IN_SEC 5
-
-/* Maximum number of nodes (LBeacons) per star network rooted at a gateway */
-#define MAX_NUMBER_NODES 16
-
-/*
-  Maximum length of time in seconds low priority message lists are starved
-  of attention. */
-#define MAX_STARVATION_TIME 600
-
-#define TEST_MALLOC_MAX_NUMBER_TIMES 5
-
-/* Maximum timeout for join request in second */
-#define JOIN_REQUEST_TIMEOUT 120
-
-/* zlog category name */
-/* The category of log file used for health report */
-#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
-
-/* The category of the printf during debugging */
-#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
-
 
 /* Time interval in seconds for idle status of the Wifi connection between the
 gateway and server. Usually, the Wifi connection being idle for longer than
