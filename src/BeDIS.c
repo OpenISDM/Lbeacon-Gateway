@@ -470,6 +470,7 @@ void sleep_t(int wait_time)
 #ifdef _WIN32
     Sleep(wait_time);
 #elif __unix__
+    wait_time*=1000;
     usleep(wait_time);
 #endif
 }

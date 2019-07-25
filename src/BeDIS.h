@@ -54,7 +54,7 @@
    #include <WS2tcpip.h>
    #include <windows.h>
 
-#elif __unix__ // all unices not caught above
+#elif __unix__
 
    #include <netdb.h>
    #include <netinet/in.h>
@@ -88,6 +88,61 @@
 #include "thpool.h"
 #include "zlog.h"
 #include "global_variable.h"
+
+/* zlog category name */
+/* The category of log file used for health report */
+#define LOG_CATEGORY_HEALTH_REPORT "Health_Report"
+
+/* The category of the printf during debugging */
+#define LOG_CATEGORY_DEBUG "LBeacon_Debug"
+
+
+/* Parameter that marks the start of the config file */
+#define DELIMITER "="
+
+/* Parameter that marks the separator of differnt records communicated with
+   SQL wrapper API */
+#define DELIMITER_SEMICOLON ";"
+
+/* Parameter that marks the separate of different records */
+#define DELIMITER_COMMA ","
+
+/* Maximum number of characters in each line of config file */
+#define CONFIG_BUFFER_SIZE 4096
+
+/* The number of slots in the memory pool */
+#define SLOTS_IN_MEM_POOL 1024
+
+/* Length of the IP address in byte */
+#define NETWORK_ADDR_LENGTH 16
+
+/* Length of the IP address in Hex */
+#define NETWORK_ADDR_LENGTH_HEX 8
+
+/* The size of message to be sent over WiFi in bytes */
+#define WIFI_MESSAGE_LENGTH 4096
+
+/* Maximum length of the message in bytes allow to set to WIFI_MESSAGE_LENGTH */
+#define MAXIMUM_WIFI_MESSAGE_LENGTH 65507
+
+/* Minimum length of the message in bytes 
+   (One byte for data type and one byte for a space) 
+ */
+#define MINIMUM_WIFI_MESSAGE_LENGTH 2
+
+/* Length of coordinates in number of bits */
+#define COORDINATE_LENGTH 64
+
+/* Timeout interval in ms */
+#define BUSY_WAITING_TIME_IN_MS 300
+
+/* Maximum number of nodes per star network */
+#define MAX_NUMBER_NODES 16
+
+/*
+  Maximum length of time in seconds low priority message lists are starved
+  of attention. */
+#define MAX_STARVATION_TIME 600
 
 
 typedef enum _ErrorCode{
