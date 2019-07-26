@@ -53,6 +53,31 @@
 /* Enable debugging mode. */
 #define debugging
 
+/* Gateway config file location and the config file definition. */
+
+/* File path of the config file of the Gateway */
+#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
+
+/* File path of the config file of the zlog */
+#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
+
+/* Server API protocol version for communicate between Server and Gateway. */
+#define BOT_SERVER_API_VERSION "2.0"
+
+/* Gateway API protocol version for communicate between Gateway and LBeacon. */
+#define BOT_GATEWAY_API_VERSION "1.0"
+
+/* Time interval in seconds for idle status of the Wifi connection between the
+gateway and server. Usually, the Wifi connection being idle for longer than
+the specified time interval is impossible in BeDIS Object tracker solution. So
+we treat the condition as a network connection failure. When this happens,
+gateway sends UDP join_request to the server again.
+*/
+#define INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC 30
+
+/* Time interval in seconds for reconnect to server */
+#define INTERVAL_FOR_RECONNECT_SERVER_IN_SEC 30
+
 /* Global variables */
 
 /* An array of address maps */
@@ -182,14 +207,14 @@ void *Server_routine(void *_buffer_node);
 
       This function sends join_request to server when there is no packets
       from the server for a specified long time or there are new LBeacon 
-	  requesting for join to this gateway.
+      requesting for join to this gateway.
 
   Parameters:
 
       report_all_lbeacons - specify if need to report all registered 
-	                        lbeacons to server
-	  single_lbeacon_uuid - uuid of LBeacon which need to be reported to
-	                        server
+                            lbeacons to server
+      single_lbeacon_uuid - uuid of LBeacon which need to be reported to
+                            server
 
   Return value:
 
@@ -238,8 +263,10 @@ ErrorCode handle_health_report();
             false : Fail to join
 
  */
-bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
-                         , int datetime);
+bool beacon_join_request(AddressMapArray *address_map, 
+                         char *uuid, 
+                         char *address, 
+                         int datetime);
 
 
 /*
@@ -251,6 +278,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
 
   Parameters:
      address_map - The head of the AddressMap.
+     pkt_type - the request type of this request command
      msg - The pointer to the msg to be send to beacons.
      size - The size of the msg.
 
@@ -259,7 +287,10 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid, char *address
      None
 
  */
-void beacon_broadcast(AddressMapArray *address_map, char *msg, int size);
+void beacon_broadcast(AddressMapArray *address_map, 
+                      int pkt_type, 
+                      char *msg, 
+                      int size);
 
 
 /*

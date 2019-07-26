@@ -24,7 +24,7 @@
 
   Version:
 
-     1.0, 20190306
+     1.0, 20190724
 
   Abstract:
 
@@ -54,14 +54,14 @@ int main(int argc, char **argv){
     int return_value;
 
     int uptime;
-	
+
     /* The main thread of the communication Unit */
     pthread_t CommUnit_thread;
 
     /* The thread to listen for messages from Wi-Fi interface */
     pthread_t wifi_listener;
-	
-	char *temp_lbeacon_uuid = NULL;
+
+    char *temp_lbeacon_uuid = NULL;
 
     /* Initialize zlog */
 
@@ -221,7 +221,7 @@ int main(int argc, char **argv){
     }
 
 
-	server_latest_polling_time = 0;
+    server_latest_polling_time = 0;
     last_join_request_time = 0;
 
     /* The while loop that keeps the program running */
@@ -230,11 +230,11 @@ int main(int argc, char **argv){
         uptime = get_clock_time();
 
         if(uptime - server_latest_polling_time > 
-		   INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
-		   uptime - last_join_request_time >
+           INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
+           uptime - last_join_request_time >
            INTERVAL_FOR_RECONNECT_SERVER_IN_SEC){
-			   
-			if(WORK_SUCCESSFULLY == send_join_request(true, temp_lbeacon_uuid))
+
+           if(WORK_SUCCESSFULLY == send_join_request(true, temp_lbeacon_uuid))
             {
                 last_join_request_time = uptime;
             }
@@ -246,8 +246,8 @@ int main(int argc, char **argv){
 
     /* The program is going to be ended. Free the connection of Wifi */
     Wifi_free();
-	
-	mp_destroy(&node_mempool);
+
+    mp_destroy(&node_mempool);
 
 #ifdef debugging
     zlog_info(category_debug, "Gateway exit successfullly");
@@ -278,7 +278,7 @@ ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
         config->is_geofence = atoi(config_message);
-		
+
         /* Keep reading each line and store into the config struct */
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -445,52 +445,60 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
 
 }
 
-
-
-
 void *NSI_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
-    char *current_uuid = NULL, *datetime_str = NULL, *saveptr = NULL;
-	
-	char uuid[LENGTH_OF_UUID];
+    char buf[WIFI_MESSAGE_LENGTH];
+    char *saveptr = NULL;
 
+    char *current_uuid = NULL;
+    char *datetime_str = NULL;
+
+    char uuid[LENGTH_OF_UUID];
     int LBeacon_datetime;
+    JoinStatus join_status = JOIN_UNKNOWN;
 
-    int send_type = (from_gateway & 0x0f)<<4;
+    memset(buf, 0, sizeof(buf));
+    strcpy(buf, temp->content);
 
     memset(uuid, 0, sizeof(uuid));
-    
-	current_uuid = strtok_save(&temp->content[1], ";", &saveptr);
-	
-	memcpy(uuid, current_uuid, sizeof(uuid));
+    current_uuid = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
+    memcpy(uuid, current_uuid, sizeof(uuid));
 
-    datetime_str = strtok_save(NULL, ";", &saveptr);
-
+    datetime_str = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
     sscanf(datetime_str, "%d", &LBeacon_datetime);
 
     /* Put the address into LBeacon_address_map and set the return pkt type
      */
     if (beacon_join_request(&LBeacon_address_map, current_uuid, temp ->
-                            net_address, LBeacon_datetime) == true)
-        send_type += join_request_ack & 0x0f;
+                            net_address, LBeacon_datetime))
+        join_status = JOIN_ACK;
     else
-        send_type += join_request_deny & 0x0f;
+        join_status = JOIN_DENY;
 
     /* put the pkt type into content */
-    temp->content[0] = (char)send_type;
 
-    zlog_debug(category_debug, "current_uuid=[%s], " \
-	                           "LBeacon_datetime=[%d], " \
-							   "net_address=[%s]",
-							   current_uuid,
-							   LBeacon_datetime,
-							   temp->net_address);
-							  
-    sprintf(&temp-> content[1], "%s;%d;%s;", current_uuid, LBeacon_datetime,
-                                             temp -> net_address);
-
+    zlog_debug(category_debug, "uuid=[%s], " \
+                               "LBeacon_datetime=[%d], " \
+                               "net_address=[%s], " \
+                               "join_result=[%d]",
+                               uuid,
+                               LBeacon_datetime,
+                               temp->net_address,
+                               join_status);
+  
+    memset(buf, 0, sizeof(buf));
+    sprintf(buf, "%d;%d;%s;%s;%d;%s;%d;", from_gateway,
+                                          join_response, 
+                                          BOT_GATEWAY_API_VERSION,
+                                          uuid, 
+                                          LBeacon_datetime,
+                                          temp -> net_address,
+                                          join_status);
+  
+    memset(temp->content, 0, sizeof(temp->content));  
+    strcpy(temp->content, buf);
     temp->content_size = strlen(temp-> content);
 
     pthread_mutex_lock(&NSI_send_buffer_list_head.list_lock);
@@ -499,9 +507,9 @@ void *NSI_routine(void *_buffer_node){
                       &NSI_send_buffer_list_head.list_head);
 
     pthread_mutex_unlock( &NSI_send_buffer_list_head.list_lock);
-				  
-	// We need to report the registration status of this Beacon to server 
-	send_join_request(false, uuid);
+ 
+    // We need to report the registration status of this Beacon to server 
+    send_join_request(false, uuid);
 
     return (void *)NULL;
 }
@@ -510,12 +518,21 @@ void *NSI_routine(void *_buffer_node){
 void *BHM_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
+    char buf[WIFI_MESSAGE_LENGTH];
 
-	strncpy(temp-> net_address, 
-	        config.server_ip, 
-			NETWORK_ADDR_LENGTH);
-			
-	pthread_mutex_lock(&BHM_send_buffer_list_head.list_lock);
+    memset(buf, 0, sizeof(buf));
+    sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                 beacon_health_report,  
+                                 BOT_SERVER_API_VERSION,
+                                 temp->content);
+    
+    strcpy(temp->content, buf);
+    temp->content_size = strlen(temp->content);
+    strncpy(temp-> net_address, 
+            config.server_ip, 
+            NETWORK_ADDR_LENGTH);
+
+    pthread_mutex_lock(&BHM_send_buffer_list_head.list_lock);
 
     insert_list_tail( &temp->buffer_entry,
                       &BHM_send_buffer_list_head.list_head);
@@ -529,16 +546,23 @@ void *BHM_routine(void *_buffer_node){
 void *LBeacon_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
+    int pkt_type = temp -> pkt_type;
+    char buf[WIFI_MESSAGE_LENGTH];
 
-    /* If this Gateway is geofence, change the pkt_direction part to be from_gateway */
-	if(config.is_geofence)
-	{
-		zlog_debug(category_debug, "change pkt_direction in LBeacon_routine");
-		int send_msg_type = ((from_gateway & 0x0f) << 4) +
-                                     (tracked_object_data & 0x0f);
-		temp -> content[0] = (char)send_msg_type;
-	}
-	
+    if(config.is_geofence)
+    {
+        pkt_type = time_critical_tracked_object_data;
+    }
+
+    memset(buf, 0, sizeof(buf));
+    sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                 pkt_type, 
+                                 BOT_SERVER_API_VERSION,
+                                 temp->content);
+
+    strcpy(temp->content, buf);	
+    temp->content_size = strlen(temp->content);
+
     /* Add the content of the buffer node to the UDP to be sent to the
        Server */
     udp_addpkt( &udp_config, config.server_ip, temp -> content,
@@ -553,23 +577,38 @@ void *LBeacon_routine(void *_buffer_node){
 void *Server_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
-    int pkt_type;
-
-    pkt_type = temp -> content[0] & 0x0f;
-
+    int pkt_type = temp->pkt_type;
+    char buf[WIFI_MESSAGE_LENGTH];
+    
     switch(pkt_type){
         case tracked_object_data:
             zlog_info(category_debug, "Send tracked object data to LBeacon");
+
             break;
-        case health_report:
-		    handle_health_report();
+
+        case gateway_health_report:
+            handle_health_report();
             zlog_info(category_debug, "Send health report to LBeacon");
+          
+            // Use beacon_health_report as pkt_type to ask LBeacons to report
+            // health report status
+            pkt_type = beacon_health_report;
+          
             break;
     }
 
     zlog_info(category_debug, "Start Broadcast to LBeacon");
 
-    beacon_broadcast(&LBeacon_address_map, temp -> content, temp ->
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf), "%d;%d;%s;%s", from_gateway,
+                                              pkt_type,
+                                              BOT_GATEWAY_API_VERSION,
+                                              temp -> content);
+    strcpy(buf, temp -> content);
+    temp->content_size = strlen(temp->content);
+
+    beacon_broadcast(&LBeacon_address_map, pkt_type, 
+                     temp -> content, temp ->
                      content_size);
 
     zlog_info(category_debug, "Polling Data from Server");
@@ -581,142 +620,140 @@ void *Server_routine(void *_buffer_node){
 
 ErrorCode send_join_request(bool report_all_lbeacons, 
                             char *single_lbeacon_uuid){
-	
+
     char message_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
-	char summary_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
-	char lbeacons_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
-	char one_lbeacon_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
-	
-	int send_type = 0;
-	int count = 0;
-	int index = -1;
-	int n;
-	
-	zlog_debug(category_debug, ">>send_join_request");
-	
-	memset(message_buf, 0, sizeof(message_buf));
-	memset(summary_buf, 0, sizeof(summary_buf));
-	memset(lbeacons_buf, 0, sizeof(lbeacons_buf));
-	memset(one_lbeacon_buf, 0, sizeof(one_lbeacon_buf));
-	
-	send_type = ((from_gateway & 0x0f) << 4) + (request_to_join & 0x0f);
-    message_buf[0] = (char)send_type;
-    message_buf[1] = ';';
+    char summary_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+    char lbeacons_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+    char one_lbeacon_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+
+    int send_type = 0;
+    int count = 0;
+    int index = -1;
+    int n;
+
+    zlog_debug(category_debug, ">>send_join_request");
+
+    memset(message_buf, 0, sizeof(message_buf));
+    memset(summary_buf, 0, sizeof(summary_buf));
+    memset(lbeacons_buf, 0, sizeof(lbeacons_buf));
+    memset(one_lbeacon_buf, 0, sizeof(one_lbeacon_buf));
+
+    snprintf(message_buf, sizeof(message_buf), "%d;%d;%s;", 
+             from_gateway, request_to_join, BOT_SERVER_API_VERSION);
 
     if(report_all_lbeacons == true){
-		
-	    zlog_debug(category_debug, "report_all_lbeacons=[%d]", 
-		           report_all_lbeacons);
-		pthread_mutex_lock(&LBeacon_address_map.list_lock);
-		
-		for(n = 0; n < MAX_NUMBER_NODES; n ++){
-		    if (LBeacon_address_map.in_use[n] == true){
-				
-				memset(one_lbeacon_buf, 0, sizeof(one_lbeacon_buf));
-				sprintf(one_lbeacon_buf, "%s;%d;%s;", 
-			            LBeacon_address_map.address_map_list[n].uuid, 
-					    LBeacon_address_map.address_map_list[n].last_request_time,
-					    LBeacon_address_map.address_map_list[n].net_address);
-				
-				if(sizeof(lbeacons_buf) <= 
-				   (strlen(lbeacons_buf) + strlen(one_lbeacon_buf))){
-					   
-					zlog_error(category_debug, 
-					           "lbeacons_buf is not big enough to " \
-		                       "include one_lbeacon_buf");
-					pthread_mutex_unlock(&LBeacon_address_map.list_lock);
-					return E_BUFFER_SIZE;
-				}
-				strcat(lbeacons_buf, one_lbeacon_buf);
-			}
-		}
-		
-		pthread_mutex_unlock(&LBeacon_address_map.list_lock);
-	}
-	else if(report_all_lbeacons == false && single_lbeacon_uuid != NULL)
-	{
-		zlog_debug(category_debug, 
-		           "report_all_lbeacons=[%d], " \
-		           "single_lbeacon_uuid=[%s]", 
-		           report_all_lbeacons,
-				   single_lbeacon_uuid);
-				   
+
+        zlog_debug(category_debug, "report_all_lbeacons=[%d]", 
+                   report_all_lbeacons);
         pthread_mutex_lock(&LBeacon_address_map.list_lock);
-		
-		index = is_in_Address_Map(&LBeacon_address_map, single_lbeacon_uuid, 1);
-		if(index >= 0){
-			count = 1;
-			
-			memset(lbeacons_buf, 0, sizeof(lbeacons_buf));
-			
-			sprintf(lbeacons_buf, "%s;%d;%s;",  
-			        LBeacon_address_map.address_map_list[index].uuid, 
-					LBeacon_address_map.address_map_list[index].last_request_time,
-					LBeacon_address_map.address_map_list[index].net_address);
-					
-			zlog_debug(category_debug, 
-		               "lbeacons_buf=[%s]",
-		               lbeacons_buf);
-		}
-		
-		pthread_mutex_unlock(&LBeacon_address_map.list_lock);
-	}
-	
-	sprintf(summary_buf, "%d;%s;", count, config.IPaddress);
-	
-	if(sizeof(message_buf) <= strlen(message_buf) + strlen(summary_buf)){
-		zlog_error(category_debug, "message_buf is not big enough to " \
-		                           "include summary_buf");
-		return E_BUFFER_SIZE;
-	}
-	
-	strcat(message_buf, summary_buf);
+
+        for(n = 0; n < MAX_NUMBER_NODES; n ++){
+            if (LBeacon_address_map.in_use[n] == true){
+
+                memset(one_lbeacon_buf, 0, sizeof(one_lbeacon_buf));
+                sprintf(one_lbeacon_buf, "%s;%d;%s;", 
+                        LBeacon_address_map.address_map_list[n].uuid, 
+                        LBeacon_address_map.address_map_list[n].last_request_time,
+                        LBeacon_address_map.address_map_list[n].net_address);
+
+                if(sizeof(lbeacons_buf) <= 
+                   (strlen(lbeacons_buf) + strlen(one_lbeacon_buf))){
+   
+                    zlog_error(category_debug, 
+                               "lbeacons_buf is not big enough to " \
+                               "include one_lbeacon_buf");
+                    pthread_mutex_unlock(&LBeacon_address_map.list_lock);
+                    return E_BUFFER_SIZE;
+                }
+                strcat(lbeacons_buf, one_lbeacon_buf);
+            }
+        }
+
+        pthread_mutex_unlock(&LBeacon_address_map.list_lock);
+    }
+    else if(report_all_lbeacons == false && single_lbeacon_uuid != NULL)
+    {
+        zlog_debug(category_debug, 
+                   "report_all_lbeacons=[%d], " \
+                   "single_lbeacon_uuid=[%s]", 
+                   report_all_lbeacons,
+                   single_lbeacon_uuid);
+
+        pthread_mutex_lock(&LBeacon_address_map.list_lock);
+
+        index = is_in_Address_Map(&LBeacon_address_map, single_lbeacon_uuid, 1);
+        if(index >= 0){
+            count = 1;
+
+            memset(lbeacons_buf, 0, sizeof(lbeacons_buf));
+
+            sprintf(lbeacons_buf, "%s;%d;%s;",  
+                    LBeacon_address_map.address_map_list[index].uuid, 
+                    LBeacon_address_map.address_map_list[index].last_request_time,
+                    LBeacon_address_map.address_map_list[index].net_address);
+
+            zlog_debug(category_debug, 
+                       "lbeacons_buf=[%s]",
+                       lbeacons_buf);
+        }
+
+        pthread_mutex_unlock(&LBeacon_address_map.list_lock);
+    }
+
+    sprintf(summary_buf, "%d;%s;", count, config.IPaddress);
+
+    if(sizeof(message_buf) <= strlen(message_buf) + strlen(summary_buf)){
+        zlog_error(category_debug, "message_buf is not big enough to " \
+                                   "include summary_buf");
+        return E_BUFFER_SIZE;
+    }
+
+    strcat(message_buf, summary_buf);
     
-	if(sizeof(message_buf) <= strlen(message_buf) + strlen(lbeacons_buf)){
-		zlog_error(category_debug, "message_buf is not big enough to " \
-		                           "include lbeacons_buf");
-		return E_BUFFER_SIZE;
-	}
-	
+    if(sizeof(message_buf) <= strlen(message_buf) + strlen(lbeacons_buf)){
+        zlog_error(category_debug, "message_buf is not big enough to " \
+                                   "include lbeacons_buf");
+        return E_BUFFER_SIZE;
+    }
+
     strcat(message_buf, lbeacons_buf);
-	
+
     udp_addpkt( &udp_config, config.server_ip, message_buf, strlen(message_buf));
-	
-	zlog_debug(category_debug, "<<send_join_request");
-	
+
+    zlog_debug(category_debug, "<<send_join_request");
+
     return WORK_SUCCESSFULLY;
 }
 
 ErrorCode handle_health_report(){
-	BufferNode *new_node = NULL;
+    BufferNode *new_node = NULL;
 
     new_node = mp_alloc( &node_mempool);
-	if(new_node == NULL){
-		zlog_error(category_debug, "Cannot malloc memory by mp_alloc");
-		return E_MALLOC;
-	}
-	
-    int send_type = ((from_gateway & 0x0f) << 4) + (health_report & 0x0f);
+    if(new_node == NULL){
+        zlog_error(category_debug, "Cannot malloc memory by mp_alloc");
+        return E_MALLOC;
+    }
 
-    /* put the pkt type into content */
-    new_node->content[0] = (char)send_type;
-
-    sprintf(&new_node-> content[1], "%s;%d;", config.IPaddress, S_NORMAL_STATUS);
+    sprintf(new_node->content, "%d;%d;%s;%s;%d;", from_gateway, 
+                                                  gateway_health_report, 
+                                                  BOT_SERVER_API_VERSION, 
+                                                  config.IPaddress, 
+                                                  S_NORMAL_STATUS);
      
-	new_node->content_size = strlen(new_node-> content);
-	
-	strncpy(new_node-> net_address, 
-	        config.server_ip, 
-			NETWORK_ADDR_LENGTH);
-	
-	pthread_mutex_lock(&BHM_send_buffer_list_head.list_lock);
+    new_node->content_size = strlen(new_node-> content);
+
+    strncpy(new_node-> net_address, 
+            config.server_ip, 
+            NETWORK_ADDR_LENGTH);
+
+    pthread_mutex_lock(&BHM_send_buffer_list_head.list_lock);
 
     insert_list_tail( &new_node->buffer_entry,
                       &BHM_send_buffer_list_head.list_head);
 
     pthread_mutex_unlock( &BHM_send_buffer_list_head.list_lock);
-	
-	return WORK_SUCCESSFULLY;
+
+    return WORK_SUCCESSFULLY;
 }
 
 
@@ -771,19 +808,31 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
 }
 
 
-void beacon_broadcast(AddressMapArray *address_map, char *msg, int size){
+void beacon_broadcast(AddressMapArray *address_map,
+                      int pkt_type, 
+                      char *msg, 
+                      int size){
+
+    char buf[WIFI_MESSAGE_LENGTH];
 
     pthread_mutex_lock( &address_map -> list_lock);
 
     zlog_info(category_debug, "==Current in Brocast==");
 
     if (size <= MAXIMUM_WIFI_MESSAGE_LENGTH){
-        for(int n = 0;n < MAX_NUMBER_NODES;n ++){
+        for(int n = 0; n < MAX_NUMBER_NODES; n++){
 
             if (address_map -> in_use[n] == true){
                 zlog_info(category_debug, "Brocast IP: %s", address_map ->
                                           address_map_list[n].net_address);
 
+                memset(buf, 0, sizeof(buf));
+                sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                             pkt_type, 
+                                             BOT_GATEWAY_API_VERSION,
+                                             msg);
+                strcpy(msg, buf);
+                size = strlen(msg);
                 /* Add the pkt that to be sent to the server */
                 udp_addpkt( &udp_config, address_map -> address_map_list[n]
                             .net_address, msg, size);
@@ -824,6 +873,8 @@ void *process_wifi_send(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
+    printf("process_wifi_send content=[%s]\n", temp->content);
+
     /* Add the content that to be sent to the server */
     udp_addpkt( &udp_config, temp -> net_address, temp->content,
                 temp->content_size);
@@ -838,6 +889,14 @@ void *process_wifi_receive(){
     char tmp_addr[NETWORK_ADDR_LENGTH];
     int uptime;
 
+    char buf[WIFI_MESSAGE_LENGTH];
+    char *saveptr = NULL;
+    char *remain_string = NULL;
+
+    char *from_direction = NULL;
+    char *request_type = NULL;
+    char *API_version = NULL;
+
     while (ready_to_work == true) {
 
         BufferNode *new_node;
@@ -847,7 +906,7 @@ void *process_wifi_receive(){
         if(temppkt.type == UDP){
 
             uptime = get_clock_time();
-			
+
 
             /* Allocate memory from node_mempool a buffer node for received data
                and copy the data from Wi-Fi receive queue to the node. */
@@ -864,31 +923,50 @@ void *process_wifi_receive(){
                 /* Initialize the entry of the buffer node */
                 init_entry( &new_node -> buffer_entry);
 
-                /* Copy the content to the buffer_node */
-                memcpy(new_node -> content, temppkt.content
-                     , temppkt.content_size);
+                memset(buf, 0, sizeof(buf));
+                strcpy(buf, temppkt.content);
 
-                new_node -> content_size = temppkt.content_size;
+                remain_string = buf;
+ 
+                from_direction = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
+                remain_string = remain_string + strlen(from_direction) + 
+                                strlen(DELIMITER_SEMICOLON);
+                new_node -> pkt_direction = atoi(from_direction);
+
+                request_type = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+                remain_string = remain_string + strlen(request_type) + 
+                                strlen(DELIMITER_SEMICOLON);
+                new_node -> pkt_type = atoi(request_type);
+
+                API_version = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+                remain_string = remain_string + strlen(API_version) + 
+                                strlen(DELIMITER_SEMICOLON);
+
+                /* Copy the content to the buffer_node */
+                strcpy(new_node -> content, remain_string);
+
+                new_node -> content_size = strlen(new_node -> content);
+
+                zlog_info(category_debug, "pkt_direction=[%d], " \
+                          "pkt_type=[%d] new_node -> content=[%s]",   
+                          new_node->pkt_direction, new_node->pkt_type,
+                          new_node -> content);
+
                 memset(tmp_addr, 0, sizeof(tmp_addr));
                 udp_hex_to_address(temppkt.address, tmp_addr);
 
                 memcpy(new_node -> net_address, tmp_addr, NETWORK_ADDR_LENGTH);
 
-                /* read the pkt direction from higher 4 bits. */
-                int pkt_direction = (new_node -> content[0] >> 4) & 0x0f;
-                /* read the pkt type from lower lower 4 bits. */
-                int pkt_type = new_node -> content[0] & 0x0f;
-
                 /* Insert the node to the specified buffer, and release
                    list_lock. */
-                switch (pkt_direction) {
+                switch (new_node -> pkt_direction) {
                     case from_server:
-					
-                        server_latest_polling_time = uptime;
-						
-                        switch (pkt_type) {
 
-                            case health_report:
+                        server_latest_polling_time = uptime;
+
+                        switch (new_node -> pkt_type) {
+
+                            case gateway_health_report:
                                 zlog_info(category_debug,
                                          "Get Health Report from the Server");
                                 pthread_mutex_lock(&command_msg_buffer_list_head
@@ -912,7 +990,7 @@ void *process_wifi_receive(){
                                        &command_msg_buffer_list_head.list_lock);
                                 break;
 
-                            case join_request_ack:
+                            case join_response:
                                 zlog_info(category_debug,
                                      "Get Join Request Result from the Server");
                                 mp_free(&node_mempool, new_node);
@@ -925,7 +1003,7 @@ void *process_wifi_receive(){
 
                     case from_beacon:
 
-                        switch (pkt_type) {
+                        switch (new_node -> pkt_type) {
 
                             case request_to_join:
                                 zlog_info(category_debug,
@@ -950,7 +1028,7 @@ void *process_wifi_receive(){
                                    &LBeacon_receive_buffer_list_head.list_lock);
                                 break;
 
-                            case health_report:
+                            case beacon_health_report:
                                 zlog_info(category_debug,
                                             "Get Health Report from LBeacon");
                                 pthread_mutex_lock(&BHM_receive_buffer_list_head

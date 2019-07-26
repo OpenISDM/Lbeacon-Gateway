@@ -42,36 +42,12 @@
 #ifndef GLOBAL_VARIABLE_H
 #define GLOBAL_VARIABLE_H
 
-
-/* Gateway config file location and the config file definition. */
-
-/* File path of the config file of the Gateway */
-#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
-
-/* File path of the config file of the zlog */
-#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
-
-/* Length of the LBeacon's UUID in number of characters */
-#define LENGTH_OF_UUID 33
-
-/* Time interval in seconds for idle status of the Wifi connection between the
-gateway and server. Usually, the Wifi connection being idle for longer than
-the specified time interval is impossible in BeDIS Object tracker solution. So
-we treat the condition as a network connection failure. When this happens,
-gateway sends UDP join_request to the server again.
-*/
-#define INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC 180
-
-/* Time interval in seconds for reconnect to server */
-#define INTERVAL_FOR_RECONNECT_SERVER_IN_SEC 120
-
-
 /* The configuration file structure */
 typedef struct {
 
     /* A flag indicating whether this Gateway is responsible for geofence feature.*/
     bool is_geofence;
-	
+
     /* The IP address of the server for WiFi netwok connection. */
     char IPaddress[NETWORK_ADDR_LENGTH];
 
