@@ -873,8 +873,6 @@ void *process_wifi_send(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
 
-    printf("process_wifi_send content=[%s]\n", temp->content);
-
     /* Add the content that to be sent to the server */
     udp_addpkt( &udp_config, temp -> net_address, temp->content,
                 temp->content_size);
