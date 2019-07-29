@@ -911,12 +911,12 @@ void *process_wifi_receive(){
                 from_direction = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
                 remain_string = remain_string + strlen(from_direction) + 
                                 strlen(DELIMITER_SEMICOLON);
-                new_node -> pkt_direction = atoi(from_direction);
+                sscanf(from_direction, "%d", &new_node -> pkt_direction);
 
                 request_type = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
                 remain_string = remain_string + strlen(request_type) + 
                                 strlen(DELIMITER_SEMICOLON);
-                new_node -> pkt_type = atoi(request_type);
+                sscanf(request_type, "%d", &new_node -> pkt_type);
 
                 API_version = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
                 remain_string = remain_string + strlen(API_version) + 
