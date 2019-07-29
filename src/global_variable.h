@@ -54,18 +54,6 @@ typedef struct {
     /* The number of LBeacon nodes in the star network of this gateway */
     int allowed_number_nodes;
 
-    /* The time interval in seconds for gateway to send requests for health
-       reports from LBeacon */
-    int period_between_RFHR;
-
-    /* The time interval in seconds for gateway to send requests for tracked
-       object data from LBeacon */
-    int period_between_RFTOD;
-
-    /* The time interval in seconds for gateway to send requests for join request
-       to Server */
-    int period_between_join_requests;
-
     /*The number of worker threads used by the communication unit for sending
       and receiving packets to and from LBeacons and the sever.*/
     int number_worker_threads;

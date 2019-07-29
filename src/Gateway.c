@@ -301,24 +301,6 @@ ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->period_between_RFHR = atoi(config_message);
-
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        config->period_between_RFTOD = atoi(config_message);
-
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        config->period_between_join_requests = atoi(config_message);
-
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
         config->number_worker_threads = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
