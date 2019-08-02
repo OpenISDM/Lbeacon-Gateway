@@ -909,16 +909,29 @@ void *process_wifi_receive(){
                 remain_string = buf;
  
                 from_direction = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
+                if(from_direction == NULL){
+                    mp_free( &node_mempool, new_node);
+                    continue;
+                }
                 remain_string = remain_string + strlen(from_direction) + 
                                 strlen(DELIMITER_SEMICOLON);
                 sscanf(from_direction, "%d", &new_node -> pkt_direction);
 
                 request_type = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+                if(request_type == NULL){
+                    mp_free( &node_mempool, new_node);
+                    continue;
+                }
                 remain_string = remain_string + strlen(request_type) + 
                                 strlen(DELIMITER_SEMICOLON);
+                
                 sscanf(request_type, "%d", &new_node -> pkt_type);
 
                 API_version = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+                if(API_version == NULL){
+                    mp_free( &node_mempool, new_node);
+                    continue;
+                }
                 remain_string = remain_string + strlen(API_version) + 
                                 strlen(DELIMITER_SEMICOLON);
 
