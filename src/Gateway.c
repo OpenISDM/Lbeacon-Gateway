@@ -560,7 +560,7 @@ void *Server_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
     int pkt_type = temp->pkt_type;
-    char buf[WIFI_MESSAGE_LENGTH];
+    
     
     switch(pkt_type){
         case tracked_object_data:
@@ -581,17 +581,9 @@ void *Server_routine(void *_buffer_node){
 
     zlog_info(category_debug, "Start Broadcast to LBeacon");
 
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), "%d;%d;%s;%s", from_gateway,
-                                              pkt_type,
-                                              BOT_GATEWAY_API_VERSION,
-                                              temp -> content);
-    strcpy(buf, temp -> content);
-    temp->content_size = strlen(temp->content);
-
     beacon_broadcast(&LBeacon_address_map, pkt_type, 
-                     temp -> content, temp ->
-                     content_size);
+                     temp -> content, 
+                     temp -> content_size);
 
     zlog_info(category_debug, "Polling Data from Server");
 
@@ -805,7 +797,8 @@ void beacon_broadcast(AddressMapArray *address_map,
         for(int n = 0; n < MAX_NUMBER_NODES; n++){
 
             if (address_map -> in_use[n] == true){
-                zlog_info(category_debug, "Brocast IP: %s", address_map ->
+                zlog_info(category_debug, "Brocast IP: %s", 
+                                          address_map ->
                                           address_map_list[n].net_address);
 
                 memset(buf, 0, sizeof(buf));
