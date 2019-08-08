@@ -789,6 +789,12 @@ void beacon_broadcast(AddressMapArray *address_map,
 
     char buf[WIFI_MESSAGE_LENGTH];
 
+    memset(buf, 0, sizeof(buf));
+    sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                 pkt_type, 
+                                 BOT_GATEWAY_API_VERSION,
+                                 msg);
+                                             
     pthread_mutex_lock( &address_map -> list_lock);
 
     zlog_info(category_debug, "==Current in Brocast==");
@@ -801,16 +807,10 @@ void beacon_broadcast(AddressMapArray *address_map,
                                           address_map ->
                                           address_map_list[n].net_address);
 
-                memset(buf, 0, sizeof(buf));
-                sprintf(buf, "%d;%d;%s;%s;", from_gateway,
-                                             pkt_type, 
-                                             BOT_GATEWAY_API_VERSION,
-                                             msg);
-                strcpy(msg, buf);
-                size = strlen(msg);
                 /* Add the pkt that to be sent to the server */
                 udp_addpkt( &udp_config, address_map -> address_map_list[n]
-                            .net_address, msg, size);
+                            .net_address, buf, strlen(buf));
+                            
             }
         }
     }
