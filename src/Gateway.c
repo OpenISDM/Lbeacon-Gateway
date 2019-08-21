@@ -62,6 +62,8 @@ int main(int argc, char **argv){
     pthread_t wifi_listener;
 
     char *temp_lbeacon_uuid = NULL;
+    
+    struct sigaction sigint_handler;
 
     /* Initialize zlog */
 
@@ -220,13 +222,23 @@ int main(int argc, char **argv){
         }
     }
 
+    /* Register handler function for SIGINT signal */
+    sigint_handler.sa_handler = ctrlc_handler;
+    sigemptyset(&sigint_handler.sa_mask);
+    sigint_handler.sa_flags = 0;
 
+    if (-1 == sigaction(SIGINT, &sigint_handler, NULL)) {
+        zlog_error(category_health_report,
+                   "Error registering signal handler for SIGINT");
+        zlog_error(category_debug,
+                   "Error registering signal handler for SIGINT");
+    }
+    
     server_latest_polling_time = 0;
     last_join_request_time = 0;
 
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
-
         uptime = get_clock_time();
 
         if(uptime - server_latest_polling_time > 
