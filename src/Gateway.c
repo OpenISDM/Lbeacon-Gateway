@@ -485,7 +485,7 @@ void *NSI_routine(void *_buffer_node){
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%d;%d;%s;%s;%d;%s;%d;", from_gateway,
                                           join_response, 
-                                          BOT_GATEWAY_API_VERSION,
+                                          BOT_GATEWAY_API_VERSION_LATEST,
                                           uuid, 
                                           LBeacon_datetime,
                                           temp -> net_address,
@@ -517,7 +517,7 @@ void *BHM_routine(void *_buffer_node){
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%d;%d;%s;%s;", from_gateway,
                                  beacon_health_report,  
-                                 BOT_SERVER_API_VERSION,
+                                 BOT_SERVER_API_VERSION_LATEST,
                                  temp->content);
     
     strcpy(temp->content, buf);
@@ -541,6 +541,7 @@ void *LBeacon_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
     int pkt_type = temp -> pkt_type;
+    float API_version = temp -> API_version;
     char buf[WIFI_MESSAGE_LENGTH];
 
     if(config.is_geofence)
@@ -549,11 +550,19 @@ void *LBeacon_routine(void *_buffer_node){
     }
 
     memset(buf, 0, sizeof(buf));
-    sprintf(buf, "%d;%d;%s;%s;", from_gateway,
-                                 pkt_type, 
-                                 BOT_SERVER_API_VERSION,
-                                 temp->content);
-
+    
+    // Gateway should support backward compatibility. 
+    if(atof(BOT_GATEWAY_API_VERSION_10) == API_version){ 
+        sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                     pkt_type, 
+                                     BOT_SERVER_API_VERSION_20,
+                                     temp->content);
+    }else{
+        sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                     pkt_type, 
+                                     BOT_SERVER_API_VERSION_LATEST,
+                                     temp->content);
+    }
     strcpy(temp->content, buf);	
     temp->content_size = strlen(temp->content);
 
@@ -607,10 +616,10 @@ void *Server_routine(void *_buffer_node){
 ErrorCode send_join_request(bool report_all_lbeacons, 
                             char *single_lbeacon_uuid){
 
-    char message_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
-    char summary_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
-    char lbeacons_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
-    char one_lbeacon_buf[MAXIMUM_WIFI_MESSAGE_LENGTH];
+    char message_buf[WIFI_MESSAGE_LENGTH];
+    char summary_buf[WIFI_MESSAGE_LENGTH];
+    char lbeacons_buf[WIFI_MESSAGE_LENGTH];
+    char one_lbeacon_buf[WIFI_MESSAGE_LENGTH];
 
     int send_type = 0;
     int count = 0;
@@ -625,7 +634,7 @@ ErrorCode send_join_request(bool report_all_lbeacons,
     memset(one_lbeacon_buf, 0, sizeof(one_lbeacon_buf));
 
     snprintf(message_buf, sizeof(message_buf), "%d;%d;%s;", 
-             from_gateway, request_to_join, BOT_SERVER_API_VERSION);
+             from_gateway, request_to_join, BOT_SERVER_API_VERSION_LATEST);
 
     if(report_all_lbeacons == true){
 
@@ -722,7 +731,7 @@ ErrorCode handle_health_report(){
 
     sprintf(new_node->content, "%d;%d;%s;%s;%d;", from_gateway, 
                                                   gateway_health_report, 
-                                                  BOT_SERVER_API_VERSION, 
+                                                  BOT_SERVER_API_VERSION_LATEST, 
                                                   config.IPaddress, 
                                                   S_NORMAL_STATUS);
      
@@ -804,14 +813,14 @@ void beacon_broadcast(AddressMapArray *address_map,
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%d;%d;%s;%s;", from_gateway,
                                  pkt_type, 
-                                 BOT_GATEWAY_API_VERSION,
+                                 BOT_GATEWAY_API_VERSION_LATEST,
                                  msg);
                                              
     pthread_mutex_lock( &address_map -> list_lock);
 
     zlog_info(category_debug, "==Current in Brocast==");
 
-    if (size <= MAXIMUM_WIFI_MESSAGE_LENGTH){
+    if (size <= WIFI_MESSAGE_LENGTH){
         for(int n = 0; n < MAX_NUMBER_NODES; n++){
 
             if (address_map -> in_use[n] == true){
@@ -939,6 +948,7 @@ void *process_wifi_receive(){
                 }
                 remain_string = remain_string + strlen(API_version) + 
                                 strlen(DELIMITER_SEMICOLON);
+                sscanf(API_version, "%f", &new_node -> API_version);
 
                 /* Copy the content to the buffer_node */
                 strcpy(new_node -> content, remain_string);
@@ -946,8 +956,11 @@ void *process_wifi_receive(){
                 new_node -> content_size = strlen(new_node -> content);
 
                 zlog_info(category_debug, "pkt_direction=[%d], " \
-                          "pkt_type=[%d] new_node -> content=[%s]",   
-                          new_node->pkt_direction, new_node->pkt_type,
+                          "pkt_type=[%d] API_version=[%f] " \
+                          "new_node -> content=[%s]",   
+                          new_node->pkt_direction, 
+                          new_node->pkt_type,
+                          new_node->API_version,
                           new_node -> content);
 
                 memset(tmp_addr, 0, sizeof(tmp_addr));

@@ -61,12 +61,6 @@
 /* File path of the config file of the zlog */
 #define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
 
-/* Server API protocol version for communicate between Server and Gateway. */
-#define BOT_SERVER_API_VERSION "2.0"
-
-/* Gateway API protocol version for communicate between Gateway and LBeacon. */
-#define BOT_GATEWAY_API_VERSION "1.0"
-
 /* Time interval in seconds for idle status of the Wifi connection between the
 gateway and server. Usually, the Wifi connection being idle for longer than
 the specified time interval is impossible in BeDIS Object tracker solution. So
