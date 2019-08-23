@@ -52,8 +52,8 @@
 int main(int argc, char **argv){
 
     int return_value;
-
-    int uptime;
+    int last_join_request_time = 0;
+    struct timespec uptime;
 
     /* The main thread of the communication Unit */
     pthread_t CommUnit_thread;
@@ -158,7 +158,8 @@ int main(int argc, char **argv){
     }
 
     /* Initialize the Wifi connection */
-    if(return_value = Wifi_init(config.IPaddress) != WORK_SUCCESSFULLY){
+    return_value = Wifi_init();
+    if(return_value != WORK_SUCCESSFULLY){
         /* Error handling and return */
         initialization_failed = true;
         zlog_error(category_health_report, "Wi-Fi initialization Fail");
@@ -239,16 +240,16 @@ int main(int argc, char **argv){
 
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
-        uptime = get_clock_time();
+        clock_gettime(CLOCK_MONOTONIC, &uptime);
 
-        if(uptime - server_latest_polling_time > 
+        if(uptime.tv_sec - server_latest_polling_time > 
            INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
-           uptime - last_join_request_time >
+           uptime.tv_sec - last_join_request_time >
            INTERVAL_FOR_RECONNECT_SERVER_IN_SEC){
 
            if(WORK_SUCCESSFULLY == send_join_request(true, temp_lbeacon_uuid))
             {
-                last_join_request_time = uptime;
+                last_join_request_time = uptime.tv_sec;
             }
         }
         else{
@@ -841,10 +842,7 @@ void beacon_broadcast(AddressMapArray *address_map,
 }
 
 
-ErrorCode Wifi_init(char *IPaddress){
-
-    /* Set the address of server */
-    array_copy(IPaddress, udp_config.Local_Address, strlen(IPaddress));
+ErrorCode Wifi_init(){
 
     /* Initialize the Wifi cinfig file */
     if(udp_initial( &udp_config, config.send_port, config.recv_port)
@@ -881,7 +879,8 @@ void *process_wifi_send(void *_buffer_node){
 
 void *process_wifi_receive(){
     char tmp_addr[NETWORK_ADDR_LENGTH];
-    int uptime;
+    int last_join_request_time;
+    struct timespec uptime;
 
     char buf[WIFI_MESSAGE_LENGTH];
     char *saveptr = NULL;
@@ -890,7 +889,7 @@ void *process_wifi_receive(){
     char *from_direction = NULL;
     char *request_type = NULL;
     char *API_version = NULL;
-
+    
     while (ready_to_work == true) {
 
         BufferNode *new_node;
@@ -899,7 +898,7 @@ void *process_wifi_receive(){
 
         if(temppkt.type == UDP){
 
-            uptime = get_clock_time();
+            clock_gettime(CLOCK_MONOTONIC, &uptime);
 
 
             /* Allocate memory from node_mempool a buffer node for received data
@@ -973,7 +972,7 @@ void *process_wifi_receive(){
                 switch (new_node -> pkt_direction) {
                     case from_server:
 
-                        server_latest_polling_time = uptime;
+                        server_latest_polling_time = uptime.tv_sec;
 
                         switch (new_node -> pkt_type) {
 

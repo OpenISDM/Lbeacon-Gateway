@@ -66,10 +66,9 @@ int udp_initial(pudp_config udp_config, int send_port, int recv_port){
 
     struct timeval timeout;
     timeout.tv_sec = UDP_SELECT_TIMEOUT; // sec
-
-    if (setsockopt(udp_config -> recv_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout
-                 , sizeof(timeout)) == -1)
-        return set_socketopt_error;
+    
+    setsockopt(udp_config -> recv_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+               sizeof(timeout));
 
     udp_config -> si_server.sin_family = AF_INET;
     udp_config -> si_server.sin_port = htons(recv_port);
@@ -87,9 +86,11 @@ int udp_initial(pudp_config udp_config, int send_port, int recv_port){
 
     pthread_create(&udp_config -> udp_receive, NULL, udp_recv_pkt, (void*)
                    udp_config);
+    pthread_detach(udp_config -> udp_receive);
 
     pthread_create(&udp_config -> udp_send, NULL, udp_send_pkt, (void*)
                    udp_config);
+    pthread_detach(udp_config -> udp_send);
 
     return 0;
 }
@@ -121,8 +122,6 @@ sPkt udp_getrecv(pudp_config udp_config){
 void *udp_send_pkt(void *udpconfig){
 
     pudp_config udp_config = (pudp_config) udpconfig;
-
-    int sleep_time = 0;
 
     char dest_address[NETWORK_ADDR_LENGTH];
 
@@ -167,7 +166,7 @@ void *udp_send_pkt(void *udpconfig){
         }
         else{
 
-            sleep_t(SLEEP_TIME);
+            sleep_t(SLEEP_TIME_IN_MS);
 
         }
 
@@ -236,10 +235,6 @@ void *udp_recv_pkt(void *udpconfig){
 
 
 int udp_release(pudp_config udp_config){
-
-    pthread_join(udp_config -> udp_send, NULL);
-
-    pthread_join(udp_config -> udp_receive, NULL);
 
     close(udp_config -> send_socket);
 

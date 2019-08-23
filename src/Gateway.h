@@ -82,7 +82,6 @@ BufferListHead command_msg_buffer_list_head;
 
 /* Variables for storing the last polling times in second*/\
 int server_latest_polling_time;
-int last_join_request_time;
 
 
 /*
@@ -294,14 +293,14 @@ void beacon_broadcast(AddressMapArray *address_map,
 
   Parameters:
 
-     IPaddress - The address of the server.
+     None
 
   Return value:
 
       ErrorCode - The error code for the corresponding error or successful
 
  */
-ErrorCode Wifi_init(char *IPaddress);
+ErrorCode Wifi_init();
 
 
 /*
