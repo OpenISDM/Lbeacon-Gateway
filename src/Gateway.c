@@ -569,8 +569,11 @@ void *LBeacon_routine(void *_buffer_node){
 
     /* Add the content of the buffer node to the UDP to be sent to the
        Server */
-    udp_addpkt( &udp_config, config.server_ip, temp -> content,
-                temp -> content_size);
+    udp_addpkt(&udp_config, 
+               config.server_ip, 
+               config.send_port,
+               temp -> content,
+               temp -> content_size);
 
     mp_free( &node_mempool, temp);
 
@@ -714,7 +717,11 @@ ErrorCode send_join_request(bool report_all_lbeacons,
 
     strcat(message_buf, lbeacons_buf);
 
-    udp_addpkt( &udp_config, config.server_ip, message_buf, strlen(message_buf));
+    udp_addpkt(&udp_config, 
+               config.server_ip, 
+               config.send_port,
+               message_buf, 
+               strlen(message_buf));
 
     zlog_debug(category_debug, "<<send_join_request");
 
@@ -830,8 +837,11 @@ void beacon_broadcast(AddressMapArray *address_map,
                                           address_map_list[n].net_address);
 
                 /* Add the pkt that to be sent to the server */
-                udp_addpkt( &udp_config, address_map -> address_map_list[n]
-                            .net_address, buf, strlen(buf));
+                udp_addpkt(&udp_config, 
+                           address_map -> address_map_list[n].net_address, 
+                           config.send_port,
+                           buf, 
+                           strlen(buf));
                             
             }
         }
@@ -845,7 +855,7 @@ void beacon_broadcast(AddressMapArray *address_map,
 ErrorCode Wifi_init(){
 
     /* Initialize the Wifi cinfig file */
-    if(udp_initial( &udp_config, config.send_port, config.recv_port)
+    if(udp_initial( &udp_config, config.recv_port)
                    != WORK_SUCCESSFULLY){
 
         /* Error handling TODO */
@@ -868,8 +878,11 @@ void *process_wifi_send(void *_buffer_node){
     BufferNode *temp = (BufferNode *)_buffer_node;
 
     /* Add the content that to be sent to the server */
-    udp_addpkt( &udp_config, temp -> net_address, temp->content,
-                temp->content_size);
+    udp_addpkt(&udp_config, 
+               temp -> net_address, 
+               config.send_port, 
+               temp->content, 
+               temp->content_size);
 
     mp_free( &node_mempool, temp);
 
@@ -878,7 +891,6 @@ void *process_wifi_send(void *_buffer_node){
 
 
 void *process_wifi_receive(){
-    char tmp_addr[NETWORK_ADDR_LENGTH];
     int last_join_request_time;
     struct timespec uptime;
 
@@ -896,178 +908,183 @@ void *process_wifi_receive(){
 
         sPkt temppkt = udp_getrecv( &udp_config);
 
-        if(temppkt.type == UDP){
-
-            clock_gettime(CLOCK_MONOTONIC, &uptime);
-
-
-            /* Allocate memory from node_mempool a buffer node for received data
-               and copy the data from Wi-Fi receive queue to the node. */
-            
-            new_node = mp_alloc( &node_mempool);
+        if(temppkt.is_null == true){
+            /* If there is no packet received, sleep a short time */
+            sleep_t(BUSY_WAITING_TIME_IN_MS);
+        }
+        
+        clock_gettime(CLOCK_MONOTONIC, &uptime);
+        /* Allocate memory from node_mempool a buffer node for received data
+           and copy the data from Wi-Fi receive queue to the node. */
+        
+        new_node = mp_alloc( &node_mempool);
                
-            if(new_node == NULL){
-                /* Alloc memory failed, error handling. */
-            }
-            else{
+        if(new_node == NULL){
+            zlog_debug(category_debug, 
+                       "process_wifi_receive (new_node) mp_alloc " \
+                       "failed, abort this data");
+            continue;
+        }
+        
+        memset(new_node, 0, sizeof(BufferNode));
 
-                memset(new_node, 0, sizeof(BufferNode));
+        /* Initialize the entry of the buffer node */
+        init_entry( &new_node -> buffer_entry);
 
-                /* Initialize the entry of the buffer node */
-                init_entry( &new_node -> buffer_entry);
+        memset(buf, 0, sizeof(buf));
+        strcpy(buf, temppkt.content);
 
-                memset(buf, 0, sizeof(buf));
-                strcpy(buf, temppkt.content);
-
-                remain_string = buf;
+        remain_string = buf;
  
-                from_direction = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
-                if(from_direction == NULL){
-                    mp_free( &node_mempool, new_node);
-                    continue;
-                }
-                remain_string = remain_string + strlen(from_direction) + 
-                                strlen(DELIMITER_SEMICOLON);
-                sscanf(from_direction, "%d", &new_node -> pkt_direction);
+        from_direction = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
+        if(from_direction == NULL){
+            mp_free( &node_mempool, new_node);
+            continue;
+        }
+        remain_string = remain_string + strlen(from_direction) + 
+                        strlen(DELIMITER_SEMICOLON);
+        sscanf(from_direction, "%d", &new_node -> pkt_direction);
 
-                request_type = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
-                if(request_type == NULL){
-                    mp_free( &node_mempool, new_node);
-                    continue;
-                }
-                remain_string = remain_string + strlen(request_type) + 
-                                strlen(DELIMITER_SEMICOLON);
-                sscanf(request_type, "%d", &new_node -> pkt_type);
+        request_type = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+        if(request_type == NULL){
+            mp_free( &node_mempool, new_node);
+            continue;
+        }
+        remain_string = remain_string + strlen(request_type) + 
+                        strlen(DELIMITER_SEMICOLON);
+        sscanf(request_type, "%d", &new_node -> pkt_type);
 
-                API_version = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
-                if(API_version == NULL){
-                    mp_free( &node_mempool, new_node);
-                    continue;
-                }
-                remain_string = remain_string + strlen(API_version) + 
-                                strlen(DELIMITER_SEMICOLON);
-                sscanf(API_version, "%f", &new_node -> API_version);
+        API_version = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+        if(API_version == NULL){
+            mp_free( &node_mempool, new_node);
+            continue;
+        }
+        remain_string = remain_string + strlen(API_version) + 
+                        strlen(DELIMITER_SEMICOLON);
+        sscanf(API_version, "%f", &new_node -> API_version);
 
-                /* Copy the content to the buffer_node */
-                strcpy(new_node -> content, remain_string);
+        /* Copy the content to the buffer_node */
+        strcpy(new_node -> content, remain_string);
 
-                new_node -> content_size = strlen(new_node -> content);
+        new_node -> content_size = strlen(new_node -> content);
 
-                zlog_info(category_debug, "pkt_direction=[%d], " \
-                          "pkt_type=[%d] API_version=[%f] " \
-                          "new_node -> content=[%s]",   
-                          new_node->pkt_direction, 
-                          new_node->pkt_type,
-                          new_node->API_version,
-                          new_node -> content);
+        zlog_info(category_debug, "pkt_direction=[%d], " \
+                  "pkt_type=[%d] API_version=[%f] " \
+                  "new_node -> content=[%s]",   
+                  new_node->pkt_direction, 
+                  new_node->pkt_type,
+                  new_node->API_version,
+                  new_node -> content);
 
-                memset(tmp_addr, 0, sizeof(tmp_addr));
-                udp_hex_to_address(temppkt.address, tmp_addr);
+        memcpy(new_node -> net_address, temppkt.address, 
+               NETWORK_ADDR_LENGTH);
 
-                memcpy(new_node -> net_address, tmp_addr, NETWORK_ADDR_LENGTH);
+        /* Insert the node to the specified buffer, and release
+           list_lock. */
+        switch (new_node -> pkt_direction) {
+            
+            case from_server:
 
-                /* Insert the node to the specified buffer, and release
-                   list_lock. */
-                switch (new_node -> pkt_direction) {
-                    case from_server:
+                server_latest_polling_time = uptime.tv_sec;
 
-                        server_latest_polling_time = uptime.tv_sec;
+                switch (new_node -> pkt_type) {
 
-                        switch (new_node -> pkt_type) {
+                    case gateway_health_report:
+       
+                        zlog_info(category_debug,
+                                  "Get Health Report from the Server");
+                        pthread_mutex_lock(&command_msg_buffer_list_head
+                                           .list_lock);
+                        insert_list_tail(&new_node -> buffer_entry,
+                                         &command_msg_buffer_list_head
+                                         .list_head);
+                        pthread_mutex_unlock(&command_msg_buffer_list_head
+                                             .list_lock);
 
-                            case gateway_health_report:
-                                zlog_info(category_debug,
-                                         "Get Health Report from the Server");
-                                pthread_mutex_lock(&command_msg_buffer_list_head
-                                                   .list_lock);
-                                insert_list_tail(&new_node -> buffer_entry,
-                                                 &command_msg_buffer_list_head
-                                                 .list_head);
-                                pthread_mutex_unlock(
-                                       &command_msg_buffer_list_head.list_lock);
-
-                                break;
-
-                            case tracked_object_data:
-                                zlog_info(category_debug,
-                                   "Get Tracked Object Data from the Server");
-                                pthread_mutex_lock(&command_msg_buffer_list_head
-                                                   .list_lock);
-                                insert_list_tail( &new_node -> buffer_entry,
-                                       &command_msg_buffer_list_head.list_head);
-                                pthread_mutex_unlock(
-                                       &command_msg_buffer_list_head.list_lock);
-                                break;
-
-                            case join_response:
-                                zlog_info(category_debug,
-                                     "Get Join Request Result from the Server");
-                                mp_free(&node_mempool, new_node);
-                                break;
-                            default:
-                                mp_free(&node_mempool, new_node);
-                                break;
-                        }
                         break;
 
-                    case from_beacon:
+                    case tracked_object_data:
+                
+                        zlog_info(category_debug,
+                                  "Get Tracked Object Data from the Server");
+                        pthread_mutex_lock(&command_msg_buffer_list_head
+                                           .list_lock);
+                        insert_list_tail(&new_node -> buffer_entry,
+                                         &command_msg_buffer_list_head
+                                         .list_head);
+                        pthread_mutex_unlock(&command_msg_buffer_list_head
+                                             .list_lock);
+                        break;
 
-                        switch (new_node -> pkt_type) {
+                    case join_response:
+                    
+                        zlog_info(category_debug,
+                                  "Get Join Request Result from the Server");
+                        mp_free(&node_mempool, new_node);
+                        
+                        break;
+                    default:
+                 
+                        mp_free(&node_mempool, new_node);
+                        break;
+                }
+                
+                break;
 
-                            case request_to_join:
-                                zlog_info(category_debug,
-                                             "Get Join Request from LBeacon");
-                                pthread_mutex_lock(&NSI_receive_buffer_list_head
-                                                   .list_lock);
-                                insert_list_tail(&new_node -> buffer_entry,
-                                                 &NSI_receive_buffer_list_head
-                                                 .list_head);
-                                pthread_mutex_unlock(
-                                       &NSI_receive_buffer_list_head.list_lock);
-                                break;
+            case from_beacon:
 
-                            case tracked_object_data:
-                                zlog_info(category_debug,
-                                      "Get Tracked Object Data from LBeacon");
-                                pthread_mutex_lock(
-                                   &LBeacon_receive_buffer_list_head.list_lock);
-                                insert_list_tail( &new_node -> buffer_entry,
-                                   &LBeacon_receive_buffer_list_head.list_head);
-                                pthread_mutex_unlock(
-                                   &LBeacon_receive_buffer_list_head.list_lock);
-                                break;
+                switch (new_node -> pkt_type) {
 
-                            case beacon_health_report:
-                                zlog_info(category_debug,
-                                            "Get Health Report from LBeacon");
-                                pthread_mutex_lock(&BHM_receive_buffer_list_head
-                                                   .list_lock);
-                                insert_list_tail( &new_node -> buffer_entry,
-                                       &BHM_receive_buffer_list_head.list_head);
-                                pthread_mutex_unlock(
-                                       &BHM_receive_buffer_list_head.list_lock);
-                                break;
+                    case request_to_join:
+                    
+                        zlog_info(category_debug,
+                                  "Get Join Request from LBeacon");
+                        pthread_mutex_lock(&NSI_receive_buffer_list_head
+                                           .list_lock);
+                        insert_list_tail(&new_node -> buffer_entry,
+                                         &NSI_receive_buffer_list_head
+                                         .list_head);
+                        pthread_mutex_unlock(&NSI_receive_buffer_list_head
+                                             .list_lock);
+                        break;
 
-                            default:
-                                mp_free( &node_mempool, new_node);
-                                break;
-                        }
+                    case tracked_object_data:
+                   
+                        zlog_info(category_debug,
+                                  "Get Tracked Object Data from LBeacon");
+                        pthread_mutex_lock(&LBeacon_receive_buffer_list_head
+                                           .list_lock);
+                        insert_list_tail(&new_node -> buffer_entry,
+                                         &LBeacon_receive_buffer_list_head
+                                         .list_head);
+                        pthread_mutex_unlock(&LBeacon_receive_buffer_list_head
+                                             .list_lock);
+                        break;
+
+                    case beacon_health_report:
+                    
+                        zlog_info(category_debug,
+                                  "Get Health Report from LBeacon");
+                        pthread_mutex_lock(&BHM_receive_buffer_list_head
+                                           .list_lock);
+                        insert_list_tail(&new_node -> buffer_entry,
+                                         &BHM_receive_buffer_list_head
+                                         .list_head);
+                        pthread_mutex_unlock(&BHM_receive_buffer_list_head
+                                             .list_lock);
                         break;
 
                     default:
                         mp_free( &node_mempool, new_node);
                         break;
                 }
-            }
-        }
-        else if(temppkt.type == NONE){
-            /* If there is no packet received, sleep a short time */
-            sleep_t(BUSY_WAITING_TIME_IN_MS);
-        }
-        else {
-            /* If there is no packet received, sleep a short time */
-            sleep_t(BUSY_WAITING_TIME_IN_MS);
-        }
+                
+                break;
+
+            default:
+                mp_free( &node_mempool, new_node);
+                break;
+        }    
     } /* end of while (ready_to_work == true) */
     return (void *)NULL;
 }
