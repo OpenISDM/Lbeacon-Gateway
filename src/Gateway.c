@@ -770,11 +770,14 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     /* Find the first unused address map location and use the location to store
        the new joined LBeacon. */
     int not_in_use = -1;
-    int answer;
+    int answer = -1;
 
-    if(answer = is_in_Address_Map(address_map, uuid, 1) >=0){
+    answer = is_in_Address_Map(address_map, uuid, 1);
+    if(answer >=0){
+        memset(address_map -> address_map_list[answer].net_address, 0,
+               NETWORK_ADDR_LENGTH);
         strncpy(address_map -> address_map_list[answer].net_address,
-                address, NETWORK_ADDR_LENGTH);
+                address, strlen(address));
         address_map -> address_map_list[answer].last_request_time =
                                                               get_system_time();
         address_map -> address_map_list[answer].last_lbeacon_datetime= datetime;
@@ -792,13 +795,19 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     /* If here still has space for the LBeacon to register */
     if (not_in_use != -1){
 
-        AddressMap *tmp =  &address_map -> address_map_list[not_in_use];
-
         address_map -> in_use[not_in_use] = true;
-
-        strncpy(tmp -> uuid, uuid, strlen(uuid));
-        strncpy(tmp -> net_address, address, NETWORK_ADDR_LENGTH);
-        tmp -> last_request_time = get_system_time();
+        
+        memset(address_map->address_map_list[not_in_use].net_address, 0,
+               NETWORK_ADDR_LENGTH);
+        strncpy(address_map->address_map_list[not_in_use].net_address, 
+                address, strlen(address));
+                
+        memset(address_map->address_map_list[not_in_use].uuid, 0, 
+               LENGTH_OF_UUID);
+        strncpy(address_map->address_map_list[not_in_use].uuid, 
+                uuid, strlen(uuid));
+        address_map->address_map_list[not_in_use].last_request_time
+            = get_system_time();
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }
@@ -911,6 +920,7 @@ void *process_wifi_receive(){
         if(temppkt.is_null == true){
             /* If there is no packet received, sleep a short time */
             sleep_t(BUSY_WAITING_TIME_IN_MS);
+            continue;
         }
         
         clock_gettime(CLOCK_MONOTONIC, &uptime);
