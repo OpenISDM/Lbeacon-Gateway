@@ -2,7 +2,7 @@
 #---------------------------------------------------------------------------
 CC = gcc
 OBJS =  LinkedList.o Mempool.o thpool.o pkt_Queue.o UDP_API.o
-CFLAGS = -std=gnu99 -lrt -lpthread -lzlog
+CFLAGS = -std=gnu99 -lrt -lpthread -lzlog -O3
 LIB = -L /usr/local/lib
 #---------------------------------------------------------------------------
 all: Gateway.out

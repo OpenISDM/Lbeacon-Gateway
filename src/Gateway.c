@@ -937,7 +937,6 @@ void *process_wifi_receive(){
                 }
                 remain_string = remain_string + strlen(request_type) + 
                                 strlen(DELIMITER_SEMICOLON);
-                
                 sscanf(request_type, "%d", &new_node -> pkt_type);
 
                 API_version = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
