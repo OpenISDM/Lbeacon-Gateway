@@ -53,7 +53,7 @@ int main(int argc, char **argv){
 
     int return_value;
     int last_join_request_time = 0;
-    struct timespec uptime;
+    int uptime;
 
     /* The main thread of the communication Unit */
     pthread_t CommUnit_thread;
@@ -240,16 +240,17 @@ int main(int argc, char **argv){
 
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
-        clock_gettime(CLOCK_MONOTONIC, &uptime);
 
-        if(uptime.tv_sec - server_latest_polling_time > 
+        uptime = get_clock_time();
+
+        if(uptime - server_latest_polling_time > 
            INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
-           uptime.tv_sec - last_join_request_time >
+           uptime - last_join_request_time >
            INTERVAL_FOR_RECONNECT_SERVER_IN_SEC){
 
            if(WORK_SUCCESSFULLY == send_join_request(true, temp_lbeacon_uuid))
             {
-                last_join_request_time = uptime.tv_sec;
+                last_join_request_time = uptime;
             }
         }
         else{
@@ -901,7 +902,7 @@ void *process_wifi_send(void *_buffer_node){
 
 void *process_wifi_receive(){
     int last_join_request_time;
-    struct timespec uptime;
+    int uptime;
 
     char buf[WIFI_MESSAGE_LENGTH];
     char *saveptr = NULL;
@@ -923,7 +924,7 @@ void *process_wifi_receive(){
             continue;
         }
         
-        clock_gettime(CLOCK_MONOTONIC, &uptime);
+        uptime = get_clock_time();
         /* Allocate memory from node_mempool a buffer node for received data
            and copy the data from Wi-Fi receive queue to the node. */
         
@@ -995,7 +996,7 @@ void *process_wifi_receive(){
             
             case from_server:
 
-                server_latest_polling_time = uptime.tv_sec;
+                server_latest_polling_time = uptime;
 
                 switch (new_node -> pkt_type) {
 
