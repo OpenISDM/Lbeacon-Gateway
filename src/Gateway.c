@@ -18,13 +18,13 @@
 
      Each gateway is the root of a star network of LBeacons and a leaf in the
      star network with the server at the root. This file contains programs to
-     transmit and receive data to and from LBeacon and the sever through Wi-Fi
-     network from and to the Gateway, and programs executed by network setup and
-     initialization, Beacon health monitor and comminication unit.
+     transmit and receive data to and from LBeacons and the sever through Wi-Fi
+     network from and to the Gateway, and programs executed by the network setup 
+     and initialization modules, Beacon health monitor and comminication unit.
 
   Version:
 
-     1.0, 20190724
+     1.0, 20190902
 
   Abstract:
 
@@ -43,7 +43,7 @@
      Jake Lee       , jakelee@iis.sinica.edu.tw
      Ray Chao       , raychao5566@gmail.com
      Gary Xiao      , garyh0205@hotmail.com
-     Chun Yu Lai    , chunyu1202@gmail.com
+     Chun-Yu Lai    , chunyu1202@gmail.com
  */
 
 #include "Gateway.h"
@@ -94,7 +94,7 @@ int main(int argc, char **argv){
         return E_OPEN_FILE;
     }
 
-    /* Initialize sll global flags */
+    /* Initialize all global flags */
     NSI_initialization_complete      = false;
     CommUnit_initialization_complete = false;
     initialization_failed = false;
@@ -243,10 +243,10 @@ int main(int argc, char **argv){
 
         uptime = get_clock_time();
 
-        if(uptime - server_latest_polling_time > 
-           INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC && 
-           uptime - last_join_request_time >
-           INTERVAL_FOR_RECONNECT_SERVER_IN_SEC){
+        if( ( uptime - server_latest_polling_time > 
+              INTERVAL_RECEIVE_MESSAGE_FROM_SERVER_IN_SEC ) && 
+            ( uptime - last_join_request_time >
+              INTERVAL_FOR_RECONNECT_SERVER_IN_SEC ) ){
 
            if(WORK_SUCCESSFULLY == send_join_request(true, temp_lbeacon_uuid))
             {
@@ -409,8 +409,7 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
 
         else if(current_head -> priority_nice == config -> low_priority)
 
-            insert_list_tail( list_pointer, &low_priority_head);
-
+            insert_list_tail( list_pointer, &low_priority_head); 
     }
 
     if(is_entry_list_empty(&critical_priority_head) == false){
@@ -769,7 +768,7 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
        address map. */
 
     /* Find the first unused address map location and use the location to store
-       the new joined LBeacon. */
+       address of the newly joined LBeacon. */
     int not_in_use = -1;
     int answer = -1;
 
