@@ -86,7 +86,8 @@ int main(int argc, char **argv){
 #endif
 
 
-    if(get_gateway_config( &config, CONFIG_FILE_NAME) != WORK_SUCCESSFULLY){
+    if(get_gateway_config( &config, &common_config, CONFIG_FILE_NAME) 
+       != WORK_SUCCESSFULLY){
         zlog_error(category_health_report, "Opening config file Fail");
     #ifdef debugging
         zlog_error(category_debug, "Opening config file Fail");
@@ -107,35 +108,35 @@ int main(int argc, char **argv){
      */
 
     init_buffer( &priority_list_head, (void *) sort_priority_list,
-                config.high_priority);
+                 common_config.high_priority);
 
     init_buffer( &command_msg_buffer_list_head,
-                (void *) Server_routine, config.normal_priority);
+                (void *) Server_routine, common_config.normal_priority);
     insert_list_tail( &command_msg_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &LBeacon_receive_buffer_list_head,
-                (void *) LBeacon_routine, config.normal_priority);
+                (void *) LBeacon_routine, common_config.normal_priority);
     insert_list_tail( &LBeacon_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_send_buffer_list_head,
-                (void *) process_wifi_send, config.normal_priority);
+                (void *) process_wifi_send, common_config.normal_priority);
     insert_list_tail( &NSI_send_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_receive_buffer_list_head,
-                (void *) NSI_routine, config.normal_priority);
+                (void *) NSI_routine, common_config.normal_priority);
     insert_list_tail( &NSI_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &BHM_receive_buffer_list_head,
-                (void *) BHM_routine, config.low_priority);
+                (void *) BHM_routine, common_config.low_priority);
     insert_list_tail( &BHM_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &BHM_send_buffer_list_head,
-                (void *) process_wifi_send, config.low_priority);
+                (void *) process_wifi_send, common_config.low_priority);
     insert_list_tail( &BHM_send_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
@@ -143,7 +144,7 @@ int main(int argc, char **argv){
     zlog_info(category_debug, "Buffers initialize Success");
 #endif
 
-    sort_priority_list(&config, &priority_list_head);
+    sort_priority_list(&common_config, &priority_list_head);
 
     /* Create the config from input config file */
 
@@ -271,7 +272,9 @@ int main(int argc, char **argv){
 }
 
 
-ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
+ErrorCode get_gateway_config(GatewayConfig *config, 
+                             CommonConfig *common_config,
+                             char *file_name) {
 
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
@@ -315,7 +318,7 @@ ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->number_worker_threads = atoi(config_message);
+        common_config->number_worker_threads = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
@@ -343,101 +346,30 @@ ErrorCode get_gateway_config(GatewayConfig *config, char *file_name) {
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->time_critical_priority = atoi(config_message);
+        common_config->time_critical_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->high_priority = atoi(config_message);
+        common_config->high_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->normal_priority = atoi(config_message);
+        common_config->normal_priority = atoi(config_message);
 
         fgets(config_setting, sizeof(config_setting), file);
         config_message = strstr((char *)config_setting, DELIMITER);
         config_message = config_message + strlen(DELIMITER);
         trim_string_tail(config_message);
-        config->low_priority = atoi(config_message);
+        common_config->low_priority = atoi(config_message);
 
         fclose(file);
 
     }
     return WORK_SUCCESSFULLY;
-}
-
-
-void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head){
-
-    List_Entry *list_pointer,
-               *next_list_pointer;
-
-    List_Entry critical_priority_head, high_priority_head,
-               normal_priority_head, low_priority_head;
-
-    BufferListHead *current_head, *next_head;
-
-    init_entry( &critical_priority_head);
-    init_entry( &high_priority_head);
-    init_entry( &normal_priority_head);
-    init_entry( &low_priority_head);
-
-    pthread_mutex_lock( &list_head -> list_lock);
-
-    list_for_each_safe(list_pointer, next_list_pointer,
-                       &list_head -> priority_list_entry){
-
-        remove_list_node(list_pointer);
-
-        current_head = ListEntry(list_pointer, BufferListHead,
-                                 priority_list_entry);
-
-        if(current_head -> priority_nice == config -> time_critical_priority)
-
-            insert_list_tail( list_pointer, &critical_priority_head);
-
-        else if(current_head -> priority_nice == config -> high_priority)
-
-            insert_list_tail( list_pointer, &high_priority_head);
-
-        else if(current_head -> priority_nice == config -> normal_priority)
-
-            insert_list_tail( list_pointer, &normal_priority_head);
-
-        else if(current_head -> priority_nice == config -> low_priority)
-
-            insert_list_tail( list_pointer, &low_priority_head); 
-    }
-
-    if(is_entry_list_empty(&critical_priority_head) == false){
-        list_pointer = critical_priority_head.next;
-        remove_list_node(list_pointer -> prev);
-        concat_list( &list_head -> priority_list_entry, list_pointer);
-    }
-
-    if(is_entry_list_empty(&high_priority_head) == false){
-        list_pointer = high_priority_head.next;
-        remove_list_node(list_pointer -> prev);
-        concat_list( &list_head -> priority_list_entry, list_pointer);
-    }
-
-    if(is_entry_list_empty(&normal_priority_head) == false){
-        list_pointer = normal_priority_head.next;
-        remove_list_node(list_pointer -> prev);
-        concat_list( &list_head -> priority_list_entry, list_pointer);
-    }
-
-    if(is_entry_list_empty(&low_priority_head) == false){
-        list_pointer = low_priority_head.next;
-        remove_list_node(list_pointer -> prev);
-        concat_list( &list_head -> priority_list_entry, list_pointer);
-    }
-
-    pthread_mutex_unlock( &list_head -> list_lock);
-
 }
 
 void *NSI_routine(void *_buffer_node){

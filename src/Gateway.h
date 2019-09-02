@@ -75,6 +75,34 @@ gateway sends UDP join_request to the server again.
 
 /* Global variables */
 
+/* The configuration file structure */
+typedef struct {
+
+    /* A flag indicating whether this Gateway is responsible for geofence feature.*/
+    bool is_geofence;
+
+    /* The IP address of the server for WiFi netwok connection. */
+    char IPaddress[NETWORK_ADDR_LENGTH];
+
+    /* The number of LBeacon nodes in the star network of this gateway */
+    int allowed_number_nodes;
+
+    /* The IP address of the server */
+    char server_ip[NETWORK_ADDR_LENGTH];
+
+    /* A port that LBeacons and the server are listening on and for gateway to
+       send to. */
+    int send_port;
+
+    /* A port that the Gateway is listening on and for beacons and server to
+       send to */
+    int recv_port;
+    
+} GatewayConfig;
+
+/* A Gateway config struct for storing config parameters from the config file */
+GatewayConfig config;
+
 /* An array of address maps */
 AddressMapArray LBeacon_address_map;
 
@@ -93,36 +121,18 @@ int server_latest_polling_time;
      GatewayConfig struct global variable.
 
   Parameters:
-
-     file_name - the name of the config file that stores gateway data
+     config - Gateway related configration settings
+     common_config - Common configuration settings among Gateway and Server
+     file_name - The name of the config file that stores the Server data
 
   Return value:
 
      config - GatewayConfig struct
  */
 
-ErrorCode get_gateway_config(GatewayConfig *config, char *file_name);
-
-
-/*
-  sort_priority_list:
-
-     The function arranges entries in the priority list in nondecreasing
-     order of priority.
-
-  Parameters:
-
-     config - The pointer points to the structure which stored config for
-              gateway.
-     list_head - The pointer points to the priority list head.
-
-  Return value:
-
-     None
- */
-void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
-
-
+ErrorCode get_gateway_config(GatewayConfig *config, 
+                             CommonConfig *common_config, 
+                             char *file_name);
 
 /*
   NSI_routine:
@@ -141,7 +151,6 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
 
  */
 void *NSI_routine(void *_buffer_node);
-
 
 /*
   BHM_routine:
