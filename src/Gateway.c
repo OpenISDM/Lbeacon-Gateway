@@ -277,98 +277,50 @@ ErrorCode get_gateway_config(GatewayConfig *config,
                              char *file_name) {
 
     FILE *file = fopen(file_name, "r");
+    char config_message[CONFIG_BUFFER_SIZE];
+    
     if (file == NULL) {
         /* Error handling */
         zlog_error(category_health_report, "Open config file fail.");
         return E_OPEN_FILE;
     }
-    else {
+        
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    config->is_geofence = atoi(config_message);
 
-        /* Create spaces for storing the string in the current line being read
-         */
-        char  config_setting[CONFIG_BUFFER_SIZE];
-        char *config_message = NULL;
-        int config_message_size = 0;
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    memcpy(config->IPaddress, config_message, sizeof(config->IPaddress));
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        config->is_geofence = atoi(config_message);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    config->allowed_number_nodes = atoi(config_message);
 
-        /* Keep reading each line and store into the config struct */
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        if(config_message[strlen(config_message)-1] == '\n')
-            config_message_size = strlen(config_message) - 1;
-        else
-            config_message_size = strlen(config_message);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    common_config->number_worker_threads = atoi(config_message);
 
-        memcpy(config->IPaddress, config_message, config_message_size);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    memcpy(config->server_ip, config_message, sizeof(config->server_ip));
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        config->allowed_number_nodes = atoi(config_message);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    config->send_port = atoi(config_message);
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        common_config->number_worker_threads = atoi(config_message);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    config->recv_port = atoi(config_message);
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        if(config_message[strlen(config_message)-1] == '\n')
-            config_message_size = strlen(config_message) - 1;
-        else
-            config_message_size = strlen(config_message);
-        memcpy(config->server_ip, config_message, config_message_size);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    common_config->time_critical_priority = atoi(config_message);
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        config->send_port = atoi(config_message);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    common_config->high_priority = atoi(config_message);
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        config->recv_port = atoi(config_message);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    common_config->normal_priority = atoi(config_message);
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        common_config->time_critical_priority = atoi(config_message);
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    common_config->low_priority = atoi(config_message);
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        common_config->high_priority = atoi(config_message);
+    fclose(file);
 
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        common_config->normal_priority = atoi(config_message);
-
-        fgets(config_setting, sizeof(config_setting), file);
-        config_message = strstr((char *)config_setting, DELIMITER);
-        config_message = config_message + strlen(DELIMITER);
-        trim_string_tail(config_message);
-        common_config->low_priority = atoi(config_message);
-
-        fclose(file);
-
-    }
+    
     return WORK_SUCCESSFULLY;
 }
 
