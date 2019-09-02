@@ -39,7 +39,8 @@
      Holly Wang   , hollywang@iis.sinica.edu.tw
      Ray Chao     , raychao5566@gmail.com
      Gary Xiao    , garyh0205@hotmail.com
-     Chun Yu Lai  , chunyu1202@gmail.com
+     Chun-Yu Lai  , chunyu1202@gmail.com
+     Jia Ying Shi , littlestone1225@yahoo.com.tw 
 
  */
 
@@ -106,8 +107,8 @@ ErrorCode get_gateway_config(GatewayConfig *config, char *file_name);
 /*
   sort_priority_list:
 
-     The function arrange entries in the priority list in nonincreasing
-     order of the priority nice.
+     The function arranges entries in the priority list in nondecreasing
+     order of priority.
 
   Parameters:
 
@@ -131,8 +132,8 @@ void *sort_priority_list(GatewayConfig *config, BufferListHead *list_head);
 
   Parameters:
 
-     _buffer_list_head - A pointer of the buffer list containing buffers to be
-                         modified.
+     _buffer_list_head - A pointer to the head of the buffer list containing 
+                         buffers to be processed.
 
   Return value:
 
@@ -150,7 +151,8 @@ void *NSI_routine(void *_buffer_node);
 
   Parameters:
 
-     _buffer_list_head - A pointer of the buffer to be modified.
+     _buffer_list_head - A pointer of the head of the list containing buffers 
+                         to be processed.
 
   Return value:
 
@@ -164,11 +166,12 @@ void *BHM_routine(void *_buffer_node);
   LBeacon_routine:
 
      This function is executed by worker threads when they remove buffer nodes
-     from LBeacon_receive_buffer_list and send them to the server directly.
+     from LBeacon_receive_buffer_list and send them to the server.
 
   Parameters:
 
-     _buffer_list_head - A pointer of the buffer to be modified.
+     _buffer_list_head - A pointer of the head of the list containing buffers 
+                         to be processed.
 
   Return value:
 
@@ -182,11 +185,13 @@ void *LBeacon_routine(void *_buffer_node);
   Server_routine:
 
      This function is executed by worker threads when they process the buffer
-     nodes in Command_msg_buffer_list and broadcast to LBeacons.
+     nodes in Command_msg_buffer_list and broadcast messages in them to 
+     LBeacons.
 
   Parameters:
 
-     _buffer_list_head - A pointer of the buffer to be modified.
+     _buffer_list_head - A pointer of the head of the list containing buffers 
+                         of command messages 
 
   Return value:
 
@@ -198,16 +203,16 @@ void *Server_routine(void *_buffer_node);
 /*
   send_join_request:
 
-      This function sends join_request to server when there is no packets
-      from the server for a specified long time or there are new LBeacon 
-      requesting for join to this gateway.
+      This function sends join_request of a gateway to the Server when there 
+      is no packets from the Server for a specified long time or when there is 
+      a new LBeacon requesting to join to this gateway.
 
   Parameters:
 
-      report_all_lbeacons - specify if need to report all registered 
-                            lbeacons to server
-      single_lbeacon_uuid - uuid of LBeacon which need to be reported to
-                            server
+      report_all_lbeacons - a Bool flag indicating the need to report all 
+                            registered lbeacons to server
+      single_lbeacon_uuid - the uuid of LBeacon which needs to be reported to 
+                            the Server 
 
   Return value:
 
@@ -238,17 +243,17 @@ ErrorCode handle_health_report();
 /*
   beacon_join_request:
 
-     This function is executed when a beacon sends a command to join the gateway
-     . When executed, it fills the AddressMap with the inputs and sets the
+     This function is executed when a beacon sends a request to join the 
+     gateway. When executed, it fills the AddressMap with the inputs and sets the
      network_address if the number of beacons already joined the gateway does
      not excceed allowed_number_of_nodes.
 
   Parameters:
 
-     address_map - The head of the AddressMap.
+     address_map - The starting address of the AddressMap
      uuid - The UUID of the LBeacon
-     address - The mac address of the LBeacon IP.
-     datetime - The last LBeacon reported datetime
+     address - The mac address of the LBeacon
+     datetime - The time of the last LBeacon reported datetime
 
   Return value:
 
@@ -263,33 +268,33 @@ bool beacon_join_request(AddressMapArray *address_map,
 
 
 /*
-  beacon_brocast:
+  broadcast_to_beacons:
 
      This function is executed when a command is to be broadcast to LBeacons.
-     When called, this function sends msg to all LBeacons registered in the
-     LBeacon_address_map.
+     When called, this function sends the message pointered to by an input 
+     parameter to all LBeacons registered in the LBeacon_address_map.
 
   Parameters:
-     address_map - The head of the AddressMap.
-     pkt_type - the request type of this request command
-     msg - The pointer to the msg to be send to beacons.
-     size - The size of the msg.
+     address_map - The starting address of the AddressMap.
+     pkt_type - The type of this request command
+     msg - A pointer to the message to be send to beacons.
+     size - The size of the message.
 
   Return value:
 
      None
 
  */
-void beacon_broadcast(AddressMapArray *address_map, 
-                      int pkt_type, 
-                      char *msg, 
-                      int size);
+void broadcast_to_beacons(AddressMapArray *address_map, 
+                          int pkt_type, 
+                          char *msg, 
+                          int size);
 
 
 /*
   Wifi_init:
 
-     This function initializes the Wifi's objects.
+     This function initializes the Wifi objects.
 
   Parameters:
 
@@ -323,8 +328,8 @@ void Wifi_free();
 /*
   process_wifi_send:
 
-     This function sends the msg in the specified buffer list to the server via
-     Wi-Fi.
+     This function sends the message in the specified buffer list to the 
+     Server via Wi-Fi.
 
   Parameters:
 
@@ -340,8 +345,8 @@ void *process_wifi_send(void *_buffer_node);
 /*
   process_wifi_receive:
 
-     This function listens for messages or command received from the server or
-     beacons. After getting the message, put the data in the message into the
+     This function listens for messages or commands received from the server or
+     beacons and after getting the message, puts the data in the message into a
      buffer.
 
   Parameters:
@@ -378,12 +383,13 @@ extern void * memset(void * ptr, int value, size_t number);
 /*
   pthread_attr_init:
 
-      This function is called to initialize thread attributes object pointed
-      to by attr with default attribute values
+      This function is called to initialize thread attributes or "attribute 
+      objects" pointed to by attr with default attribute values
 
   Parameters:
 
-      attr - pointer to the thread attributes object to be initialized
+      attr - pointer to the thread attributes or "attribute objects" to be 
+             initialized
 
   Return value:
 
@@ -413,14 +419,14 @@ extern int pthread_attr_destroy(pthread_attr_t *attr);
   pthread_create:
 
       This function is called to start a new thread in the calling process.
-      The new thread starts execution by invoking start_routine.
+      When the new thread starts, it executes start_routine.
 
   Parameters:
 
       thread - a pointer to the new thread
       attr - set thread properties
-      start_routine - routine to be executed by the new thread
-      arg - the parameters of the start_routine.
+      start_routine - a pointer to the routine to be executed by the new thread
+      arg - a parameter of the start_routine.
 
   Return value:
 
@@ -434,9 +440,9 @@ extern int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 /*
   pthread_detach:
 
-      This function is called to mark the thread identified by thread as
-      detached. When a detached thread returns, its resources are
-      automatically released back to the system.
+      This function is called to mark the thread identified by the input 
+      parameter as detached. When a detached thread returns, its resources 
+      are automatically released back to the system.
 
   Parameters:
 

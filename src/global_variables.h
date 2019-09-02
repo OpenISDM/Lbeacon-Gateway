@@ -16,12 +16,13 @@
 
   File Description:
 
-     This file include the global variables and definition that used in BeDIS 
-     and Server but not always commonly used in Gateway and LBeacon.
+     This file include the declarations and definitions of global variables 
+     and definition used in BeDIS Gateway but not commonly used in Server and 
+     LBeacon.
 
   Version:
 
-     2.0, 20190718
+     2.0, 20190902
 
   Abstract:
 
@@ -36,7 +37,8 @@
 
   Authors:
       
-     Jia Ying Shi  , littlestone1225@yahoo.com.tw
+     Jia Ying Shi,   littlestone1225@yahoo.com.tw
+     Chun-Yu Lai,    chunyu1202@gmail.com
  */
 
 #ifndef GLOBAL_VARIABLE_H

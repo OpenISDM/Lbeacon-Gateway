@@ -607,9 +607,9 @@ void *Server_routine(void *_buffer_node){
 
     zlog_info(category_debug, "Start Broadcast to LBeacon");
 
-    beacon_broadcast(&LBeacon_address_map, pkt_type, 
-                     temp -> content, 
-                     temp -> content_size);
+    broadcast_to_beacons(&LBeacon_address_map, pkt_type, 
+                         temp -> content, 
+                         temp -> content_size);
 
     zlog_info(category_debug, "Polling Data from Server");
 
@@ -821,11 +821,11 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
 }
 
 
-void beacon_broadcast(AddressMapArray *address_map,
-                      int pkt_type, 
-                      char *msg, 
-                      int size){
-
+void broadcast_to_beacons(AddressMapArray *address_map,
+                          int pkt_type, 
+                          char *msg, 
+                          int size){
+  
     char buf[WIFI_MESSAGE_LENGTH];
 
     memset(buf, 0, sizeof(buf));
