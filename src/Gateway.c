@@ -802,6 +802,11 @@ void send_notification_alarm_to_agents(char *message, int size){
         agent_ip = strtok_save(NULL, DELIMITER_COLON, &saveptr);
         
         agent_port = strtok_save(NULL, DELIMITER_COMMA, &saveptr);
+        if(agent_port == NULL){
+            zlog_debug(category_debug, 
+                       "agent_port is incorrect, abort the action");
+            continue;
+        }
         port = atoi(agent_port);
         
         memset(message_to_send, 0, sizeof(message_to_send));
