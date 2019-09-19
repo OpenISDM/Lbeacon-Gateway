@@ -680,14 +680,17 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     int answer = -1;
 
     answer = is_in_Address_Map(address_map, uuid, 1);
-    if(answer >=0){
+    if(answer >=0)
+    {
+        /* Need to update both ip address and last request time for each 
+           LBeacon */
         memset(address_map -> address_map_list[answer].net_address, 0,
                NETWORK_ADDR_LENGTH);
         strncpy(address_map -> address_map_list[answer].net_address,
                 address, strlen(address));
         address_map -> address_map_list[answer].last_request_time =
-                                                              get_system_time();
-        address_map -> address_map_list[answer].last_lbeacon_datetime= datetime;
+            get_system_time();
+            
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }
@@ -713,8 +716,10 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
                LENGTH_OF_UUID);
         strncpy(address_map->address_map_list[not_in_use].uuid, 
                 uuid, strlen(uuid));
+                
         address_map->address_map_list[not_in_use].last_request_time
             = get_system_time();
+            
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }
@@ -748,9 +753,11 @@ void broadcast_to_beacons(AddressMapArray *address_map,
         for(int n = 0; n < MAX_NUMBER_NODES; n++){
 
             if (address_map -> in_use[n] == true){
-                zlog_info(category_debug, "Brocast IP: %s", 
+                zlog_info(category_debug, "Brocast IP: [%s] UUID [%s]", 
                                           address_map ->
-                                          address_map_list[n].net_address);
+                                          address_map_list[n].net_address,
+                                          address_map ->
+                                          address_map_list[n].uuid);
 
                 /* Add the pkt that to be sent to the server */
                 udp_addpkt(&udp_config, 
@@ -763,7 +770,7 @@ void broadcast_to_beacons(AddressMapArray *address_map,
         }
     }
 
-    zlog_info(category_debug, "END Brocast");
+    zlog_info(category_debug, "END Broadcast");
     pthread_mutex_unlock( &address_map -> list_lock);
 }
 
