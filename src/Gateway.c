@@ -808,7 +808,7 @@ void send_notification_alarm_to_agents(char *message, int size){
         sprintf(message_to_send, "%d;%d;%s;%s;%s;", 
                 from_gateway,
                 send_notification_alarm, 
-                BOT_GATEWAY_API_VERSION_LATEST,
+                BOT_AGENT_API_VERSION_LATEST,
                 alarm_type,
                 alarm_duration_in_sec);
         
