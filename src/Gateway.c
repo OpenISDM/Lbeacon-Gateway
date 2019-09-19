@@ -470,31 +470,54 @@ void *Server_routine(void *_buffer_node){
     BufferNode *temp = (BufferNode *)_buffer_node;
     int pkt_type = temp->pkt_type;
     
-    
     switch(pkt_type){
         case tracked_object_data:
-            zlog_info(category_debug, "Send tracked object data to LBeacon");
+        
+            zlog_info(category_debug, "Send tracked data request to LBeacon");
+
+            zlog_info(category_debug, "Start Broadcast to LBeacon");
+
+            broadcast_to_beacons(&LBeacon_address_map, pkt_type, 
+                                 temp -> content, 
+                                 temp -> content_size);
+
 
             break;
 
         case gateway_health_report:
+        
             handle_health_report();
-            zlog_info(category_debug, "Send health report to LBeacon");
-          
+            
+            // Use beacon_health_report as pkt_type to ask LBeacons to report
+            // health report status
+            zlog_info(category_debug, "Send health report request to LBeacon");
+            
             // Use beacon_health_report as pkt_type to ask LBeacons to report
             // health report status
             pkt_type = beacon_health_report;
+            
+            zlog_info(category_debug, "Start Broadcast to LBeacon");
+
+            broadcast_to_beacons(&LBeacon_address_map, pkt_type, 
+                                 temp -> content, 
+                                 temp -> content_size);
           
             break;
+            
+        case send_notification_alarm:
+        
+            zlog_info(category_debug, "Send notification alarm request to Agent");
+
+            zlog_info(category_debug, "Start Broadcast to Agent");
+            
+            send_notification_alarm_to_agents(temp -> content, 
+                                              temp -> content_size);
+            
+            break;
+            
+        default:
+            break;
     }
-
-    zlog_info(category_debug, "Start Broadcast to LBeacon");
-
-    broadcast_to_beacons(&LBeacon_address_map, pkt_type, 
-                         temp -> content, 
-                         temp -> content_size);
-
-    zlog_info(category_debug, "Polling Data from Server");
 
     mp_free( &node_mempool, temp);
 
@@ -744,6 +767,68 @@ void broadcast_to_beacons(AddressMapArray *address_map,
     pthread_mutex_unlock( &address_map -> list_lock);
 }
 
+void send_notification_alarm_to_agents(char *message, int size){
+  
+    char buf[WIFI_MESSAGE_LENGTH];
+    char *saveptr = NULL;
+    
+    char *alarm_type = NULL;
+    char *alarm_duration_in_sec = NULL;
+    char *agents = NULL;
+    char *number_of_agents = NULL;
+    int number_agents = 0;
+    int i = 0;
+    char *agent_ip = NULL;
+    char *agent_port = NULL;
+    int port = 0;
+    
+    char message_to_send[WIFI_MESSAGE_LENGTH];
+
+    
+    memset(buf, 0, sizeof(buf));
+    strcpy(buf, message);
+    
+    alarm_type = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
+    
+    alarm_duration_in_sec = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+    
+    agents = strtok_save(NULL, DELIMITER_SEMICOLON, &saveptr);
+    
+    number_of_agents = strtok_save(agents, DELIMITER_COMMA, &saveptr);
+    
+    number_agents = atoi(number_of_agents);
+   
+    for(i = 0 ; i < number_agents ; i ++){
+        agent_ip = strtok_save(NULL, DELIMITER_COLON, &saveptr);
+        
+        agent_port = strtok_save(NULL, DELIMITER_COMMA, &saveptr);
+        port = atoi(agent_port);
+        
+        memset(message_to_send, 0, sizeof(message_to_send));
+        sprintf(message_to_send, "%d;%d;%s;%s;%s;", 
+                from_gateway,
+                send_notification_alarm, 
+                BOT_GATEWAY_API_VERSION_LATEST,
+                alarm_type,
+                alarm_duration_in_sec);
+        
+        zlog_debug(category_debug, 
+                   "send notification alarm [%s] to agent [%s:%d]", 
+                   message_to_send,
+                   agent_ip,
+                   port);
+                       
+        udp_addpkt(&udp_config, 
+                   agent_ip, 
+                   port,
+                   message_to_send, 
+                   strlen(message_to_send));
+                   
+
+                       
+    }
+                 
+}
 
 ErrorCode Wifi_init(){
 
@@ -883,6 +968,14 @@ void *process_wifi_receive(){
 
                 switch (new_node -> pkt_type) {
 
+                    case join_response:
+                    
+                        zlog_info(category_debug,
+                                  "Get Join Request Result from the Server");
+                        mp_free(&node_mempool, new_node);
+                        
+                        break;
+                        
                     case gateway_health_report:
        
                         zlog_info(category_debug,
@@ -909,14 +1002,20 @@ void *process_wifi_receive(){
                         pthread_mutex_unlock(&command_msg_buffer_list_head
                                              .list_lock);
                         break;
-
-                    case join_response:
-                    
+                     
+                    case send_notification_alarm:
+                
                         zlog_info(category_debug,
-                                  "Get Join Request Result from the Server");
-                        mp_free(&node_mempool, new_node);
-                        
+                                  "Get Send Notification Alarm from the Server");
+                        pthread_mutex_lock(&command_msg_buffer_list_head
+                                           .list_lock);
+                        insert_list_tail(&new_node -> buffer_entry,
+                                         &command_msg_buffer_list_head
+                                         .list_head);
+                        pthread_mutex_unlock(&command_msg_buffer_list_head
+                                             .list_lock);
                         break;
+                                            
                     default:
                  
                         mp_free(&node_mempool, new_node);

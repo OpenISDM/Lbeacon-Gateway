@@ -298,7 +298,25 @@ void broadcast_to_beacons(AddressMapArray *address_map,
                           int pkt_type, 
                           char *msg, 
                           int size);
+                          
 
+/*
+  send_notification_alarm_to_agents:
+
+     This function is executed when a notification alarm needs to be sent 
+     to agents. When called, this function sends notification alarms to the
+     agents specified in packet content.
+
+  Parameters:
+     message - A pointer to the content of packet.
+     size - The size of the message.
+
+  Return value:
+
+     None
+
+*/
+void send_notification_alarm_to_agents(char *message, int size);
 
 /*
   Wifi_init:
