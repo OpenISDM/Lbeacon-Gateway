@@ -18,5 +18,7 @@ if [ "$_IP" ]; then
 fi
 
 sudo /bin/bash /usr/local/bin/hostapdstart
-/home/bedis/Lbeacon-Gateway/bin/Gateway.out > /dev/null 2>&1 &
+cd /home/bedis/Lbeacon-Gateway/bin/
+chmod 755 /home/bedis/Lbeacon-Gateway/bin/auto_Gateway.sh
+/home/bedis/Lbeacon-Gateway/bin/auto_Gateway.sh > /dev/null 2>&1 &
 exit 0
