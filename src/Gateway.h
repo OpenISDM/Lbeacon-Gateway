@@ -57,10 +57,10 @@
 /* Gateway config file location and the config file definition. */
 
 /* File path of the config file of the Gateway */
-#define CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/gateway.conf"
+#define CONFIG_FILE_NAME "../config/gateway.conf"
 
 /* File path of the config file of the zlog */
-#define ZLOG_CONFIG_FILE_NAME "/home/pi/Lbeacon-Gateway/config/zlog.conf"
+#define ZLOG_CONFIG_FILE_NAME "../config/zlog.conf"
 
 /* Time interval in seconds for idle status of the Wifi connection between the
 gateway and server. Usually, the Wifi connection being idle for longer than
