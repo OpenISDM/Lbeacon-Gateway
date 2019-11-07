@@ -73,6 +73,9 @@ gateway sends UDP join_request to the server again.
 /* Time interval in seconds for reconnect to server */
 #define INTERVAL_FOR_RECONNECT_SERVER_IN_SEC 30
 
+/* The number of slots in the memory pool for buffer nodes */
+#define SLOTS_IN_MEM_POOL_BUFFER_NODE 2048
+
 /* Global variables */
 
 /* The configuration file structure */

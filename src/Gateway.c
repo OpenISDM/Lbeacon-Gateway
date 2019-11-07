@@ -115,9 +115,9 @@ int main(int argc, char **argv){
     insert_list_tail( &command_msg_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
-    init_buffer( &LBeacon_receive_buffer_list_head,
+    init_buffer( &data_receive_buffer_list_head,
                 (void *) LBeacon_routine, common_config.normal_priority);
-    insert_list_tail( &LBeacon_receive_buffer_list_head.priority_list_entry,
+    insert_list_tail( &data_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_send_buffer_list_head,
@@ -149,7 +149,7 @@ int main(int argc, char **argv){
     /* Create the config from input config file */
 
     /* Initialize the memory pool */
-    if(mp_init( &node_mempool, sizeof(BufferNode), SLOTS_IN_MEM_POOL)
+    if(mp_init( &node_mempool, sizeof(BufferNode), SLOTS_IN_MEM_POOL_BUFFER_NODE)
        != MEMORY_POOL_SUCCESS){
         zlog_error(category_health_report, "Mempool Initialization Fail");
 #ifdef debugging
@@ -1057,12 +1057,12 @@ void *process_wifi_receive(){
                    
                         zlog_info(category_debug,
                                   "Get Tracked Object Data from LBeacon");
-                        pthread_mutex_lock(&LBeacon_receive_buffer_list_head
+                        pthread_mutex_lock(&data_receive_buffer_list_head
                                            .list_lock);
                         insert_list_tail(&new_node -> buffer_entry,
-                                         &LBeacon_receive_buffer_list_head
+                                         &data_receive_buffer_list_head
                                          .list_head);
-                        pthread_mutex_unlock(&LBeacon_receive_buffer_list_head
+                        pthread_mutex_unlock(&data_receive_buffer_list_head
                                              .list_lock);
                         break;
 
