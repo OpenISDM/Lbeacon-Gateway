@@ -121,12 +121,12 @@ int main(int argc, char **argv){
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_send_buffer_list_head,
-                (void *) process_wifi_send, common_config.normal_priority);
+                (void *) process_wifi_send, common_config.high_priority);
     insert_list_tail( &NSI_send_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
     init_buffer( &NSI_receive_buffer_list_head,
-                (void *) NSI_routine, common_config.normal_priority);
+                (void *) NSI_routine, common_config.high_priority);
     insert_list_tail( &NSI_receive_buffer_list_head.priority_list_entry,
                       &priority_list_head.priority_list_entry);
 
