@@ -292,10 +292,10 @@ ErrorCode get_gateway_config(GatewayConfig *config,
     memcpy(config->IPaddress, config_message, sizeof(config->IPaddress));
 
     fetch_next_string(file, config_message, sizeof(config_message)); 
-    config->allowed_number_nodes = atoi(config_message);
+    common_config->number_worker_threads = atoi(config_message);
 
     fetch_next_string(file, config_message, sizeof(config_message)); 
-    common_config->number_worker_threads = atoi(config_message);
+    common_config->omit_out_of_date_packet_in_sec = atoi(config_message);
 
     fetch_next_string(file, config_message, sizeof(config_message)); 
     memcpy(config->server_ip, config_message, sizeof(config->server_ip));
@@ -921,6 +921,8 @@ void *process_wifi_receive(){
 
         /* Initialize the entry of the buffer node */
         init_entry( &new_node -> buffer_entry);
+        
+        new_node->uptime_at_receive = get_clock_time();
 
         memset(buf, 0, sizeof(buf));
         strcpy(buf, temppkt.content);
