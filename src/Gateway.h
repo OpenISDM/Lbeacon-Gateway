@@ -96,8 +96,7 @@ typedef struct {
        send to. */
     int send_port;
 
-    /* A port that the gateway is listening on and for beacons and server to
-       send to */
+    /* A port for gateway to send on */
     int recv_port;
     
 } GatewayConfig;
@@ -181,7 +180,7 @@ void *BHM_routine(void *_buffer_node);
 
   Parameters:
 
-     _buffer_list_head - A pointer of the head of the list containing buffers 
+     _buffer_list_head - A pointer to the head of the list containing buffers 
                          to be processed.
 
   Return value:
@@ -201,7 +200,7 @@ void *LBeacon_routine(void *_buffer_node);
 
   Parameters:
 
-     _buffer_list_head - A pointer of the head of the list containing buffers 
+     _buffer_list_head - A pointer to the head of the list containing buffers 
                          of command messages 
 
   Return value:
@@ -358,7 +357,7 @@ void Wifi_free();
   process_wifi_send:
 
      This function sends the message in the specified buffer list to the 
-     Server via Wi-Fi.
+     server via Wi-Fi.
 
   Parameters:
 
