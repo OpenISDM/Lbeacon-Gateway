@@ -41,7 +41,6 @@
 
      Holly Wang     , hollywang@iis.sinica.edu.tw
      Jake Lee       , jakelee@iis.sinica.edu.tw
-     Ray Chao       , raychao5566@gmail.com
      Gary Xiao      , garyh0205@hotmail.com
      Chun-Yu Lai    , chunyu1202@gmail.com
  */
@@ -61,8 +60,7 @@ int main(int argc, char **argv){
     /* The thread to listen for messages from Wi-Fi interface */
     pthread_t wifi_listener;
 
-    char *temp_lbeacon_uuid = NULL;
-    
+    char *temp_lbeacon_uuid = NULL;   
     struct sigaction sigint_handler;
 
     /* Initialize zlog */
