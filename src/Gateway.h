@@ -37,7 +37,6 @@
  Authors:
 
      Holly Wang   , hollywang@iis.sinica.edu.tw
-     Ray Chao     , raychao5566@gmail.com
      Gary Xiao    , garyh0205@hotmail.com
      Chun-Yu Lai  , chunyu1202@gmail.com
      Jia Ying Shi , littlestone1225@yahoo.com.tw 
@@ -56,7 +55,7 @@
 
 /* Gateway config file location and the config file definition. */
 
-/* File path of the config file of the Gateway */
+/* File path of the config file of the gateway */
 #define CONFIG_FILE_NAME "../config/gateway.conf"
 
 /* File path of the config file of the zlog */
@@ -81,7 +80,7 @@ gateway sends UDP join_request to the server again.
 /* The configuration file structure */
 typedef struct {
 
-    /* A flag indicating whether this Gateway is responsible for geofence feature.*/
+    /* A flag indicating whether this gateway is responsible for geofence feature.*/
     bool is_geofence;
 
     /* The IP address of the server for WiFi netwok connection. */
@@ -97,13 +96,13 @@ typedef struct {
        send to. */
     int send_port;
 
-    /* A port that the Gateway is listening on and for beacons and server to
+    /* A port that the gateway is listening on and for beacons and server to
        send to */
     int recv_port;
     
 } GatewayConfig;
 
-/* A Gateway config struct for storing config parameters from the config file */
+/* A gateway config struct for storing config parameters from the config file */
 GatewayConfig config;
 
 /* An array of address maps */
@@ -124,9 +123,9 @@ int server_latest_polling_time;
      GatewayConfig struct global variable.
 
   Parameters:
-     config - Gateway related configration settings
-     common_config - Common configuration settings among Gateway and Server
-     file_name - The name of the config file that stores the Server data
+     config - gateway related configration settings
+     common_config - Common configuration settings among gateway and server
+     file_name - The name of the config file that stores the server data
 
   Return value:
 
@@ -215,8 +214,8 @@ void *Server_routine(void *_buffer_node);
 /*
   send_join_request:
 
-      This function sends join_request of a gateway to the Server when there 
-      is no packets from the Server for a specified long time or when there is 
+      This function sends join_request of a gateway to the server when there 
+      is no packets from the server for a specified long time or when there is 
       a new LBeacon requesting to join to this gateway.
 
   Parameters:
@@ -224,7 +223,7 @@ void *Server_routine(void *_buffer_node);
       report_all_lbeacons - a Bool flag indicating the need to report all 
                             registered lbeacons to server
       single_lbeacon_uuid - the uuid of LBeacon which needs to be reported to 
-                            the Server 
+                            the server 
 
   Return value:
 
