@@ -641,6 +641,16 @@ ErrorCode handle_health_report(){
         zlog_error(category_debug, "Cannot malloc memory by mp_alloc");
         return E_MALLOC;
     }
+	
+    memset(new_node, 0, sizeof(BufferNode));
+
+    /* Initialize the entry of the buffer node */
+    init_entry( &new_node -> buffer_entry);
+        
+    new_node->uptime_at_receive = get_clock_time();
+    new_node->pkt_direction = from_gateway;
+    new_node->pkt_type = gateway_health_report;
+    new_node->API_version = atof(BOT_SERVER_API_VERSION_LATEST);
 
     sprintf(new_node->content, "%d;%d;%s;%s;%d;", from_gateway, 
                                                   gateway_health_report, 
