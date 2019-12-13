@@ -554,6 +554,7 @@ ErrorCode send_join_request(bool report_all_lbeacons,
         for(n = 0; n < MAX_NUMBER_NODES; n ++){
             if (LBeacon_address_map.in_use[n] == true){
 
+                count++;
                 memset(one_lbeacon_buf, 0, sizeof(one_lbeacon_buf));
                 sprintf(one_lbeacon_buf, "%s;%d;%s;", 
                         LBeacon_address_map.address_map_list[n].uuid, 
