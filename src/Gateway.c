@@ -385,8 +385,7 @@ void *NSI_routine(void *_buffer_node){
 
     pthread_mutex_unlock( &NSI_send_buffer_list_head.list_lock);
  
-    // We need to report the registration status of this Beacon to server 
-    send_join_request(false, uuid);
+    send_join_request(true, uuid);
 
     return (void *)NULL;
 }
@@ -606,6 +605,7 @@ ErrorCode send_join_request(bool report_all_lbeacons,
     }
 
     sprintf(summary_buf, "%d;%s;", count, config.IPaddress);
+    
 
     if(sizeof(message_buf) <= strlen(message_buf) + strlen(summary_buf)){
         zlog_error(category_debug, "message_buf is not big enough to " \
