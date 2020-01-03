@@ -293,7 +293,7 @@ ErrorCode get_gateway_config(GatewayConfig *config,
     common_config->number_worker_threads = atoi(config_message);
 
     fetch_next_string(file, config_message, sizeof(config_message)); 
-    common_config->omit_out_of_date_packet_in_sec = atoi(config_message);
+    common_config->min_age_out_of_date_packet_in_sec = atoi(config_message);
 
     fetch_next_string(file, config_message, sizeof(config_message)); 
     memcpy(config->server_ip, config_message, sizeof(config->server_ip));
@@ -501,7 +501,7 @@ void *Server_routine(void *_buffer_node){
           
             break;
             
-        case send_notification_alarm:
+        case notification_alarm:
         
             zlog_info(category_debug, "Send notification alarm request to Agent");
 
@@ -828,7 +828,7 @@ void send_notification_alarm_to_agents(char *message, int size){
         memset(message_to_send, 0, sizeof(message_to_send));
         sprintf(message_to_send, "%d;%d;%s;%s;%s;", 
                 from_gateway,
-                send_notification_alarm, 
+                notification_alarm, 
                 BOT_AGENT_API_VERSION_LATEST,
                 alarm_type,
                 alarm_duration_in_sec);
@@ -1026,7 +1026,7 @@ void *process_wifi_receive(){
                                              .list_lock);
                         break;
                      
-                    case send_notification_alarm:
+                    case notification_alarm:
                 
                         zlog_info(category_debug,
                                   "Get Send Notification Alarm from the Server");
