@@ -236,7 +236,7 @@ int main(int argc, char **argv){
     
     server_latest_polling_time = 0;
     last_join_request_time = 0;
-
+  
     /* The while loop that keeps the program running */
     while(ready_to_work == true){
 
@@ -315,6 +315,9 @@ ErrorCode get_gateway_config(GatewayConfig *config,
 
     fetch_next_string(file, config_message, sizeof(config_message)); 
     common_config->low_priority = atoi(config_message);
+    
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    config->address_map_time_duration_in_sec = atoi(config_message);
 
     fclose(file);
 
@@ -395,7 +398,26 @@ void *BHM_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
     char buf[WIFI_MESSAGE_LENGTH];
-
+    char *saveptr = NULL;
+    char *uuid = NULL;
+    
+    /* Get LBeacon UUID and update its last_reported_timestamp in
+    the AddressMap */
+    memset(buf, 0, sizeof(buf));
+    strcpy(buf, temp->content);
+    
+    uuid = strtok_save(buf, DELIMITER_SEMICOLON, &saveptr);
+    
+    update_report_timestamp_in_Address_Map(&LBeacon_address_map,
+                                           ADDRESS_MAP_TYPE_LBEACON,
+                                           uuid);
+                                           
+    /* Maintain Lbeacon AddressMap */
+    release_not_used_entry_from_Address_Map(
+        &LBeacon_address_map,
+        config.address_map_time_duration_in_sec);
+                                           
+    /* Prepare the payload to forward to server*/
     memset(buf, 0, sizeof(buf));
     sprintf(buf, "%d;%d;%s;%s;", from_gateway,
                                  beacon_health_report,  
@@ -557,7 +579,7 @@ ErrorCode send_join_request(bool report_all_lbeacons,
                 memset(one_lbeacon_buf, 0, sizeof(one_lbeacon_buf));
                 sprintf(one_lbeacon_buf, "%s;%d;%s;", 
                         LBeacon_address_map.address_map_list[n].uuid, 
-                        LBeacon_address_map.address_map_list[n].last_request_time,
+                        LBeacon_address_map.last_reported_timestamp[n],
                         LBeacon_address_map.address_map_list[n].net_address);
 
                 if(sizeof(lbeacons_buf) <= 
@@ -585,7 +607,9 @@ ErrorCode send_join_request(bool report_all_lbeacons,
 
         pthread_mutex_lock(&LBeacon_address_map.list_lock);
 
-        index = is_in_Address_Map(&LBeacon_address_map, single_lbeacon_uuid, 1);
+        index = is_in_Address_Map(&LBeacon_address_map, 
+                                  ADDRESS_MAP_TYPE_LBEACON, 
+                                  single_lbeacon_uuid);
         if(index >= 0){
             count = 1;
 
@@ -593,7 +617,7 @@ ErrorCode send_join_request(bool report_all_lbeacons,
 
             sprintf(lbeacons_buf, "%s;%d;%s;",  
                     LBeacon_address_map.address_map_list[index].uuid, 
-                    LBeacon_address_map.address_map_list[index].last_request_time,
+                    LBeacon_address_map.last_reported_timestamp[index],
                     LBeacon_address_map.address_map_list[index].net_address);
 
             zlog_debug(category_debug, 
@@ -688,18 +712,17 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     int not_in_use = -1;
     int answer = -1;
 
-    answer = is_in_Address_Map(address_map, uuid, 1);
+    answer = is_in_Address_Map(address_map, ADDRESS_MAP_TYPE_LBEACON, uuid);
     if(answer >=0)
     {
-        /* Need to update both ip address and last request time for each 
-           LBeacon */
-        memset(address_map -> address_map_list[answer].net_address, 0,
-               NETWORK_ADDR_LENGTH);
-        strncpy(address_map -> address_map_list[answer].net_address,
-                address, strlen(address));
-        address_map -> address_map_list[answer].last_request_time =
-            get_system_time();
-            
+        /* Need to update both ip address and last reported timestamp for 
+        each LBeacon */
+        update_entry_in_Address_Map(address_map,
+                                    answer,
+                                    ADDRESS_MAP_TYPE_LBEACON,
+                                    address,
+                                    uuid);
+                                    
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }
@@ -714,21 +737,12 @@ bool beacon_join_request(AddressMapArray *address_map, char *uuid,
     /* If here still has space for the LBeacon to register */
     if (not_in_use != -1){
 
-        address_map -> in_use[not_in_use] = true;
-        
-        memset(address_map->address_map_list[not_in_use].net_address, 0,
-               NETWORK_ADDR_LENGTH);
-        strncpy(address_map->address_map_list[not_in_use].net_address, 
-                address, strlen(address));
-                
-        memset(address_map->address_map_list[not_in_use].uuid, 0, 
-               LENGTH_OF_UUID);
-        strncpy(address_map->address_map_list[not_in_use].uuid, 
-                uuid, strlen(uuid));
-                
-        address_map->address_map_list[not_in_use].last_request_time
-            = get_system_time();
-            
+        update_entry_in_Address_Map(address_map,
+                                    not_in_use,
+                                    ADDRESS_MAP_TYPE_LBEACON,
+                                    address,
+                                    uuid);
+                                        
         pthread_mutex_unlock( &address_map -> list_lock);
         return true;
     }
