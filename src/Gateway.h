@@ -83,11 +83,8 @@ typedef struct {
     /* A flag indicating whether this gateway is responsible for geofence feature.*/
     bool is_geofence;
 
-    /* The IP address of the server for WiFi netwok connection. */
+    /* The IP address of the server for WiFi network connection. */
     char IPaddress[NETWORK_ADDR_LENGTH];
-
-    /* The number of LBeacon nodes in the star network of this gateway */
-    int allowed_number_nodes;
 
     /* The IP address of the server */
     char server_ip[NETWORK_ADDR_LENGTH];
@@ -98,6 +95,9 @@ typedef struct {
 
     /* A port for gateway to send on */
     int recv_port;
+    
+    /* The valid time duration for entries in Lbeacon AddressMap */
+    int address_map_time_duration_in_sec;
     
 } GatewayConfig;
 
@@ -110,9 +110,8 @@ AddressMapArray LBeacon_address_map;
 /* The head of a list of buffers for polling messages and commands */
 BufferListHead command_msg_buffer_list_head;
 
-/* Variables for storing the last polling times in second*/\
+/* The last polling times in second*/
 int server_latest_polling_time;
-
 
 /*
   get_gateway_config:
