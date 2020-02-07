@@ -262,7 +262,7 @@ ErrorCode handle_health_report();
      address_map - The starting address of the AddressMap
      uuid - The UUID of the LBeacon
      address - The mac address of the LBeacon
-     datetime - The time of the last LBeacon reported datetime
+     API_version - API version used by LBeacon
 
   Return value:
 
@@ -273,7 +273,7 @@ ErrorCode handle_health_report();
 bool beacon_join_request(AddressMapArray *address_map, 
                          char *uuid, 
                          char *address, 
-                         int datetime);
+                         char *API_version);
 
 
 /*
