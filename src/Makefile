@@ -1,22 +1,25 @@
 # Gateway
 #---------------------------------------------------------------------------
 CC = gcc
-OBJS =  LinkedList.o Mempool.o thpool.o pkt_Queue.o UDP_API.o
+OBJS =  LinkedList.o Mempool.o thpool.o pkt_Queue.o UDP_API.o BeDIS.o
 CFLAGS = -std=gnu99 -lrt -lpthread -lzlog -O3
 LIB = -L /usr/local/lib
+INC = -I ../import
 #---------------------------------------------------------------------------
 all: Gateway.out
-Gateway.out: $(OBJS) BeDIS.h BeDIS.c Gateway.h Gateway.c
-	$(CC) $(CFLAGS) $(OBJS) $(LIB) BeDIS.c Gateway.c -o ../bin/Gateway.out
-LinkedList.o: LinkedList.c LinkedList.h
-	$(CC) $(CFLAGS) LinkedList.c -c
-thpool.o: thpool.c thpool.h
-	$(CC) $(CFLAGS) thpool.c -c
-Mempool.o: Mempool.c Mempool.h
-	$(CC) $(CFLAGS) Mempool.c -c
-UDP_API.o: UDP_API.c UDP_API.h pkt_Queue.o
-	$(CC) $(CFLAGS) UDP_API.c -c
-pkt_Queue.o: pkt_Queue.c pkt_Queue.h
-	$(CC) $(CFLAGS) pkt_Queue.c -c
+Gateway.out: $(OBJS) Gateway.h Gateway.c
+	$(CC) $(CFLAGS) $(OBJS) $(INC) $(LIB) Gateway.c -o ../bin/Gateway.out
+LinkedList.o:
+	$(CC) $(CFLAGS) ../import/LinkedList.c -c
+thpool.o: 
+	$(CC) $(CFLAGS) ../import/thpool.c -c
+Mempool.o: 
+	$(CC) $(CFLAGS) ../import/Mempool.c -c
+UDP_API.o: pkt_Queue.o
+	$(CC) $(CFLAGS) ../import/UDP_API.c -c
+pkt_Queue.o: 
+	$(CC) $(CFLAGS) ../import/pkt_Queue.c -c
+BeDIS.o: 
+	$(CC) $(CFLAGS) ../import/BeDIS.c -c
 clean:
 	rm -f *.o *.out *.h.gch
