@@ -459,6 +459,9 @@ void *LBeacon_routine(void *_buffer_node){
     float API_version = temp -> API_version;
     char buf[WIFI_MESSAGE_LENGTH];
 
+    printf("Received content (tracking data) from Lbeacon [%s]\n",
+           temp->content);
+           
     if(config.is_geofence)
     {
         pkt_type = time_critical_tracked_object_data;
@@ -506,6 +509,8 @@ void *Server_routine(void *_buffer_node){
             zlog_info(category_debug, "Send tracked data request to LBeacon");
 
             zlog_info(category_debug, "Start Broadcast to LBeacon");
+            
+            printf("Broadcast to Lbeacons [tracking data]\n");
 
             broadcast_to_beacons(&LBeacon_address_map, pkt_type, 
                                  temp -> content, 
@@ -528,6 +533,8 @@ void *Server_routine(void *_buffer_node){
             
             zlog_info(category_debug, "Start Broadcast to LBeacon");
 
+            printf("Broadcast to Lbeacons [health status]\n");
+            
             broadcast_to_beacons(&LBeacon_address_map, pkt_type, 
                                  temp -> content, 
                                  temp -> content_size);
@@ -797,6 +804,12 @@ void broadcast_to_beacons(AddressMapArray *address_map,
         for(int n = 0; n < MAX_NUMBER_NODES; n++){
 
             if (address_map -> in_use[n] == true){
+                
+                printf("Lbeacon ip: [%s] UUID [%s] at timestamp [%d]\n",
+                       address_map -> address_map_list[n].net_address,
+                       address_map -> address_map_list[n].uuid,
+                       get_system_time());
+                
                 zlog_info(category_debug, "Brocast IP: [%s] UUID [%s]", 
                                           address_map ->
                                           address_map_list[n].net_address,
