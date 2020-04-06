@@ -95,7 +95,9 @@
 
 #define BOT_GATEWAY_API_VERSION_10 "1.0"
 
-#define BOT_GATEWAY_API_VERSION_LATEST "1.1"
+#define BOT_GATEWAY_API_VERSION_11 "1.1"
+
+#define BOT_GATEWAY_API_VERSION_LATEST "1.2"
 
 /* Agent API protocol version for gateway to deploy commands to agent. */
 
@@ -195,6 +197,9 @@
 
 /* Number of objects been monitored in each covered area */
 #define NUMBER_OBJECTS_PER_AREA 512 
+
+/* Error code for failure of opening self-check and version files */
+#define SELF_CHECK_ERROR_OPEN_FILE 99999
 
 typedef enum _ErrorCode{
 
