@@ -199,7 +199,7 @@
 #define NUMBER_OBJECTS_PER_AREA 512 
 
 /* Error code for failure of opening self-check and version files */
-#define SELF_CHECK_ERROR_OPEN_FILE 99999
+#define SELF_CHECK_ERROR_OPEN_FILE 9999
 
 /* Number of times to retry open file, because file openning operation may have
    transient failure. */
