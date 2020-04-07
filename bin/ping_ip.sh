@@ -1,7 +1,7 @@
 #!/bin/bash
 
-input="/home/bedis/Lbeacon-Gateway/log/lbeacon_ips"
-output="/home/bedis/Lbeacon-Gateway/log/bad_lbeacons"
+input="/home/bedis/Lbeacon-Gateway/log/active_lbeacon_list"
+output="/home/bedis/Lbeacon-Gateway/log/abnormal_lbeacon_list"
 
 cat /dev/null > $output
 while IFS= read -r line

@@ -61,6 +61,18 @@
 /* File path of the config file of the zlog */
 #define ZLOG_CONFIG_FILE_NAME "../config/zlog.conf"
 
+/* File path of the temporary file for active Lbeacons */
+#define ACTIVE_LBEACON_FILE_NAME "../log/active_lbeacon_list"
+
+/* File path of the temporary file for abnormal Lbeacons */
+#define ABNORMAL_LBEACON_FILE_NAME "../log/abnormal_lbeacon_list"
+
+/* The file for LBeacon self-check result */
+#define SELF_CHECK_RESULT_FILE_NAME "../log/self_check_result"
+
+/* The file for LBeacon version */
+#define VERSION_FILE_NAME "../log/version"
+
 /* Time interval in seconds for idle status of the Wifi connection between the
 gateway and server. Usually, the Wifi connection being idle for longer than
 the specified time interval is impossible in BeDIS Object tracker solution. So
@@ -71,6 +83,9 @@ gateway sends UDP join_request to the server again.
 
 /* Time interval in seconds for reconnect to server */
 #define INTERVAL_FOR_RECONNECT_SERVER_IN_SEC 30
+
+/* Time interval in seconds for dumping active Lbeacons ip addresses */
+#define INTERVAL_FOR_DUMP_ACTIVE_LBEACONS_IN_SEC 60
 
 /* The number of slots in the memory pool for buffer nodes */
 #define SLOTS_IN_MEM_POOL_BUFFER_NODE 2048
@@ -112,6 +127,8 @@ BufferListHead command_msg_buffer_list_head;
 
 /* The last polling times in second*/
 int server_latest_polling_time;
+
+
 
 /*
   get_gateway_config:

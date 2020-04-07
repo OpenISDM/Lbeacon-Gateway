@@ -53,6 +53,7 @@ int main(int argc, char **argv){
     int return_value;
     int last_join_request_time = 0;
     int uptime;
+    int last_dump_active_lbeacon_time = 0;
 
     /* The main thread of the communication Unit */
     pthread_t CommUnit_thread;
@@ -251,10 +252,26 @@ int main(int argc, char **argv){
             {
                 last_join_request_time = uptime;
             }
-        }
-        else{
+        }else if( uptime - last_dump_active_lbeacon_time >
+                  INTERVAL_FOR_DUMP_ACTIVE_LBEACONS_IN_SEC){
+                   
+            /* Maintain Lbeacon AddressMap */
+            release_not_used_entry_from_Address_Map(
+                &LBeacon_address_map,
+                config.address_map_time_duration_in_sec);
+            
+            /* Dump active Lbeacons to let shell script try network connection */
+            dump_ip_of_active_entry_from_Address_Map(
+                ACTIVE_LBEACON_FILE_NAME,
+                &LBeacon_address_map,
+                config.address_map_time_duration_in_sec);           
+            
+            last_dump_active_lbeacon_time = uptime;
+            
+        }else{
             sleep_t(NORMAL_WAITING_TIME_IN_MS);
         }
+        
     }
 
     /* The program is going to be ended. Free the connection of Wifi */
@@ -407,7 +424,11 @@ void *BHM_routine(void *_buffer_node){
     char *uuid = NULL;
     char *timestamp_str = NULL;
     int Lbeacon_timestamp;
+    char API_version[LENGTH_OF_API_VERSION];
+
     
+    memset(API_version, 0, sizeof(API_version));
+    sprintf(API_version, "%.1f", temp -> API_version);
     
     /* Get LBeacon UUID and update its last_reported_timestamp in
     the AddressMap */
@@ -422,24 +443,36 @@ void *BHM_routine(void *_buffer_node){
     update_report_timestamp_in_Address_Map(&LBeacon_address_map,
                                            ADDRESS_MAP_TYPE_LBEACON,
                                            uuid);
-                                           
-    /* Maintain Lbeacon AddressMap */
-    release_not_used_entry_from_Address_Map(
-        &LBeacon_address_map,
-        config.address_map_time_duration_in_sec);
-                                           
+    
     /* Prepare the payload to forward to server*/
     memset(buf, 0, sizeof(buf));
-    sprintf(buf, "%d;%d;%s;%s;", from_gateway,
-                                 beacon_health_report,  
-                                 BOT_SERVER_API_VERSION_LATEST,
-                                 temp->content);
+    
+    // Gateway should support backward compatibility.
+    if((strncmp(BOT_GATEWAY_API_VERSION_10, 
+               API_version, 
+               strlen(API_version)) == 0) || 
+       (strncmp(BOT_GATEWAY_API_VERSION_11, 
+               API_version, 
+               strlen(API_version)) == 0 )){ 
+        sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                     beacon_health_report,  
+                                     BOT_SERVER_API_VERSION_22,
+                                     temp->content);
+    }else{
+        sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                     beacon_health_report,  
+                                     BOT_SERVER_API_VERSION_LATEST,
+                                     temp->content);
+    }
     
     strcpy(temp->content, buf);
     temp->content_size = strlen(temp->content);
     strncpy(temp-> net_address, 
             config.server_ip, 
             NETWORK_ADDR_LENGTH);
+    
+    printf("Report to server [lbeacon health status]\n"); 
+    printf("message=[%s]\n", temp -> content);
 
     pthread_mutex_lock(&BHM_send_buffer_list_head.list_lock);
 
@@ -456,12 +489,15 @@ void *LBeacon_routine(void *_buffer_node){
 
     BufferNode *temp = (BufferNode *)_buffer_node;
     int pkt_type = temp -> pkt_type;
-    float API_version = temp -> API_version;
     char buf[WIFI_MESSAGE_LENGTH];
+    char API_version[LENGTH_OF_API_VERSION];
 
     printf("Received content (tracking data) from Lbeacon [%s]\n",
            temp->content);
-           
+
+    memset(API_version, 0, sizeof(API_version));
+    sprintf(API_version, "%.1f", temp -> API_version);
+    
     if(config.is_geofence)
     {
         pkt_type = time_critical_tracked_object_data;
@@ -469,8 +505,10 @@ void *LBeacon_routine(void *_buffer_node){
 
     memset(buf, 0, sizeof(buf));
     
-    // Gateway should support backward compatibility. 
-    if(atof(BOT_GATEWAY_API_VERSION_10) == API_version){ 
+    // Gateway should support backward compatibility.
+    if(strncmp(BOT_GATEWAY_API_VERSION_10, 
+               API_version, 
+               strlen(API_version)) == 0){ 
         sprintf(buf, "%d;%d;%s;%s;", from_gateway,
                                      pkt_type, 
                                      BOT_SERVER_API_VERSION_20,
@@ -684,7 +722,119 @@ ErrorCode send_join_request(bool report_all_lbeacons,
 
 ErrorCode handle_health_report(){
     BufferNode *new_node = NULL;
+    char message[WIFI_MESSAGE_LENGTH];
+    FILE *self_check_file = NULL;
+    char self_check_buf[WIFI_MESSAGE_LENGTH];
+    FILE *version_file = NULL;
+    char version_buf[WIFI_MESSAGE_LENGTH];
+    FILE *abnormal_lbeacon_file = NULL;
+    char abnormal_lbeacon_buf[WIFI_MESSAGE_LENGTH];
+    int count_abnormal_lbeacon = 0;
+    int retry_times = 0;
+    char message_temp[WIFI_MESSAGE_LENGTH];
 
+
+    // read self-check result
+    retry_times = FILE_OPEN_RETRY;
+    while(retry_times--){
+        self_check_file =
+            fopen(SELF_CHECK_RESULT_FILE_NAME, "r");
+
+        if(NULL != self_check_file){
+            break;
+        }
+    }
+    
+    memset(self_check_buf, 0, sizeof(self_check_buf));
+        
+    if(NULL == self_check_file){
+        zlog_error(category_health_report,
+                   "Error openning file");
+        zlog_error(category_debug,
+                   "Error openning file");
+
+        sprintf(self_check_buf, "%d", 
+                SELF_CHECK_ERROR_OPEN_FILE);
+        
+    }else{
+        fgets(self_check_buf, sizeof(self_check_buf), self_check_file);
+        trim_string_tail(self_check_buf);
+
+        fclose(self_check_file);
+    } 
+    
+    // read version result
+    retry_times = FILE_OPEN_RETRY;
+    while(retry_times--){
+        version_file =
+            fopen(VERSION_FILE_NAME, "r");
+
+        if(NULL != version_file){
+            break;
+        }
+    }
+
+    memset(version_buf, 0, sizeof(version_buf));
+        
+    if(NULL == version_file){
+        zlog_error(category_health_report,
+                   "Error openning file");
+        zlog_error(category_debug,
+                   "Error openning file");
+        
+        sprintf(version_buf, "%d", 
+                SELF_CHECK_ERROR_OPEN_FILE);        
+    }else{
+        fgets(version_buf, sizeof(version_buf), version_file);
+        trim_string_tail(version_buf); 
+        
+        fclose(version_file);             
+    }
+     
+    // read abnormal lbeacon list 
+    retry_times = FILE_OPEN_RETRY;
+    while(retry_times--){
+        abnormal_lbeacon_file =
+            fopen(ABNORMAL_LBEACON_FILE_NAME, "r");
+
+        if(NULL != abnormal_lbeacon_file){
+            break;
+        }
+    }
+
+    memset(abnormal_lbeacon_buf, 0, sizeof(abnormal_lbeacon_buf));
+    count_abnormal_lbeacon = 0;
+    
+    if(NULL == abnormal_lbeacon_file){
+        zlog_error(category_health_report,
+                   "Error openning file");
+        zlog_error(category_debug,
+                   "Error openning file");
+                   
+        sprintf(abnormal_lbeacon_buf, "%d,;",
+                count_abnormal_lbeacon);        
+    }else{
+        memset(message_temp, 0, sizeof(message_temp));
+        while(fgets(message_temp, sizeof(message_temp), abnormal_lbeacon_file)){
+            trim_string_tail(message_temp);
+            if(strlen(message_temp) > 0){
+                count_abnormal_lbeacon ++;
+                if(strlen(abnormal_lbeacon_buf) > 0){            
+                    sprintf(abnormal_lbeacon_buf, "%s,%s",
+                            abnormal_lbeacon_buf,
+                            message_temp);
+                }else{
+                    sprintf(abnormal_lbeacon_buf, "%s",
+                            message_temp);                    
+                }
+            }
+        }
+        sprintf(abnormal_lbeacon_buf, "%d,%s;",
+                count_abnormal_lbeacon,
+                abnormal_lbeacon_buf);
+        fclose(version_file);             
+    }
+     
     new_node = mp_alloc( &node_mempool);
     if(new_node == NULL){
         zlog_error(category_debug, "Cannot malloc memory by mp_alloc");
@@ -701,11 +851,14 @@ ErrorCode handle_health_report(){
     new_node->pkt_type = gateway_health_report;
     new_node->API_version = atof(BOT_SERVER_API_VERSION_LATEST);
 
-    sprintf(new_node->content, "%d;%d;%s;%s;%d;", from_gateway, 
-                                                  gateway_health_report, 
-                                                  BOT_SERVER_API_VERSION_LATEST, 
-                                                  config.IPaddress, 
-                                                  S_NORMAL_STATUS);
+    sprintf(new_node->content, "%d;%d;%s;%s;%s;%s;%s", 
+            from_gateway, 
+            gateway_health_report, 
+            BOT_SERVER_API_VERSION_LATEST, 
+            config.IPaddress, 
+            self_check_buf,
+            version_buf,
+            abnormal_lbeacon_buf);
      
     new_node->content_size = strlen(new_node-> content);
 
@@ -713,6 +866,9 @@ ErrorCode handle_health_report(){
             config.server_ip, 
             NETWORK_ADDR_LENGTH);
 
+    printf("Report to server [gateway health status]\n"); 
+    printf("message=[%s]\n", new_node -> content);
+    
     pthread_mutex_lock(&BHM_send_buffer_list_head.list_lock);
 
     insert_list_tail( &new_node->buffer_entry,
