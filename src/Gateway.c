@@ -492,8 +492,7 @@ void *LBeacon_routine(void *_buffer_node){
     char buf[WIFI_MESSAGE_LENGTH];
     char API_version[LENGTH_OF_API_VERSION];
 
-    printf("Received content (tracking data) from Lbeacon [%s]\n",
-           temp->content);
+    printf("Received content (tracking data) from Lbeacon\n");
 
     memset(API_version, 0, sizeof(API_version));
     sprintf(API_version, "%.1f", temp -> API_version);
@@ -815,24 +814,30 @@ ErrorCode handle_health_report(){
                 count_abnormal_lbeacon);        
     }else{
         memset(message_temp, 0, sizeof(message_temp));
-        while(fgets(message_temp, sizeof(message_temp), abnormal_lbeacon_file)){
+        while(NULL != 
+              fgets(message_temp, 
+                    sizeof(message_temp), 
+                    abnormal_lbeacon_file)){
+                  
             trim_string_tail(message_temp);
             if(strlen(message_temp) > 0){
                 count_abnormal_lbeacon ++;
-                if(strlen(abnormal_lbeacon_buf) > 0){            
-                    sprintf(abnormal_lbeacon_buf, "%s,%s",
-                            abnormal_lbeacon_buf,
+                if(count_abnormal_lbeacon == 1){
+                    sprintf(abnormal_lbeacon_buf,
+                            "%s",
                             message_temp);
-                }else{
-                    sprintf(abnormal_lbeacon_buf, "%s",
-                            message_temp);                    
+                }else{                  
+                    strcat(abnormal_lbeacon_buf, ",");
+                    strcat(abnormal_lbeacon_buf, message_temp);
                 }
             }
         }
-        sprintf(abnormal_lbeacon_buf, "%d,%s;",
-                count_abnormal_lbeacon,
-                abnormal_lbeacon_buf);
-        fclose(version_file);             
+        
+        sprintf(message_temp, "%d,", count_abnormal_lbeacon);
+        strcat(message_temp, abnormal_lbeacon_buf);
+        strcpy(abnormal_lbeacon_buf, message_temp);
+        
+        fclose(abnormal_lbeacon_file);             
     }
      
     new_node = mp_alloc( &node_mempool);
@@ -851,7 +856,7 @@ ErrorCode handle_health_report(){
     new_node->pkt_type = gateway_health_report;
     new_node->API_version = atof(BOT_SERVER_API_VERSION_LATEST);
 
-    sprintf(new_node->content, "%d;%d;%s;%s;%s;%s;%s", 
+    sprintf(new_node->content, "%d;%d;%s;%s;%s;%s;%s;", 
             from_gateway, 
             gateway_health_report, 
             BOT_SERVER_API_VERSION_LATEST, 
