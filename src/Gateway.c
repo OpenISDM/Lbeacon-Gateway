@@ -758,7 +758,10 @@ ErrorCode handle_health_report(){
     }else{
         fgets(self_check_buf, sizeof(self_check_buf), self_check_file);
         trim_string_tail(self_check_buf);
-
+        if(strlen(self_check_buf) == 0){
+            sprintf(self_check_buf, "%d", 
+                    SELF_CHECK_ERROR_OPEN_FILE);            
+        }
         fclose(self_check_file);
     } 
     
@@ -785,7 +788,11 @@ ErrorCode handle_health_report(){
                 SELF_CHECK_ERROR_OPEN_FILE);        
     }else{
         fgets(version_buf, sizeof(version_buf), version_file);
-        trim_string_tail(version_buf); 
+        trim_string_tail(version_buf);
+        if(strlen(version_buf) == 0){
+            sprintf(version_buf, "%d",
+                    SELF_CHECK_ERROR_OPEN_FILE);    
+        }        
         
         fclose(version_file);             
     }
@@ -820,6 +827,7 @@ ErrorCode handle_health_report(){
                     abnormal_lbeacon_file)){
                   
             trim_string_tail(message_temp);
+            
             if(strlen(message_temp) > 0){
                 count_abnormal_lbeacon ++;
                 if(count_abnormal_lbeacon == 1){
