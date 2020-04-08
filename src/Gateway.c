@@ -454,12 +454,12 @@ void *BHM_routine(void *_buffer_node){
        (strncmp(BOT_GATEWAY_API_VERSION_11, 
                API_version, 
                strlen(API_version)) == 0 )){ 
-        sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+        sprintf(buf, "%d;%d;%s;%s", from_gateway,
                                      beacon_health_report,  
                                      BOT_SERVER_API_VERSION_22,
                                      temp->content);
     }else{
-        sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+        sprintf(buf, "%d;%d;%s;%s", from_gateway,
                                      beacon_health_report,  
                                      BOT_SERVER_API_VERSION_LATEST,
                                      temp->content);
