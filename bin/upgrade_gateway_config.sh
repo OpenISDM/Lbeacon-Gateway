@@ -2,7 +2,7 @@
 
 echo "Upgrade configuration file"
 config_new="/home/bedis/Lbeacon-Gateway/config/gateway.conf"
-config_save="/tmp/gateway_save.conf"
+config_save="/home/bedis/upgrade-Gateway/gateway_save.conf"
 config_result="/home/bedis/Lbeacon-Gateway/config/gateway_result.conf"
 
 sudo cat /dev/null > $config_result
