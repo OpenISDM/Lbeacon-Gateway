@@ -36,6 +36,9 @@ sudo /home/bedis/Lbeacon-Gateway/bin/kill_Gateway.sh
 echo "backup existing configration file"
 sudo cp /home/bedis/Lbeacon-Gateway/config/gateway.conf /home/bedis/upgrade-Gateway/gateway_save.conf 
 
+echo "backup existing self_check.sh"
+sudo cp /home/bedis/Lbeacon-Gateway/bin/self_check.sh /home/bedis/upgrade-Gateway/self_check.sh.bak
+
 echo "remove existing version files"
 sudo rm -f /home/bedis/Lbeacon-Gateway/*.txt
 
