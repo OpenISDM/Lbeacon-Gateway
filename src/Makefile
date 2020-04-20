@@ -2,9 +2,9 @@
 #---------------------------------------------------------------------------
 CC = gcc
 OBJS =  LinkedList.o Mempool.o thpool.o pkt_Queue.o UDP_API.o BeDIS.o
-CFLAGS = -std=gnu99 -lrt -lpthread -lzlog -O3
-LIB = -L /usr/local/lib
-INC = -I ../import
+CFLAGS = -std=gnu99 -lrt -lpthread -lzlog -lEncrypt -O3
+LIB = -L /usr/local/lib -L /home/bedis/bot-encrypt
+INC = -I ../import -I ../import/libEncrypt
 #---------------------------------------------------------------------------
 all: Gateway.out
 Gateway.out: $(OBJS) Gateway.h Gateway.c
@@ -16,7 +16,7 @@ thpool.o:
 Mempool.o: 
 	$(CC) $(CFLAGS) ../import/Mempool.c -c
 UDP_API.o: pkt_Queue.o
-	$(CC) $(CFLAGS) ../import/UDP_API.c -c
+	$(CC) $(CFLAGS) ../import/UDP_API.c $(INC) -c
 pkt_Queue.o: 
 	$(CC) $(CFLAGS) ../import/pkt_Queue.c -c
 BeDIS.o: 
