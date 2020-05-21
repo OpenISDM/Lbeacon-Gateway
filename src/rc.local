@@ -17,7 +17,10 @@ if [ "$_IP" ]; then
   printf "My IP address is %s\n" "$_IP"
 fi
 
+sudo iptables-restore < /home/bedis/iptables.conf
+
 sudo /bin/bash /usr/local/bin/hostapdstart
+
 cd /home/bedis/Lbeacon-Gateway/bin/
 chmod 755 /home/bedis/Lbeacon-Gateway/bin/auto_Gateway.sh
 /home/bedis/Lbeacon-Gateway/bin/auto_Gateway.sh > /dev/null 2>&1 &
