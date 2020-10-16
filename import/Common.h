@@ -52,7 +52,9 @@
 
 #define BOT_SERVER_API_VERSION_22 "2.2"
 
-#define BOT_SERVER_API_VERSION_LATEST "2.3"
+#define BOT_SERVER_API_VERSION_23 "2.3"
+
+#define BOT_SERVER_API_VERSION_LATEST "2.4"
 
 /* The size of message to be sent over WiFi in bytes */
 #define WIFI_MESSAGE_LENGTH 8192
