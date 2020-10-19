@@ -503,12 +503,27 @@ void *LBeacon_routine(void *_buffer_node){
     // Gateway should support backward compatibility.
     if(strncmp(BOT_GATEWAY_API_VERSION_10, 
                API_version, 
-               strlen(API_version)) == 0){ 
+               strlen(API_version)) == 0)
+    { 
         sprintf(buf, "%d;%d;%s;%s;", from_gateway,
                                      pkt_type, 
                                      BOT_SERVER_API_VERSION_20,
                                      temp->content);
-    }else{
+    }
+    else if( 0 == strncmp(BOT_GATEWAY_API_VERSION_11, 
+                           API_version, 
+                           strlen(API_version)) || 
+              0 == strncmp(BOT_GATEWAY_API_VERSION_12, 
+                           API_version, 
+                           strlen(API_version)) )
+    {
+        sprintf(buf, "%d;%d;%s;%s;", from_gateway,
+                                     pkt_type, 
+                                     BOT_SERVER_API_VERSION_23,
+                                     temp->content); 
+    }
+    else
+    {
         sprintf(buf, "%d;%d;%s;%s;", from_gateway,
                                      pkt_type, 
                                      BOT_SERVER_API_VERSION_LATEST,
@@ -1113,6 +1128,10 @@ void *process_wifi_receive(){
     char *from_direction = NULL;
     char *request_type = NULL;
     char *API_version = NULL;
+    float API_latest_version = 0;
+
+
+    sscanf(BOT_GATEWAY_API_VERSION_LATEST, "%f", &API_latest_version);
     
     while (ready_to_work == true) {
 
@@ -1174,6 +1193,7 @@ void *process_wifi_receive(){
             mp_free( &node_mempool, new_node);
             continue;
         }
+        
         remain_string = remain_string + strlen(API_version) + 
                         strlen(DELIMITER_SEMICOLON);
         sscanf(API_version, "%f", &new_node -> API_version);
@@ -1199,7 +1219,7 @@ void *process_wifi_receive(){
         switch (new_node -> pkt_direction) {
             
             case from_server:
-
+            
                 server_latest_polling_time = uptime;
 
                 switch (new_node -> pkt_type) {
@@ -1262,6 +1282,12 @@ void *process_wifi_receive(){
 
             case from_beacon:
 
+                // protect gateway from parsiing newer API traffice from Lbeacon
+                if(new_node->API_version > API_latest_version ){
+                    mp_free( &node_mempool, new_node);
+                    continue;
+                }
+                
                 switch (new_node -> pkt_type) {
 
                     case request_to_join:
