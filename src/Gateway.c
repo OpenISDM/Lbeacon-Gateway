@@ -406,7 +406,7 @@ void *NSI_routine(void *_buffer_node){
 
     pthread_mutex_unlock( &NSI_send_buffer_list_head.list_lock);
  
-    send_join_request(true, uuid);
+    send_join_request(false, uuid);
 
     return (void *)NULL;
 }
