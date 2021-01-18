@@ -300,8 +300,13 @@ ErrorCode get_gateway_config(GatewayConfig *config,
     config->is_geofence = atoi(config_message);
 
     fetch_next_string(file, config_message, sizeof(config_message)); 
-    memcpy(config->IPaddress, config_message, sizeof(config->IPaddress));
-
+    memcpy(config->area_id, config_message, sizeof(config->area_id));
+    zlog_debug(category_debug, "area_id = [%s]", config->area_id);
+    
+    fetch_next_string(file, config_message, sizeof(config_message)); 
+    memcpy(config->serial_id, config_message, sizeof(config->serial_id));
+    zlog_debug(category_debug, "serial_id = [%s]", config->serial_id);
+    
     fetch_next_string(file, config_message, sizeof(config_message)); 
     common_config->number_worker_threads = atoi(config_message);
 
@@ -700,7 +705,11 @@ ErrorCode send_join_request(bool report_all_lbeacons,
         pthread_mutex_unlock(&LBeacon_address_map.list_lock);
     }
 
-    sprintf(summary_buf, "%d;%s;", count, config.IPaddress);
+    sprintf(summary_buf, 
+            "%d;%s%s;", 
+            count, 
+            config.area_id, 
+            config.serial_id);
     
 
     if(sizeof(message_buf) <= strlen(message_buf) + strlen(summary_buf)){
@@ -875,11 +884,12 @@ ErrorCode handle_health_report(){
     new_node->pkt_type = gateway_health_report;
     new_node->API_version = atof(BOT_SERVER_API_VERSION_LATEST);
 
-    sprintf(new_node->content, "%d;%d;%s;%s;%s;%s;%s;", 
+    sprintf(new_node->content, "%d;%d;%s;%s%s;%s;%s;%s;", 
             from_gateway, 
             gateway_health_report, 
             BOT_SERVER_API_VERSION_LATEST, 
-            config.IPaddress, 
+            config.area_id,
+            config.serial_id,            
             self_check_buf,
             version_buf,
             abnormal_lbeacon_buf);

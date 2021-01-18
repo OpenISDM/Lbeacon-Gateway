@@ -94,9 +94,10 @@ typedef struct {
     /* A flag indicating whether this gateway is responsible for geofence feature.*/
     bool is_geofence;
 
-    /* The IP address of the server for WiFi network connection. */
-    char IPaddress[NETWORK_ADDR_LENGTH];
-
+    char area_id[CONFIG_BUFFER_SIZE];
+    
+    char serial_id[CONFIG_BUFFER_SIZE];
+    
     /* The IP address of the server */
     char server_ip[NETWORK_ADDR_LENGTH];
 
