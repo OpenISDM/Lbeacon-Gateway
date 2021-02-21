@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Check network status and Change .conf
-default_gateway=192.168.1.1
+default_gateway=`cat /home/bedis/Lbeacon-Gateway/config/gateway.conf | grep "default_gateway" | cut -d '=' -f2`
 count_file=/home/bedis/Lbeacon-Gateway/log/error_count
 restart_criteria=30
 echo "$default_gateway"
